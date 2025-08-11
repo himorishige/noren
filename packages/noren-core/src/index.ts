@@ -145,7 +145,7 @@ function builtinDetect(u: DetectUtils) {
   // credit card（Luhn）
   const chunk = /(?:\d[ -]?){13,19}/g
   for (const m of u.src.matchAll(chunk)) {
-    const digits = (m[0] as string).replace(/[ -]/g, '')
+    const digits = m[0].replace(/[ -]/g, '')
     if (digits.length >= 13 && digits.length <= 19 && luhn(digits))
       u.push(hit('credit_card', m as RegExpExecArray, 'high'))
   }
