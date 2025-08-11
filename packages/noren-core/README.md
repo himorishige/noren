@@ -1,5 +1,7 @@
 # @himorishige/noren-core
 
+[English](./README.md) | [日本語](./docs/ja/README.md)
+
 The core package for the Noren PII masking library.
 
 This package provides the `Registry` class, which acts as the engine for PII detection, masking, and tokenization, along with key functions and the foundational type definitions for the plugin architecture.

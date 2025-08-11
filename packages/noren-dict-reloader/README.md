@@ -1,5 +1,7 @@
 # @himorishige/noren-dict-reloader
 
+[English](./README.md) | [日本語](./docs/ja/README.md)
+
 An extension package for the Noren PII masking library that provides functionality to dynamically load and periodically update (hot-reload) redaction policies and custom dictionaries from remote URLs.
 
 ## Features

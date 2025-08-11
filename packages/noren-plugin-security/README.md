@@ -1,5 +1,7 @@
 # @himorishige/noren-plugin-security
 
+[English](./README.md) | [日本語](./docs/ja/README.md)
+
 A plugin for the Noren PII masking library that specializes in detecting and masking sensitive information related to web application security, such as API keys, JWTs, and cookies.
 
 ## Features

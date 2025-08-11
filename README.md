@@ -1,5 +1,7 @@
 # Noren (暖簾)
 
+[English](./README.md) | [日本語](./docs/ja/README.md)
+
 A fast, lightweight PII (Personally Identifiable Information) masking and tokenization library built on **Web Standards**.
 
 It is designed to run in various JavaScript environments that support web standards, including server-side Node.js, edge computing platforms like Cloudflare Workers, Deno, and Bun.

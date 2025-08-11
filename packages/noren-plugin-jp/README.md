@@ -1,5 +1,7 @@
 # @himorishige/noren-plugin-jp
 
+[English](./README.md) | [日本語](./docs/ja/README.md)
+
 A plugin for the Noren PII masking library that provides detectors and maskers specific to Japanese Personally Identifiable Information (PII).
 
 ## Features
