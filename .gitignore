@@ -4,6 +4,9 @@ node_modules
 # windsurf
 .windsurf
 
+# claude
+.mcp.json
+
 # build artifacts
 packages/*/dist/
 packages/*/dist-test/
