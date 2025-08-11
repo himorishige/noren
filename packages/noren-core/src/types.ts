@@ -1,4 +1,4 @@
-// Type definitions (tree-shakeable)
+// Core type definitions
 
 export type PiiType =
   | 'email'
@@ -27,9 +27,9 @@ export type Policy = {
 }
 
 export type DetectUtils = {
-  src: string // 正規化済み
-  hasCtx: (words?: string[]) => boolean // 文脈ゲート
-  push: (h: Hit) => void // 検出結果追加
+  src: string
+  hasCtx: (words?: string[]) => boolean
+  push: (h: Hit) => void
 }
 
 export type Detector = {

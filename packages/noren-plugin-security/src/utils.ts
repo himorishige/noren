@@ -1,10 +1,10 @@
 import type { CookieInfo, HeaderInfo, SecurityConfig } from './types.js'
 
-/** Cookieヘッダー文字列を解析する */
+/** Parse Cookie header string */
 export function parseCookieHeader(cookieHeader: string): CookieInfo[] {
   const cookies: CookieInfo[] = []
 
-  // "Cookie: name1=value1; name2=value2; name3=value3" の形式を解析
+  // Parse format: "Cookie: name1=value1; name2=value2; name3=value3"
   const cookieValue = cookieHeader.replace(/^Cookie\s*:\s*/i, '')
   const pairs = cookieValue.split(';')
 
@@ -19,7 +19,7 @@ export function parseCookieHeader(cookieHeader: string): CookieInfo[] {
       cookies.push({
         name,
         value,
-        isAllowed: false, // 後でアローリストチェックで更新
+        isAllowed: false, // Updated later by allowlist check
       })
     }
   }
@@ -27,9 +27,9 @@ export function parseCookieHeader(cookieHeader: string): CookieInfo[] {
   return cookies
 }
 
-/** Set-Cookieヘッダー文字列を解析する */
+/** Parse Set-Cookie header string */
 export function parseSetCookieHeader(setCookieHeader: string): CookieInfo | null {
-  // "Set-Cookie: name=value; Path=/; HttpOnly" の形式を解析
+  // Parse format: "Set-Cookie: name=value; Path=/; HttpOnly"
   const cookieValue = setCookieHeader.replace(/^Set-Cookie\s*:\s*/i, '')
   const parts = cookieValue.split(';')
 
@@ -46,11 +46,11 @@ export function parseSetCookieHeader(setCookieHeader: string): CookieInfo | null
   return {
     name,
     value,
-    isAllowed: false, // 後でアローリストチェックで更新
+    isAllowed: false, // Updated later by allowlist check
   }
 }
 
-/** HTTPヘッダー文字列を解析する */
+/** Parse HTTP header string */
 export function parseHttpHeader(headerLine: string): HeaderInfo | null {
   const colonIndex = headerLine.indexOf(':')
   if (colonIndex <= 0) return null
@@ -61,19 +61,19 @@ export function parseHttpHeader(headerLine: string): HeaderInfo | null {
   return {
     name,
     value,
-    isAllowed: false, // 後でアローリストチェックで更新
+    isAllowed: false, // Updated later by allowlist check
   }
 }
 
-/** Cookieがアローリストに含まれているかチェック */
+/** Check if cookie is in allowlist */
 export function isCookieAllowed(cookieName: string, config?: SecurityConfig): boolean {
   if (!config?.cookieAllowlist) return false
 
   return config.cookieAllowlist.some((allowed) => {
-    // 大文字小文字を無視して比較
+    // Case-insensitive comparison
     if (allowed.toLowerCase() === cookieName.toLowerCase()) return true
 
-    // ワイルドカードパターン（* で終わる）をサポート
+    // Support wildcard patterns (ending with *)
     if (allowed.endsWith('*')) {
       const prefix = allowed.slice(0, -1).toLowerCase()
       return cookieName.toLowerCase().startsWith(prefix)
@@ -83,17 +83,17 @@ export function isCookieAllowed(cookieName: string, config?: SecurityConfig): bo
   })
 }
 
-/** ヘッダーがアローリストに含まれているかチェック */
+/** Check if header is in allowlist */
 export function isHeaderAllowed(headerName: string, config?: SecurityConfig): boolean {
   if (!config?.headerAllowlist) return false
 
   return config.headerAllowlist.some((allowed) => {
-    // 大文字小文字を無視して比較（HTTPヘッダーは大文字小文字を区別しない）
+    // Case-insensitive comparison (HTTP headers are case-insensitive)
     return allowed.toLowerCase() === headerName.toLowerCase()
   })
 }
 
-/** セキュリティ設定のデフォルト値を適用 */
+/** Apply default values to security configuration */
 export function applyDefaultConfig(config: SecurityConfig = {}): Required<SecurityConfig> {
   return {
     cookieAllowlist: config.cookieAllowlist ?? [],

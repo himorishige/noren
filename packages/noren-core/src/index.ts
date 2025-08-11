@@ -1,9 +1,7 @@
-// Noren Core — 世界共通の薄い原理（Web標準のみ）
+// Noren Core - Global PII detection and masking (Web Standards only)
 
-// Re-export lazy loading utilities
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
-// Re-export types for backward compatibility
 export type {
   Action,
   Detector,
@@ -14,14 +12,12 @@ export type {
   Policy,
 } from './types'
 
-// Re-export utilities
 export { normalize } from './utils.js'
 
 import { builtinDetect } from './detection.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'
 import { defaultMask } from './masking.js'
 import { hitPool } from './pool.js'
-// Import dependencies
 import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy } from './types.js'
 import { hmacToken, importHmacKey, normalize } from './utils.js'
 
@@ -37,21 +33,17 @@ export class Registry {
   }
 
   use(detectors: Detector[] = [], maskers: Record<string, Masker> = {}, ctx: string[] = []) {
-    // Add detectors and sort immediately
     for (const d of detectors) this.detectors.push(d)
     this.detectors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
 
-    // Add maskers
     for (const [k, m] of Object.entries(maskers)) this.maskers.set(k as PiiType, m)
 
-    // Update context hints using Set
     if (ctx.length) {
       for (const hint of ctx) this.contextHintsSet.add(hint)
       this.base.contextHints = Array.from(this.contextHintsSet)
     }
   }
 
-  // Lazy plugin loading
   async useLazy(pluginName: string, plugin: LazyPlugin): Promise<void> {
     const loaded = await loadPlugin(pluginName, plugin)
     this.use(loaded.detectors, loaded.maskers, loaded.contextHints)
@@ -68,14 +60,12 @@ export class Registry {
     const src = normalize(raw)
     const hits: Hit[] = []
 
-    // Create optimized context check function with caching
     const ctxHintsForCheck = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
     let contextCheckCache: boolean | null = null
 
     const u: DetectUtils = {
       src,
       hasCtx: (ws) => {
-        // Cache context check result if no specific words provided
         if (!ws) {
           if (contextCheckCache === null) {
             contextCheckCache = ctxHintsForCheck.some((w) => src.includes(w))
@@ -88,15 +78,12 @@ export class Registry {
     }
 
     builtinDetect(u)
-    // Use pre-sorted detectors
     for (const d of this.detectors) await d.match(u)
 
-    // Optimized interval merging with early termination
     if (hits.length === 0) return { src, hits: [] }
 
     hits.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start))
 
-    // In-place merging to reduce allocations
     let writeIndex = 0
     let currentEnd = -1
 
@@ -107,12 +94,10 @@ export class Registry {
         currentEnd = hit.end
         writeIndex++
       } else {
-        // Release the overlapped hit back to pool
         hitPool.release([hit])
       }
     }
 
-    // Trim array to actual size and release unused hits
     const finalHits = hits.slice(0, writeIndex)
     const releasedHits = hits.slice(writeIndex)
     if (releasedHits.length > 0) {
@@ -127,16 +112,13 @@ export async function redactText(reg: Registry, input: string, override: Policy 
   const cfg = { ...reg.getPolicy(), ...override }
   const { src, hits } = await reg.detect(input, cfg.contextHints)
 
-  // Early exit for no hits
   if (hits.length === 0) return src
 
-  // Pre-check for tokenization to avoid repeated key import
   const needTok =
     Object.values(cfg.rules ?? {}).some((v) => v?.action === 'tokenize') ||
     cfg.defaultAction === 'tokenize'
   const key = needTok && cfg.hmacKey ? await importHmacKey(cfg.hmacKey) : undefined
 
-  // Pre-allocate array with estimated size to reduce reallocations
   const parts: string[] = []
   const _estimatedParts = hits.length * 2 + 1
 
@@ -144,12 +126,10 @@ export async function redactText(reg: Registry, input: string, override: Policy 
   for (const h of hits) {
     const rule = cfg.rules?.[h.type] ?? { action: cfg.defaultAction ?? 'mask' }
 
-    // Add text before hit
     if (h.start > cur) {
       parts.push(src.slice(cur, h.start))
     }
 
-    // Process hit based on action
     let rep = h.value
     if (rule.action === 'remove') {
       rep = ''
@@ -166,7 +146,6 @@ export async function redactText(reg: Registry, input: string, override: Policy 
     cur = h.end
   }
 
-  // Add remaining text after last hit
   if (cur < src.length) {
     parts.push(src.slice(cur))
   }

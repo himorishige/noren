@@ -2,7 +2,7 @@ import type { Masker } from '@himorishige/noren-core'
 import type { SecurityConfig } from './types.js'
 import { isCookieAllowed, parseCookieHeader, parseSetCookieHeader } from './utils.js'
 
-/** JWT構造を保持しながらマスクする */
+/** Mask JWT while preserving structure */
 function maskJwtStructure(jwt: string): string {
   const parts = jwt.split('.')
   if (parts.length !== 3) {
@@ -22,7 +22,7 @@ function maskJwtStructure(jwt: string): string {
   return `${maskPart(header)}.${maskPart(payload)}.${maskPart(signature)}`
 }
 
-/** API Keyのプリフィックスを保持してマスクする */
+/** Mask API key while preserving prefix */
 function maskApiKey(apiKey: string): string {
   const prefixMatch = apiKey.match(/^([a-z]+_)(.+)$/i)
   if (prefixMatch) {
@@ -30,19 +30,19 @@ function maskApiKey(apiKey: string): string {
     return prefix + '*'.repeat(Math.max(4, suffix.length))
   }
 
-  // プリフィックスがない場合は最初の4文字以外をマスク
+  // Mask all but first 4 characters if no prefix
   if (apiKey.length <= 8) {
     return '*'.repeat(apiKey.length)
   }
   return apiKey.substring(0, 4) + '*'.repeat(apiKey.length - 4)
 }
 
-/** UUID形式を部分的にマスクする */
+/** Partially mask UUID format */
 function maskUuid(uuid: string): string {
   if (uuid.length <= 8) {
     return '*'.repeat(uuid.length)
   }
-  // 最初と最後の4文字を保持、中間をマスク
+  // Keep first and last 4 characters, mask the middle
   const start = uuid.substring(0, 4)
   const end = uuid.substring(uuid.length - 4)
   const middle = uuid.substring(4, uuid.length - 4)
@@ -50,7 +50,7 @@ function maskUuid(uuid: string): string {
   return start + maskedMiddle + end
 }
 
-/** 16進数トークンをマスクする */
+/** Mask hexadecimal tokens */
 function maskHexToken(hexToken: string): string {
   if (hexToken.length <= 8) {
     return '*'.repeat(hexToken.length)
@@ -62,7 +62,7 @@ function maskHexToken(hexToken: string): string {
   )
 }
 
-/** セッションIDをマスクする */
+/** Mask session IDs */
 function maskSessionId(sessionId: string): string {
   const equalIndex = sessionId.indexOf('=')
   if (equalIndex === -1) {
@@ -80,7 +80,7 @@ function maskSessionId(sessionId: string): string {
   )
 }
 
-/** Cookieヘッダーをマスクする（アローリスト考慮） */
+/** Mask Cookie header with allowlist consideration */
 function maskCookieHeader(cookieHeader: string, config?: SecurityConfig): string {
   try {
     const cookies = parseCookieHeader(cookieHeader)
@@ -88,10 +88,10 @@ function maskCookieHeader(cookieHeader: string, config?: SecurityConfig): string
 
     for (const cookie of cookies) {
       if (isCookieAllowed(cookie.name, config)) {
-        // アローリストのCookieはそのまま
+        // Keep allowlisted cookies as-is
         maskedPairs.push(`${cookie.name}=${cookie.value}`)
       } else {
-        // アローリスト外のCookieをマスク
+        // Mask non-allowlisted cookies
         const maskedValue =
           cookie.value.length <= 6
             ? '*'.repeat(cookie.value.length)
@@ -108,18 +108,18 @@ function maskCookieHeader(cookieHeader: string, config?: SecurityConfig): string
   }
 }
 
-/** Set-Cookieヘッダーをマスクする（アローリスト考慮） */
+/** Mask Set-Cookie header with allowlist consideration */
 function maskSetCookieHeader(setCookieHeader: string, config?: SecurityConfig): string {
   try {
     const cookie = parseSetCookieHeader(setCookieHeader)
     if (!cookie) return '[REDACTED:SET-COOKIE]'
 
     if (isCookieAllowed(cookie.name, config)) {
-      // アローリストのCookieはそのまま
+      // Keep allowlisted cookies as-is
       return setCookieHeader
     }
 
-    // アローリスト外のCookieをマスク
+    // Mask non-allowlisted cookies
     const maskedValue =
       cookie.value.length <= 6
         ? '*'.repeat(cookie.value.length)
@@ -127,14 +127,14 @@ function maskSetCookieHeader(setCookieHeader: string, config?: SecurityConfig): 
           '*'.repeat(cookie.value.length - 4) +
           cookie.value.substring(cookie.value.length - 2)
 
-    // 元の形式を保持しつつ値のみマスク
+    // Preserve original format while masking only the value
     return setCookieHeader.replace(/^(Set-Cookie\s*:\s*[^=]+=)([^;]+)(.*)$/i, `$1${maskedValue}$3`)
   } catch {
     return '[REDACTED:SET-COOKIE]'
   }
 }
 
-/** 設定付きマスカー関数を作成 */
+/** Create masker functions with configuration */
 export function createSecurityMaskers(config?: SecurityConfig): Record<string, Masker> {
   return {
     sec_jwt_token: (h) => maskJwtStructure(h.value),
@@ -150,5 +150,5 @@ export function createSecurityMaskers(config?: SecurityConfig): Record<string, M
   }
 }
 
-/** デフォルトのセキュリティマスカー（設定なし） */
+/** Default security maskers without configuration */
 export const maskers: Record<string, Masker> = createSecurityMaskers()
