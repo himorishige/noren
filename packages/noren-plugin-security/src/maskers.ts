@@ -39,13 +39,15 @@ function maskApiKey(apiKey: string): string {
 
 /** UUID形式を部分的にマスクする */
 function maskUuid(uuid: string): string {
-  return uuid.replace(/[0-9a-f]/gi, (match, offset) => {
-    // ハイフンは保持、最初と最後の4文字以外をマスク
-    if (offset < 4 || offset >= uuid.length - 4) {
-      return match
-    }
-    return match === '-' ? '-' : '*'
-  })
+  if (uuid.length <= 8) {
+    return '*'.repeat(uuid.length)
+  }
+  // 最初と最後の4文字を保持、中間をマスク
+  const start = uuid.substring(0, 4)
+  const end = uuid.substring(uuid.length - 4)
+  const middle = uuid.substring(4, uuid.length - 4)
+  const maskedMiddle = middle.replace(/[0-9a-f]/gi, '*')
+  return start + maskedMiddle + end
 }
 
 /** 16進数トークンをマスクする */

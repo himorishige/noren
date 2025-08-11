@@ -159,13 +159,13 @@ export const detectors: Detector[] = [
         if (m.index !== undefined && m[2] && m[2].length >= 8) {
           // パラメータ名に基づいてリスクレベルを決定
           const paramName = m[1].toLowerCase()
-          let risk: 'low' | 'medium' | 'high' = 'medium'
-
-          if (paramName.includes('secret') || paramName.includes('refresh')) {
-            risk = 'high'
-          } else if (paramName === 'token' || paramName === 'access_token') {
-            risk = 'high'
-          }
+          const risk: 'low' | 'medium' | 'high' =
+            paramName.includes('secret') ||
+            paramName.includes('refresh') ||
+            paramName === 'token' ||
+            paramName === 'access_token'
+              ? 'high'
+              : 'medium'
 
           push({
             type: 'sec_url_token',
