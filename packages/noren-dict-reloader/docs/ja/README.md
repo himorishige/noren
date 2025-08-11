@@ -169,6 +169,78 @@ await reloader.start()
 - `file://` 以外のURLはビルトインの HTTP(S) ローダーにフォールバックする。
 - 独自ストレージ向けに、`LoaderFn` 型のローダーを自作して `load` に渡すことも可能。
 
+## Cloudflare Workers 例 (KV / R2)
+
+Workers では `file://` が使えないので、`load` に渡す `LoaderFn` を実装して KV や R2 から読む。
+
+KV ローダー:
+
+```ts
+import type { LoaderFn } from '@himorishige/noren-dict-reloader'
+
+async function sha256Hex(s: string): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+export const kvLoader = (kv: KVNamespace): LoaderFn => {
+  return async (url, prev) => {
+    const key = new URL(url).pathname.slice(1) // 例: kv://manifest.json
+    const text = await kv.get(key, 'text')
+    if (text == null) throw new Error(`KV ${key} not found`)
+    const etag = `W/"sha256:${await sha256Hex(text)}"`
+    if (prev?.etag === etag) return { status: 304, meta: prev }
+    let json: unknown
+    try { json = JSON.parse(text) } catch { json = text }
+    return { status: 200, meta: { etag, text, json } }
+  }
+}
+
+// 使い方
+// new PolicyDictReloader({
+//   policyUrl: 'kv://policy.json',
+//   dictManifestUrl: 'kv://manifest.json',
+//   compile,
+//   load: kvLoader(env.MY_KV),
+// })
+```
+
+R2 ローダー:
+
+```ts
+import type { LoaderFn } from '@himorishige/noren-dict-reloader'
+
+export const r2Loader = (bucket: R2Bucket): LoaderFn => {
+  return async (url, prev) => {
+    const key = new URL(url).pathname.slice(1)
+    const obj = await bucket.get(key)
+    if (!obj) throw new Error(`R2 ${key} not found`)
+    const etag = obj.etag
+    const lastModified = obj.uploaded?.toUTCString()
+    if (prev?.etag === etag) return { status: 304, meta: prev }
+    const text = await obj.text()
+    let json: unknown
+    try { json = JSON.parse(text) } catch { json = text }
+    return { status: 200, meta: { etag, lastModified, text, json } }
+  }
+}
+```
+
+## バンドル埋め込み（リモート取得なし）
+
+ホットリロード不要なら、ビルド時に JSON を同梱して `compile()` を直接呼べばいい。
+
+```ts
+// bundler で policy/dicts を import（または JSON を直書き）
+import policy from './policy.json'
+import dictA from './dictA.json'
+import dictB from './dictB.json'
+
+// 上の compile() 例を利用
+const registry = compile(policy, [dictA, dictB])
+// すぐに registry を使い始められる
+```
+
 ## Tips
 
 - サーバー側は `ETag` または `Last-Modified` と、ブラウザ利用時は適切な CORS ヘッダーを返すこと。

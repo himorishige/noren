@@ -171,6 +171,78 @@ Notes:
 - Non-`file://` URLs are delegated to the built-in HTTP(S) loader.
 - You can supply your own loader as a `LoaderFn` to fetch from custom stores.
 
+## Cloudflare Workers examples (KV / R2)
+
+You can implement a `LoaderFn` for Cloudflare Workers.
+
+KV loader:
+
+```ts
+import type { LoaderFn } from '@himorishige/noren-dict-reloader'
+
+async function sha256Hex(s: string): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+export const kvLoader = (kv: KVNamespace): LoaderFn => {
+  return async (url, prev) => {
+    const key = new URL(url).pathname.slice(1) // e.g. kv://manifest.json
+    const text = await kv.get(key, 'text')
+    if (text == null) throw new Error(`KV ${key} not found`)
+    const etag = `W/"sha256:${await sha256Hex(text)}"`
+    if (prev?.etag === etag) return { status: 304, meta: prev }
+    let json: unknown
+    try { json = JSON.parse(text) } catch { json = text }
+    return { status: 200, meta: { etag, text, json } }
+  }
+}
+
+// Usage
+// new PolicyDictReloader({
+//   policyUrl: 'kv://policy.json',
+//   dictManifestUrl: 'kv://manifest.json',
+//   compile,
+//   load: kvLoader(env.MY_KV),
+// })
+```
+
+R2 loader:
+
+```ts
+import type { LoaderFn } from '@himorishige/noren-dict-reloader'
+
+export const r2Loader = (bucket: R2Bucket): LoaderFn => {
+  return async (url, prev) => {
+    const key = new URL(url).pathname.slice(1)
+    const obj = await bucket.get(key)
+    if (!obj) throw new Error(`R2 ${key} not found`)
+    const etag = obj.etag
+    const lastModified = obj.uploaded?.toUTCString()
+    if (prev?.etag === etag) return { status: 304, meta: prev }
+    const text = await obj.text()
+    let json: unknown
+    try { json = JSON.parse(text) } catch { json = text }
+    return { status: 200, meta: { etag, lastModified, text, json } }
+  }
+}
+```
+
+## Bundle-embedded (no remote fetch)
+
+If you don't need hot reload, you can embed JSON at build time and call your `compile()` directly:
+
+```ts
+// import policy/dicts via bundler (or inline JSON)
+import policy from './policy.json'
+import dictA from './dictA.json'
+import dictB from './dictB.json'
+
+// using the compile() example above
+const registry = compile(policy, [dictA, dictB])
+// start using `registry` right away
+```
+
 ## Tips
 
 - Ensure your server sends `ETag` or `Last-Modified` and proper CORS headers if used in browsers.
