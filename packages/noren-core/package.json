@@ -1,6 +1,28 @@
 {
   "name": "@himorishige/noren-core",
   "version": "0.1.0",
+  "description": "Core PII detection, masking, and tokenization library built on Web Standards",
+  "keywords": [
+    "pii",
+    "privacy",
+    "redaction",
+    "masking",
+    "web-standards",
+    "streams",
+    "webcrypto",
+    "edge"
+  ],
+  "homepage": "https://github.com/himorishige/noren#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/himorishige/noren.git",
+    "directory": "packages/noren-core"
+  },
+  "bugs": {
+    "url": "https://github.com/himorishige/noren/issues"
+  },
+  "author": "himorishige",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,6 +36,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

@@ -1,6 +1,29 @@
 {
   "name": "@himorishige/noren-plugin-security",
   "version": "0.1.0",
+  "description": "Security-focused plugin for Noren (JWT tokens, API keys, HTTP headers, cookies)",
+  "keywords": [
+    "pii",
+    "privacy",
+    "redaction",
+    "security",
+    "jwt",
+    "api-key",
+    "http-headers",
+    "cookies",
+    "noren-plugin"
+  ],
+  "homepage": "https://github.com/himorishige/noren#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/himorishige/noren.git",
+    "directory": "packages/noren-plugin-security"
+  },
+  "bugs": {
+    "url": "https://github.com/himorishige/noren/issues"
+  },
+  "author": "himorishige",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,6 +37,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

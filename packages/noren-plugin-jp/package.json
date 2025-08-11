@@ -1,6 +1,28 @@
 {
   "name": "@himorishige/noren-plugin-jp",
   "version": "0.1.0",
+  "description": "Japan-specific PII detection plugin for Noren (phone numbers, postal codes, MyNumber)",
+  "keywords": [
+    "pii",
+    "privacy",
+    "redaction",
+    "japan",
+    "mynumber",
+    "postal-code",
+    "phone",
+    "noren-plugin"
+  ],
+  "homepage": "https://github.com/himorishige/noren#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/himorishige/noren.git",
+    "directory": "packages/noren-plugin-jp"
+  },
+  "bugs": {
+    "url": "https://github.com/himorishige/noren/issues"
+  },
+  "author": "himorishige",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,6 +36,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
