@@ -50,7 +50,7 @@ const testInput = `
 HTTP Request Log:
 POST /api/v1/users HTTP/1.1
 Host: api.example.com
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+Authorization: Bearer eyJmYWtlIjoiaGVhZGVyIn0.eyJmYWtlIjoicGF5bG9hZCJ9.fake_signature_demo
 Cookie: session_id=abc123def456789; theme=dark; user_pref=large_text
 X-API-Key: sk_live_1234567890abcdef
 

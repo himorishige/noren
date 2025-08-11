@@ -74,7 +74,7 @@ export const detectors: Detector[] = [
       if (!hasCtx([...SECURITY_CONTEXTS.session, ...SECURITY_CONTEXTS.auth])) return
 
       for (const m of src.matchAll(SECURITY_PATTERNS.hexToken)) {
-        if (m.index !== undefined && m[0].length >= 32) {
+        if (m.index !== undefined) {
           push({
             type: 'sec_hex_token',
             start: m.index,

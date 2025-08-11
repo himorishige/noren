@@ -5,8 +5,8 @@ export const SECURITY_PATTERNS = {
   // Authorization ヘッダー（Bearer, Basic）
   authHeader: /Authorization\s*:\s*((?:Bearer|Basic)\s+[A-Za-z0-9+/=._-]{8,})/gi,
 
-  // JWT パターン (eyJ で始まる3つのセクション)
-  jwt: /\beyJ[A-Za-z0-9+/=._-]{10,}\.eyJ[A-Za-z0-9+/=._-]{10,}\.[A-Za-z0-9+/=._-]{10,}\b/g,
+  // JWT パターン (eyJ で始まるheader、任意のpayload、signature)
+  jwt: /\beyJ[A-Za-z0-9+/=._-]{10,}\.[A-Za-z0-9+/=._-]{10,}\.[A-Za-z0-9+/=._-]{8,}\b/g,
 
   // API Key パターン（よくあるプリフィックス付き）
   apiKey: /\b(?:sk_|pk_|api_|key_)[A-Za-z0-9_]{8,}\b/g,

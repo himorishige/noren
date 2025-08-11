@@ -11,9 +11,25 @@
     "phone_jp": { "action": "mask" }
   },
   "contextHints": [
-    "Employee", "ID", "Code", "Project", "Product", "Account", "Customer",
-    "社員", "番号", "コード", "プロジェクト", "製品", "口座", "顧客",
-    "TEL", "電話", "メール", "住所", "郵便番号"
+    "Employee",
+    "ID",
+    "Code",
+    "Project",
+    "Product",
+    "Account",
+    "Customer",
+    "社員",
+    "番号",
+    "コード",
+    "プロジェクト",
+    "製品",
+    "口座",
+    "顧客",
+    "TEL",
+    "電話",
+    "メール",
+    "住所",
+    "郵便番号"
   ],
   "hmacKey": "your-secure-hmac-key-minimum-16-characters"
 }

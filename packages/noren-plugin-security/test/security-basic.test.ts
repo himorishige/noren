@@ -21,7 +21,7 @@ function runDetect(src: string, ctxHints: string[] = []): Hit[] {
 
 describe('noren-plugin-security detectors', () => {
   it('detects JWT tokens', () => {
-    const text = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjMifQ.signature-here'
+    const text = 'Bearer eyJmYWtlIjoiaGVhZGVyIn0.eyJmYWtlIjoicGF5bG9hZCJ9.fake_signature_here'
     const hits = runDetect(text)
     const jwt = hits.find((h) => h.type === 'sec_jwt_token')
     assert.ok(jwt)
