@@ -24,9 +24,11 @@ export const UNIFIED_PATTERN = new RegExp(
     '((?:^|[\\s<>"`])[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,253}\\.[A-Z]{2,63}(?=[\\s<>"`]|$))',
     // Group 2: IPv4
     '|\\b((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3})\\b',
-    // Group 3: MAC Address
+    // Group 3: IPv6
+    '|((?:[0-9A-F]{1,4}:){7}[0-9A-F]{1,4}|(?:(?:[0-9A-F]{0,4}:){0,6})?::(?:(?:[0-9A-F]{0,4}:){0,6}[0-9A-F]{0,4})?)',
+    // Group 4: MAC Address
     '|\\b([0-9A-F]{2}(?:[:-][0-9A-F]{2}){5})\\b',
-    // Group 4: Credit Card (simplified for unified pattern)
+    // Group 5: Credit Card (simplified for unified pattern)
     '|\\b((?:\\d[ -]?){12,18}\\d)\\b',
   ].join(''),
   'gi',
@@ -36,6 +38,7 @@ export const UNIFIED_PATTERN = new RegExp(
 export const PATTERN_TYPES: Array<{ type: string; risk: 'low' | 'medium' | 'high' }> = [
   { type: 'email', risk: 'medium' },
   { type: 'ipv4', risk: 'low' },
+  { type: 'ipv6', risk: 'low' },
   { type: 'mac', risk: 'low' },
   { type: 'credit_card', risk: 'high' },
 ]

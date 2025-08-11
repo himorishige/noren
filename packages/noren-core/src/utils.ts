@@ -39,8 +39,8 @@ export async function importHmacKey(secret: string | CryptoKey) {
   if (typeof secret !== 'string') return secret
 
   // Ensure minimum key length for security
-  if (secret.length < 16) {
-    throw new Error('HMAC key must be at least 16 characters long')
+  if (secret.length < 32) {
+    throw new Error('HMAC key must be at least 32 characters long')
   }
 
   return crypto.subtle.importKey(
