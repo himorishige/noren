@@ -4,6 +4,10 @@
 
 A fast, lightweight PII (Personally Identifiable Information) masking and tokenization library built on **Web Standards**.
 
+Noren (暖簾) is a fast, lightweight PII masking library that protects data at your application's "edge". Like the Japanese "noren"
+(shop curtain) that hangs at an entrance to provide privacy, Noren instantly masks sensitive data like PII and API keys within data
+streams before they reach your core system.
+
 It is designed to run in various JavaScript environments that support web standards, including server-side Node.js, edge computing platforms like Cloudflare Workers, Deno, and Bun.
 
 > **Status: Alpha**
