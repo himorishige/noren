@@ -213,6 +213,7 @@ function builtinDetect(u: DetectUtils) {
 
 // Maintaining original hit function for backwards compatibility
 // This function is used in external packages or user-defined plugins
+// biome-ignore lint/correctness/noUnusedVariables: kept for backwards compatibility with external packages
 function hit(type: PiiType, m: RegExpMatchArray, risk: Hit['risk']): Hit | null {
   if (m.index === undefined) return null
   return {

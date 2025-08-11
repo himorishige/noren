@@ -4,10 +4,16 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": { ".": "./dist/index.js" },
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "sideEffects": false,
-  "engines": { "node": ">=20.10.0" },
-  "files": ["dist"],
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
