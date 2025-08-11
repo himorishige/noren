@@ -105,7 +105,7 @@ export async function redactText(reg: Registry, input: string, override: Policy 
     else if (rule.action === 'mask')
       rep = reg.maskerFor(h.type)?.(h) ?? defaultMask(h, rule.preserveLast4)
     else if (rule.action === 'tokenize') {
-      if (!key) throw new Error('hmacKey is required for tokenize action')
+      if (!key) throw new Error(`hmacKey is required for tokenize action on type ${h.type}`)
       rep = `TKN_${String(h.type).toUpperCase()}_${await hmacToken(h.value, key)}`
     }
     out += rep
