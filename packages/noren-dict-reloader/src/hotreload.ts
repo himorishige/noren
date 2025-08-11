@@ -15,10 +15,23 @@ export type ReloaderOptions<TCompiled> = {
   onSwap?: (compiled: TCompiled, changed: string[]) => void
   onError?: (err: unknown) => void
   compile: (policy: unknown, dicts: unknown[]) => TCompiled
+  /**
+   * Optional custom loader. If provided, it overrides the default HTTP(S) loader.
+   * This enables loading from file://, in-memory stores, or custom transports.
+   */
+  load?: LoaderFn
 }
 
+export type LoaderResult = { status: 200 | 304; meta: SourceMeta }
+export type LoaderFn = (
+  url: string,
+  prev: SourceMeta | undefined,
+  headers: Record<string, string>,
+  force: boolean,
+) => Promise<LoaderResult>
+
 export class PolicyDictReloader<TCompiled> {
-  private opts: Required<Omit<ReloaderOptions<TCompiled>, 'onSwap' | 'onError' | 'compile'>> &
+  private opts: Required<Omit<ReloaderOptions<TCompiled>, 'onSwap' | 'onError' | 'compile' | 'load'>> &
     Pick<ReloaderOptions<TCompiled>, 'onSwap' | 'onError' | 'compile'>
   private timer: ReturnType<typeof setTimeout> | null = null
   private running = false
@@ -28,6 +41,7 @@ export class PolicyDictReloader<TCompiled> {
   private manifest: SourceMeta = {}
   private dicts = new Map<string, SourceMeta>()
   private compiled: TCompiled | null = null
+  private loader: LoaderFn
 
   constructor(opts: ReloaderOptions<TCompiled>) {
     this.opts = {
@@ -41,6 +55,7 @@ export class PolicyDictReloader<TCompiled> {
       onError: opts.onError,
       compile: opts.compile,
     }
+    this.loader = opts.load ?? conditionalGet
   }
 
   getCompiled() {
@@ -83,13 +98,13 @@ export class PolicyDictReloader<TCompiled> {
   private async tick(force: boolean) {
     try {
       const changed: string[] = []
-      const p = await conditionalGet(this.opts.policyUrl, this.policy, this.opts.headers, force)
+      const p = await this.loader(this.opts.policyUrl, this.policy, this.opts.headers, force)
       if (p.status === 200) {
         this.policy = p.meta
         changed.push('policy')
       }
 
-      const m = await conditionalGet(
+      const m = await this.loader(
         this.opts.dictManifestUrl,
         this.manifest,
         this.opts.headers,
@@ -103,7 +118,7 @@ export class PolicyDictReloader<TCompiled> {
       const list = parseManifestJson(this.manifest.json)
       for (const { id, url } of list) {
         const prev = this.dicts.get(id)
-        const d = await conditionalGet(url, prev, this.opts.headers, force)
+        const d = await this.loader(url, prev, this.opts.headers, force)
         if (d.status === 200) {
           this.dicts.set(id, d.meta)
           changed.push(`dict:${id}`)
@@ -203,3 +218,6 @@ function parseManifestJson(j: unknown): Array<{ id: string; url: string }> {
   }
   return out
 }
+
+// Public alias for the built-in HTTP(S) loader
+export { conditionalGet as defaultLoader }

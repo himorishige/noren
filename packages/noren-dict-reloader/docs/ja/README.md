@@ -91,7 +91,7 @@ const initialRegistry = reloader.getCompiled();
 
 テンプレート:
 
-- パッケージ内の `docs/manifest.template.json` と `docs/dictionary.template.json` を参照。
+- パッケージ内の `example/manifest.template.json` と `example/dictionary.template.json` を参照。
 - ルートの `examples/dictionary-files/company-dict.json` も実例として利用可能。
 
 ## 例: 辞書エントリを検出器として登録する compile()
@@ -144,6 +144,30 @@ function compile(policy: unknown, dicts: unknown[]) {
   return registry
 }
 ```
+
+## ローカルファイルとカスタムローダー
+
+HTTP(S) でホスティングできない場合は、`load` オプションで取得方法を差し替えられる。
+
+Node.js で `file://` を使う最短例:
+
+```ts
+import { PolicyDictReloader, fileLoader } from '@himorishige/noren-dict-reloader'
+
+const reloader = new PolicyDictReloader({
+  policyUrl: 'file:///abs/path/to/policy.json',
+  dictManifestUrl: 'file:///abs/path/to/manifest.json',
+  compile,
+  load: fileLoader, // file:// を有効化。非 file:// は従来のHTTPローダーに委譲
+})
+await reloader.start()
+```
+
+補足:
+
+- `fileLoader` はファイル内容の SHA-256 を ETag とし、ファイルの mtime を Last-Modified 相当として扱う。
+- `file://` 以外のURLはビルトインの HTTP(S) ローダーにフォールバックする。
+- 独自ストレージ向けに、`LoaderFn` 型のローダーを自作して `load` に渡すことも可能。
 
 ## Tips
 

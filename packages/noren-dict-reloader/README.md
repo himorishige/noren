@@ -93,7 +93,7 @@ Notes:
 
 Templates:
 
-- See `docs/manifest.template.json` and `docs/dictionary.template.json` in this package.
+- See `example/manifest.template.json` and `example/dictionary.template.json` in this package.
 - A more complete example is in `examples/dictionary-files/company-dict.json` at the repo root.
 
 ## Example: compile() that registers dictionary entries
@@ -146,6 +146,30 @@ function compile(policy: unknown, dicts: unknown[]) {
   return registry
 }
 ```
+
+## Local files and custom loaders
+
+If you cannot host files over HTTP(S), you can override how files are loaded using the `load` option.
+
+Quick start for local files on Node.js using `file://`:
+
+```ts
+import { PolicyDictReloader, fileLoader } from '@himorishige/noren-dict-reloader'
+
+const reloader = new PolicyDictReloader({
+  policyUrl: 'file:///abs/path/to/policy.json',
+  dictManifestUrl: 'file:///abs/path/to/manifest.json',
+  compile,
+  load: fileLoader, // enables file:// support; HTTP(S) remains available
+})
+await reloader.start()
+```
+
+Notes:
+
+- `fileLoader` computes ETag from the SHA-256 of file contents and uses file mtime as Last-Modified.
+- Non-`file://` URLs are delegated to the built-in HTTP(S) loader.
+- You can supply your own loader as a `LoaderFn` to fetch from custom stores.
 
 ## Tips
 
