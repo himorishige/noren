@@ -2,6 +2,7 @@
 
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
+export { HitPool } from './pool.js'
 export type {
   Action,
   Detector,
@@ -11,8 +12,7 @@ export type {
   PiiType,
   Policy,
 } from './types'
-
-export { normalize } from './utils.js'
+export { hmacToken, importHmacKey, normalize } from './utils.js'
 
 import { builtinDetect } from './detection.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'

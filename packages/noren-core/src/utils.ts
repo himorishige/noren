@@ -36,7 +36,10 @@ for (let i = 0; i < 256; i++) {
 const enc = new TextEncoder()
 
 export async function importHmacKey(secret: string | CryptoKey) {
-  if (typeof secret !== 'string') return secret
+  if (typeof secret !== 'string') {
+    if (secret instanceof CryptoKey) return secret
+    throw new Error('HMAC key must be at least 32 characters long')
+  }
 
   // Ensure minimum key length for security
   if (secret.length < 32) {
