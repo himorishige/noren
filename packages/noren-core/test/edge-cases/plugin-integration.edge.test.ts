@@ -38,7 +38,7 @@ describe('Plugin Integration Edge Cases', () => {
       },
     }
 
-    reg.addDetector(customDetector)
+    reg.use([customDetector])
 
     const testText = 'SSN: 123-45-6789 is sensitive'
     const result = await redactText(reg, testText)
@@ -96,8 +96,7 @@ describe('Plugin Integration Edge Cases', () => {
       },
     }
 
-    reg.addDetector(lowPriorityDetector)
-    reg.addDetector(highPriorityDetector)
+    reg.use([lowPriorityDetector, highPriorityDetector])
 
     const lowPriorityResult = await redactText(reg, 'Email: test@low.com')
     const highPriorityResult = await redactText(reg, 'Email: test@high.com')
@@ -145,8 +144,7 @@ describe('Plugin Integration Edge Cases', () => {
       },
     }
 
-    reg.addDetector(errorDetector)
-    reg.addDetector(normalDetector)
+    reg.use([errorDetector, normalDetector])
 
     const testText = 'Emails: error@test.com and normal@test.com'
 
@@ -222,8 +220,7 @@ describe('Plugin Integration Edge Cases', () => {
       },
     }
 
-    reg.addDetector(jpPhoneDetector)
-    reg.addDetector(usZipDetector)
+    reg.use([jpPhoneDetector, usZipDetector])
 
     const complexText = `
       Contact info:
@@ -287,7 +284,7 @@ describe('Plugin Integration Edge Cases', () => {
       },
     }
 
-    reg.addDetector(contextPhoneDetector)
+    reg.use([contextPhoneDetector])
 
     const contextTests = [
       { text: 'Phone: 123-456-7890', expectDetection: true },
@@ -348,8 +345,7 @@ describe('Plugin Integration Edge Cases', () => {
       },
     }
 
-    reg.addDetector(customDetector)
-    reg.addMasker('custom_type', customMasker)
+    reg.use([customDetector], { custom_type: customMasker })
 
     const result = await redactText(reg, 'Code: CUSTOM-1234 is secret')
     console.log(`Custom masker test: "${result}"`)
