@@ -25,7 +25,7 @@ describe('redactText - credit card masking/tokenization', () => {
   })
 
   it('tokenizes credit card when defaultAction is tokenize and hmacKey is provided', async () => {
-    const reg = new Registry({ defaultAction: 'tokenize', hmacKey: 'secret' })
+    const reg = new Registry({ defaultAction: 'tokenize', hmacKey: 'thisisalongersecretkey123' })
     const input = 'Card: 4242 4242 4242 4242'
     const out = await redactText(reg, input)
     assert.match(out, /TKN_CREDIT_CARD_[0-9a-f]{16}/)

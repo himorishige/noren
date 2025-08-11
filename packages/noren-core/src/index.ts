@@ -144,7 +144,7 @@ const NORMALIZE_PATTERNS = {
 const DETECTION_PATTERNS = {
   email: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,
   ipv4: /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g,
-  ipv6: /\b(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}\b/gi,
+  ipv6: /\b(?:(?:[0-9A-F]{1,4}:){7}[0-9A-F]{1,4}|(?:[0-9A-F]{1,4}:)*::(?:[0-9A-F]{1,4}:)*[0-9A-F]{1,4})\b/gi,
   mac: /\b(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi,
   e164: /\+?\d[\d\-\s()]{8,15}/g,
   creditCardChunk: /(?:\d[ -]?){13,19}/g,
@@ -159,41 +159,70 @@ export const normalize = (s: string) =>
     .trim()
 
 function builtinDetect(u: DetectUtils) {
+  // Helper function for type-safe hit creation
+  const createHit = (type: PiiType, match: RegExpMatchArray, risk: Hit['risk']): Hit | null => {
+    if (match.index === undefined) return null
+    return {
+      type,
+      start: match.index,
+      end: match.index + match[0].length,
+      value: match[0],
+      risk,
+    }
+  }
+
   // email
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.email))
-    u.push(hit('email', m as RegExpExecArray, 'medium'))
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.email)) {
+    const hit = createHit('email', m, 'medium')
+    if (hit) u.push(hit)
+  }
 
   // ipv4
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv4))
-    u.push(hit('ipv4', m as RegExpExecArray, 'low'))
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv4)) {
+    const hit = createHit('ipv4', m, 'low')
+    if (hit) u.push(hit)
+  }
 
   // ipv6
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv6))
-    u.push(hit('ipv6', m as RegExpExecArray, 'low'))
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv6)) {
+    const hit = createHit('ipv6', m, 'low')
+    if (hit) u.push(hit)
+  }
 
   // mac
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.mac))
-    u.push(hit('mac', m as RegExpExecArray, 'low'))
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.mac)) {
+    const hit = createHit('mac', m, 'low')
+    if (hit) u.push(hit)
+  }
 
   // phone_e164（弱）—文脈で強め
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.e164))
-    u.push(hit('phone_e164', m as RegExpExecArray, 'medium'))
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.e164)) {
+    const hit = createHit('phone_e164', m, 'medium')
+    if (hit) u.push(hit)
+  }
 
   // credit card（Luhn）
   for (const m of u.src.matchAll(DETECTION_PATTERNS.creditCardChunk)) {
     const digits = m[0].replace(/[ -]/g, '')
-    if (digits.length >= 13 && digits.length <= 19 && luhn(digits))
-      u.push(hit('credit_card', m as RegExpExecArray, 'high'))
+    if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
+      const hit = createHit('credit_card', m, 'high')
+      if (hit) u.push(hit)
+    }
   }
 }
 
-const hit = (type: PiiType, m: RegExpExecArray, risk: Hit['risk']): Hit => ({
-  type,
-  start: m.index,
-  end: m.index + m[0].length,
-  value: m[0],
-  risk,
-})
+// Maintaining original hit function for backwards compatibility
+// This function is used in external packages or user-defined plugins
+function hit(type: PiiType, m: RegExpMatchArray, risk: Hit['risk']): Hit | null {
+  if (m.index === undefined) return null
+  return {
+    type,
+    start: m.index,
+    end: m.index + m[0].length,
+    value: m[0],
+    risk,
+  }
+}
 
 function luhn(d: string) {
   let sum = 0
@@ -224,6 +253,12 @@ function defaultMask(h: Hit, keepLast4?: boolean) {
 const enc = new TextEncoder()
 async function importHmacKey(secret: string | CryptoKey) {
   if (typeof secret !== 'string') return secret
+  
+  // Ensure minimum key length for security
+  if (secret.length < 16) {
+    throw new Error('HMAC key must be at least 16 characters long')
+  }
+
   return crypto.subtle.importKey(
     'raw',
     enc.encode(secret),
