@@ -25,7 +25,7 @@ export class HitPool {
     // Return hits to pool for reuse
     for (const hit of hits) {
       if (this.pool.length < this.maxSize) {
-        // Clear sensitive data securely
+        // Clear sensitive data securely before pooling
         this.securelyWipeHit(hit)
         this.pool.push(hit)
       }
@@ -33,7 +33,7 @@ export class HitPool {
   }
 
   private securelyWipeHit(hit: Hit): void {
-    // Overwrite sensitive data with random values before clearing
+    // Overwrite sensitive data with random values before pooling
     if (hit.value.length > 0) {
       const randomBytes = new Uint8Array(hit.value.length)
       crypto.getRandomValues(randomBytes)
@@ -41,9 +41,7 @@ export class HitPool {
       const randomString = Array.from(randomBytes, (b) => String.fromCharCode(b)).join('')
       hit.value = randomString
     }
-    // Clear to empty values
-    hit.value = ''
-    hit.type = '' as PiiType
+    // Note: Don't clear to empty values - acquire() will overwrite all properties
   }
 
   clear(): void {

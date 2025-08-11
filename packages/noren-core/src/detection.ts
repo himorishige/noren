@@ -41,13 +41,27 @@ export function builtinDetect(u: DetectUtils) {
             if (hit) u.push(hit)
           }
         } else {
+          let actualStart = m.index
+          let actualEnd = m.index + m[i].length
+          
+          // For email, calculate actual position within the match
+          if (patternInfo.type === 'email') {
+            const fullMatch = m[0]
+            const emailMatch = m[i]
+            const emailIndex = fullMatch.indexOf(emailMatch)
+            if (emailIndex !== -1) {
+              actualStart = m.index + emailIndex
+              actualEnd = actualStart + emailMatch.length
+            }
+          }
+          
           const hit = createHit(
             patternInfo.type as PiiType,
             m,
             patternInfo.risk,
             m[i],
-            m.index,
-            m.index + m[i].length,
+            actualStart,
+            actualEnd,
           )
           if (hit) u.push(hit)
         }
@@ -56,10 +70,6 @@ export function builtinDetect(u: DetectUtils) {
     }
   }
 
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv6)) {
-    const hit = createHit('ipv6', m, 'low')
-    if (hit) u.push(hit)
-  }
 
   for (const m of u.src.matchAll(DETECTION_PATTERNS.e164)) {
     const hit = createHit('phone_e164', m, 'medium')
