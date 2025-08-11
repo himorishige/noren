@@ -6,7 +6,8 @@
     "node": ">=20.10.0"
   },
   "scripts": {
-    "build": "pnpm -r --filter './packages/**' run --if-present build",
+    "clean": "pnpm -r --filter './packages/**' exec node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('dist-test',{recursive:true,force:true})\"",
+    "build": "pnpm run clean && pnpm -r --filter './packages/**' run --if-present build",
     "typecheck": "pnpm -r --filter './packages/**' run --if-present typecheck",
     "test": "pnpm -r --filter './packages/**' run --if-present test",
     "lint": "biome lint .",
