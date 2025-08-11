@@ -42,7 +42,28 @@ node examples/detect-dump.mjs
 node examples/stream-redact.mjs input.txt > redacted.txt
 ```
 
-## 5) hono-server.mjs
+## 5) security-demo.mjs
+セキュリティプラグインでHTTPヘッダー、JWT、APIキー、Cookieなどのマスク例。
+
+```sh
+node examples/security-demo.mjs
+```
+
+## 6) dictionary-demo.mjs
+カスタム辞書機能のデモ。企業固有のPIIパターン（社員ID、プロジェクトコード、製品コードなど）を辞書で定義し、ETagベースのホットリロード機能を実演。
+
+```sh
+node examples/dictionary-demo.mjs
+```
+
+辞書ファイルのサンプルは `examples/dictionary-files/` に含まれている：
+- `manifest.json` - 辞書一覧
+- `policy.json` - マスキングルール設定
+- `company-dict.json` - 社員ID、プロジェクトコード等
+- `product-dict.json` - 製品コード、SKU等  
+- `financial-dict.json` - 口座番号、顧客ID等
+
+## 7) hono-server.mjs
 Honoで `/redact` エンドポイントを立て、POST本文をストリームで赤入れして返す。
 
 事前に依存を入れる：

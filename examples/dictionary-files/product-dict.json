@@ -1,0 +1,34 @@
+{
+  "entries": [
+    {
+      "pattern": "PRD-\\d{4}-[A-Z]{2}",
+      "type": "product_code",
+      "risk": "medium",
+      "description": "Product code format: PRD-YEAR-CATEGORY"
+    },
+    {
+      "pattern": "SKU[：:]?\\s*[A-Z0-9]{8,12}",
+      "type": "product_sku",
+      "risk": "low",
+      "description": "Stock Keeping Unit identifier"
+    },
+    {
+      "pattern": "製品コード[：:]?\\s*[A-Z0-9-]{8,}",
+      "type": "product_code",
+      "risk": "medium",
+      "description": "Japanese product code format"
+    },
+    {
+      "pattern": "品番[：:]?\\s*[A-Z0-9]{6,10}",
+      "type": "part_number",
+      "risk": "low",
+      "description": "Part number format"
+    },
+    {
+      "pattern": "バーコード[：:]?\\s*\\d{8,13}",
+      "type": "barcode",
+      "risk": "low",
+      "description": "Barcode number format"
+    }
+  ]
+}

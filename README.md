@@ -18,6 +18,7 @@ Built on **Web Standards** (WHATWG Streams, WebCrypto, fetch). Node 20+ only.
 - `@himorishige/noren-core` — core APIs (global detectors, masking/tokenization)
 - `@himorishige/noren-plugin-jp` — Japan: phone/postal/MyNumber detectors + maskers
 - `@himorishige/noren-plugin-us` — US: phone/ZIP/SSN detectors + maskers
+- `@himorishige/noren-plugin-security` — HTTP headers, tokens, cookies security redaction
 - `@himorishige/noren-dict-reloader` — ETag‑based policy/dictionary hot‑reloader
 
 ## Requirements
@@ -32,17 +33,19 @@ pnpm build
 ```ts
 import { Registry, redactText } from '@himorishige/noren-core';
 import * as jp from '@himorishige/noren-plugin-jp';
+import * as security from '@himorishige/noren-plugin-security';
 import * as us from '@himorishige/noren-plugin-us';
 
 const reg = new Registry({
   defaultAction: 'mask',
   rules: { credit_card: { action: 'mask', preserveLast4: true }, jp_my_number: { action: 'remove' } },
-  contextHints: ['TEL','電話','〒','住所','Zip','Address','SSN','Social Security']
+  contextHints: ['TEL','電話','〒','住所','Zip','Address','SSN','Authorization','Bearer','Cookie']
 });
 reg.use(jp.detectors, jp.maskers, ['〒','住所','TEL','Phone']);
 reg.use(us.detectors, us.maskers, ['Zip','Address','SSN','Phone']);
+reg.use(security.detectors, security.maskers, ['Authorization','Bearer','Cookie','X-API-Key','token']);
 
-const input = '〒150-0001 TEL 090-1234-5678 / SSN 123-45-6789 / 4242 4242 4242 4242';
+const input = '〒150-0001 TEL 090-1234-5678 / SSN 123-45-6789 / Card: 4242 4242 4242 4242 / Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature';
 const out = await redactText(reg, input, { hmacKey: 'this-is-a-secure-key-16plus-chars' });
 console.log(out);
 ```
@@ -58,6 +61,7 @@ const supportTicket = `
 Customer: John Doe (john.doe@example.com)
 Phone: +1-555-123-4567
 Issue: Payment failed for card 4242 4242 4242 4242
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature
 `;
 const masked = await redactText(registry, supportTicket);
 console.log(masked);
@@ -67,6 +71,7 @@ console.log(masked);
 Customer: John Doe ([REDACTED:email])
 Phone: [REDACTED:phone_e164]  
 Issue: Payment failed for card **** **** **** 4242
+[REDACTED:AUTH]
 ```
 
 **📊 Analytics & Logging**  
@@ -135,11 +140,107 @@ User: [REDACTED:email], CC: **** **** **** 1111
 Location: [REDACTED:ipv4], ZIP: [REDACTED:us_zip]
 ```
 
+**🔐 HTTP Security Headers & API Tokens**
+```ts
+// Redact authentication tokens and sensitive headers from HTTP requests
+const httpLog = `
+POST /api/users HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature
+X-API-Key: sk_live_1234567890abcdef
+Cookie: session_id=abc123secret; theme=dark; user_pref=enabled
+`;
+const sanitizedLog = await redactText(registry, httpLog, {
+  hmacKey: 'secure-key-for-http-logs'
+});
+console.log(sanitizedLog);
+```
+**Output:**
+```
+POST /api/users HTTP/1.1
+[REDACTED:AUTH]
+sk_live_****
+Cookie: se*****ret; theme=dark; user_pref=enabled
+```
+
+**📖 Custom Dictionary & Policy Management**
+```ts
+// Use custom dictionaries for domain-specific PII detection with hot reloading
+import { PolicyDictReloader } from '@himorishige/noren-dict-reloader';
+
+// Compile function: converts policy + dictionaries into a Registry
+function compile(policy, dicts) {
+  const registry = new Registry(policy);
+  
+  // Process each dictionary to create custom detectors/maskers
+  for (const dict of dicts) {
+    const { entries = [] } = dict;
+    const customDetectors = [];
+    const customMaskers = {};
+    
+    for (const entry of entries) {
+      // Create detector for each dictionary entry
+      if (entry.pattern) {
+        customDetectors.push({
+          id: `custom.${entry.type}`,
+          match: ({ src, push }) => {
+            const regex = new RegExp(entry.pattern, 'gi');
+            for (const m of src.matchAll(regex)) {
+              if (m.index !== undefined) {
+                push({
+                  type: entry.type,
+                  start: m.index,
+                  end: m.index + m[0].length,
+                  value: m[0],
+                  risk: entry.risk || 'medium'
+                });
+              }
+            }
+          }
+        });
+        // Create custom masker
+        customMaskers[entry.type] = () => `[REDACTED:${entry.type.toUpperCase()}]`;
+      }
+    }
+    
+    registry.use(customDetectors, customMaskers);
+  }
+  
+  return registry;
+}
+
+// Set up dictionary reloader with ETag-based hot reloading
+const reloader = new PolicyDictReloader({
+  policyUrl: 'https://example.com/policy.json',
+  dictManifestUrl: 'https://example.com/manifest.json',
+  compile,
+  onSwap: (newRegistry, changed) => {
+    console.log('Dictionary updated:', changed);
+    // Use newRegistry for subsequent redactions
+  },
+  onError: (error) => console.error('Reload failed:', error)
+});
+
+await reloader.start();
+const registry = reloader.getCompiled();
+
+// Use the dictionary-enhanced registry
+const text = 'Employee ID: EMP12345, Project Code: PROJ-ALPHA-2024';
+const redacted = await redactText(registry, text);
+console.log(redacted); // Employee ID: [REDACTED:EMPLOYEE_ID], Project Code: [REDACTED:PROJECT_CODE]
+```
+
+**Dictionary File Structure:**
+- **manifest.json**: `{"dicts": [{"id": "company", "url": "https://example.com/company-dict.json"}]}`
+- **policy.json**: `{"defaultAction": "mask", "rules": {"employee_id": {"action": "tokenize"}}}`
+- **company-dict.json**: `{"entries": [{"pattern": "EMP\\d{5}", "type": "employee_id", "risk": "high"}]}`
+
 ### Code Examples
 - `node examples/basic-redact.mjs` — basic masking
 - `node examples/tokenize.mjs` — HMAC‑based tokenization
 - `node examples/detect-dump.mjs` — dump detections
 - `node examples/stream-redact.mjs` — streaming redaction
+- `node examples/security-demo.mjs` — security plugin with HTTP headers & tokens
+- `node examples/dictionary-demo.mjs` — custom dictionaries with hot reloading
 - `pnpm add -w -D hono @hono/node-server && node examples/hono-server.mjs` — Hono endpoint (`/redact`)
 
 ## Managed alternatives (recommended)

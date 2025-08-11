@@ -1,0 +1,7 @@
+{
+  "dicts": [
+    { "id": "company", "url": "https://example.com/api/dicts/company-dict.json" },
+    { "id": "products", "url": "https://example.com/api/dicts/product-dict.json" },
+    { "id": "financial", "url": "https://example.com/api/dicts/financial-dict.json" }
+  ]
+}

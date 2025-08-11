@@ -1,0 +1,35 @@
+{
+  "defaultAction": "mask",
+  "rules": {
+    "employee_id": { "action": "tokenize" },
+    "project_code": { "action": "remove" },
+    "product_code": { "action": "mask" },
+    "account_number": { "action": "tokenize" },
+    "customer_id": { "action": "tokenize" },
+    "credit_card": { "action": "mask", "preserveLast4": true },
+    "email": { "action": "mask" },
+    "phone_jp": { "action": "mask" }
+  },
+  "contextHints": [
+    "Employee",
+    "ID",
+    "Code",
+    "Project",
+    "Product",
+    "Account",
+    "Customer",
+    "社員",
+    "番号",
+    "コード",
+    "プロジェクト",
+    "製品",
+    "口座",
+    "顧客",
+    "TEL",
+    "電話",
+    "メール",
+    "住所",
+    "郵便番号"
+  ],
+  "hmacKey": "your-secure-hmac-key-minimum-16-characters"
+}
