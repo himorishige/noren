@@ -1,30 +1,29 @@
 // Noren Core — 世界共通の薄い原理（Web標準のみ）
 
-// Re-export types for backward compatibility
-export type {
-  PiiType,
-  Hit,
-  Action,
-  Policy,
-  DetectUtils,
-  Detector,
-  Masker
-} from './types'
-
 // Re-export lazy loading utilities
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
+// Re-export types for backward compatibility
+export type {
+  Action,
+  Detector,
+  DetectUtils,
+  Hit,
+  Masker,
+  PiiType,
+  Policy,
+} from './types'
 
 // Re-export utilities
 export { normalize } from './utils.js'
 
-// Import dependencies
-import type { Policy, DetectUtils, Hit, PiiType, Detector, Masker } from './types.js'
-import { normalize, importHmacKey, hmacToken } from './utils.js'
-import { defaultMask } from './masking.js'
 import { builtinDetect } from './detection.js'
+import { type LazyPlugin, loadPlugin } from './lazy.js'
+import { defaultMask } from './masking.js'
 import { hitPool } from './pool.js'
-import { loadPlugin, type LazyPlugin } from './lazy.js'
+// Import dependencies
+import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy } from './types.js'
+import { hmacToken, importHmacKey, normalize } from './utils.js'
 
 export class Registry {
   private detectors: Detector[] = []
@@ -72,7 +71,7 @@ export class Registry {
     // Create optimized context check function with caching
     const ctxHintsForCheck = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
     let contextCheckCache: boolean | null = null
-    
+
     const u: DetectUtils = {
       src,
       hasCtx: (ws) => {
@@ -94,13 +93,13 @@ export class Registry {
 
     // Optimized interval merging with early termination
     if (hits.length === 0) return { src, hits: [] }
-    
+
     hits.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start))
-    
+
     // In-place merging to reduce allocations
     let writeIndex = 0
     let currentEnd = -1
-    
+
     for (let readIndex = 0; readIndex < hits.length; readIndex++) {
       const hit = hits[readIndex]
       if (hit.start >= currentEnd) {
@@ -112,14 +111,14 @@ export class Registry {
         hitPool.release([hit])
       }
     }
-    
+
     // Trim array to actual size and release unused hits
     const finalHits = hits.slice(0, writeIndex)
     const releasedHits = hits.slice(writeIndex)
     if (releasedHits.length > 0) {
       hitPool.release(releasedHits)
     }
-    
+
     return { src, hits: finalHits }
   }
 }
@@ -127,10 +126,10 @@ export class Registry {
 export async function redactText(reg: Registry, input: string, override: Policy = {}) {
   const cfg = { ...reg.getPolicy(), ...override }
   const { src, hits } = await reg.detect(input, cfg.contextHints)
-  
+
   // Early exit for no hits
   if (hits.length === 0) return src
-  
+
   // Pre-check for tokenization to avoid repeated key import
   const needTok =
     Object.values(cfg.rules ?? {}).some((v) => v?.action === 'tokenize') ||
@@ -139,17 +138,17 @@ export async function redactText(reg: Registry, input: string, override: Policy 
 
   // Pre-allocate array with estimated size to reduce reallocations
   const parts: string[] = []
-  const estimatedParts = hits.length * 2 + 1
-  
+  const _estimatedParts = hits.length * 2 + 1
+
   let cur = 0
   for (const h of hits) {
     const rule = cfg.rules?.[h.type] ?? { action: cfg.defaultAction ?? 'mask' }
-    
+
     // Add text before hit
     if (h.start > cur) {
       parts.push(src.slice(cur, h.start))
     }
-    
+
     // Process hit based on action
     let rep = h.value
     if (rule.action === 'remove') {
@@ -160,13 +159,13 @@ export async function redactText(reg: Registry, input: string, override: Policy 
       if (!key) throw new Error(`hmacKey is required for tokenize action on type ${h.type}`)
       rep = `TKN_${String(h.type).toUpperCase()}_${await hmacToken(h.value, key)}`
     }
-    
+
     if (rep !== '') {
       parts.push(rep)
     }
     cur = h.end
   }
-  
+
   // Add remaining text after last hit
   if (cur < src.length) {
     parts.push(src.slice(cur))
@@ -174,4 +173,3 @@ export async function redactText(reg: Registry, input: string, override: Policy 
 
   return parts.join('')
 }
-

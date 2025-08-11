@@ -55,7 +55,7 @@ export async function importHmacKey(secret: string | CryptoKey) {
 export async function hmacToken(value: string, key: CryptoKey) {
   const mac = await crypto.subtle.sign('HMAC', key, enc.encode(value))
   const b = new Uint8Array(mac)
-  
+
   // Use lookup table for faster hex conversion (first 8 bytes = 64 bits)
   let hex = ''
   for (let i = 0; i < 8; i++) {

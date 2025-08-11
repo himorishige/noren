@@ -23,12 +23,10 @@ declare module './types.js' {
 // Cache for loaded plugins to avoid duplicate imports
 const pluginCache = new Map<string, Promise<LoadedPlugin>>()
 
-export async function loadPlugin(
-  name: string,
-  plugin: LazyPlugin
-): Promise<LoadedPlugin> {
+export async function loadPlugin(name: string, plugin: LazyPlugin): Promise<LoadedPlugin> {
   if (pluginCache.has(name)) {
-    return pluginCache.get(name)!
+    const cached = pluginCache.get(name)
+    if (cached) return cached
   }
 
   const loadPromise = (async () => {

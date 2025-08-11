@@ -1,15 +1,23 @@
 // Detection logic (separate for tree-shaking)
-import type { DetectUtils, Hit, PiiType } from './types.js'
+
 import { DETECTION_PATTERNS, PATTERN_TYPES, UNIFIED_PATTERN } from './patterns.js'
-import { luhn } from './utils.js'
 import { hitPool } from './pool.js'
+import type { DetectUtils, Hit, PiiType } from './types.js'
+import { luhn } from './utils.js'
 
 export function builtinDetect(u: DetectUtils) {
   // Helper function for pooled hit creation
-  const createHit = (type: PiiType, match: RegExpMatchArray, risk: Hit['risk'], value?: string, start?: number, end?: number): Hit | null => {
+  const createHit = (
+    type: PiiType,
+    match: RegExpMatchArray,
+    risk: Hit['risk'],
+    value?: string,
+    start?: number,
+    end?: number,
+  ): Hit | null => {
     if (match.index === undefined && start === undefined) return null
-    const actualStart = start ?? match.index!
-    const actualEnd = end ?? (match.index! + match[0].length)
+    const actualStart = start ?? match.index ?? 0
+    const actualEnd = end ?? (match.index ?? 0) + match[0].length
     const actualValue = value ?? match[0]
     return hitPool.acquire(type, actualStart, actualEnd, actualValue, risk)
   }
@@ -17,7 +25,7 @@ export function builtinDetect(u: DetectUtils) {
   // Unified pattern detection (single pass for most common patterns)
   for (const m of u.src.matchAll(UNIFIED_PATTERN)) {
     if (m.index === undefined) continue
-    
+
     // Determine which capture group matched
     for (let i = 1; i < m.length; i++) {
       if (m[i]) {
@@ -26,11 +34,25 @@ export function builtinDetect(u: DetectUtils) {
           // Credit card requires Luhn validation
           const digits = m[i].replace(/[ -]/g, '')
           if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
-            const hit = createHit(patternInfo.type as PiiType, m, patternInfo.risk, m[i], m.index, m.index + m[i].length)
+            const hit = createHit(
+              patternInfo.type as PiiType,
+              m,
+              patternInfo.risk,
+              m[i],
+              m.index,
+              m.index + m[i].length,
+            )
             if (hit) u.push(hit)
           }
         } else {
-          const hit = createHit(patternInfo.type as PiiType, m, patternInfo.risk, m[i], m.index, m.index + m[i].length)
+          const hit = createHit(
+            patternInfo.type as PiiType,
+            m,
+            patternInfo.risk,
+            m[i],
+            m.index,
+            m.index + m[i].length,
+          )
           if (hit) u.push(hit)
         }
         break // Only match first capture group

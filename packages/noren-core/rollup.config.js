@@ -8,30 +8,30 @@ export default [
     output: {
       file: 'dist/index.min.js',
       format: 'es',
-      sourcemap: true
+      sourcemap: true,
     },
     plugins: [
       nodeResolve(),
       terser({
         mangle: {
           // Preserve public API names
-          reserved: ['Registry', 'redactText', 'normalize']
+          reserved: ['Registry', 'redactText', 'normalize'],
         },
         compress: {
           // Aggressive compression for size
           drop_console: false,
           drop_debugger: true,
-          passes: 2
+          passes: 2,
         },
         format: {
           // Preserve comments for licensing
-          comments: /^!|license|copyright/i
-        }
-      })
+          comments: /^!|license|copyright/i,
+        },
+      }),
     ],
-    external: [] // Bundle everything for single-file distribution
+    external: [], // Bundle everything for single-file distribution
   },
-  
+
   // Tree-shakeable modules build (individual files)
   {
     input: [
@@ -42,22 +42,22 @@ export default [
       'dist/detection.js',
       'dist/masking.js',
       'dist/pool.js',
-      'dist/lazy.js'
+      'dist/lazy.js',
     ],
     output: {
       dir: 'dist/esm',
       format: 'es',
       preserveModules: true,
-      sourcemap: true
+      sourcemap: true,
     },
     plugins: [
       terser({
         mangle: false, // Keep names for tree-shaking
         compress: {
           drop_console: false,
-          drop_debugger: true
-        }
-      })
-    ]
-  }
+          drop_debugger: true,
+        },
+      }),
+    ],
+  },
 ]
