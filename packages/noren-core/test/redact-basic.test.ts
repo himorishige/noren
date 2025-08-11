@@ -1,6 +1,6 @@
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { Registry, redactText } from '@himorishige/noren-core';
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { Registry, redactText } from '@himorishige/noren-core'
 
 /**
  * Basic redaction/tokenization behavior tests against built outputs.
@@ -9,34 +9,34 @@ import { Registry, redactText } from '@himorishige/noren-core';
 
 describe('redactText - credit card masking/tokenization', () => {
   it('masks credit card with default mask', async () => {
-    const reg = new Registry({ defaultAction: 'mask' });
-    const input = 'Card: 4242 4242 4242 4242';
-    const out = await redactText(reg, input);
-    assert.ok(out.includes('[REDACTED:credit_card]'));
-  });
+    const reg = new Registry({ defaultAction: 'mask' })
+    const input = 'Card: 4242 4242 4242 4242'
+    const out = await redactText(reg, input)
+    assert.ok(out.includes('[REDACTED:credit_card]'))
+  })
 
   it('masks credit card preserving last 4 when configured', async () => {
     const reg = new Registry({
       rules: { credit_card: { action: 'mask', preserveLast4: true } },
-    });
-    const input = 'Card: 4242-4242-4242-4242';
-    const out = await redactText(reg, input);
-    assert.ok(out.includes('**** **** **** 4242'));
-  });
+    })
+    const input = 'Card: 4242-4242-4242-4242'
+    const out = await redactText(reg, input)
+    assert.ok(out.includes('**** **** **** 4242'))
+  })
 
   it('tokenizes credit card when defaultAction is tokenize and hmacKey is provided', async () => {
-    const reg = new Registry({ defaultAction: 'tokenize', hmacKey: 'secret' });
-    const input = 'Card: 4242 4242 4242 4242';
-    const out = await redactText(reg, input);
-    assert.match(out, /TKN_CREDIT_CARD_[0-9a-f]{16}/);
-  });
-});
+    const reg = new Registry({ defaultAction: 'tokenize', hmacKey: 'secret' })
+    const input = 'Card: 4242 4242 4242 4242'
+    const out = await redactText(reg, input)
+    assert.match(out, /TKN_CREDIT_CARD_[0-9a-f]{16}/)
+  })
+})
 
 describe('redactText - email masking', () => {
   it('masks email by default', async () => {
-    const reg = new Registry({ defaultAction: 'mask' });
-    const input = 'email: foo.bar+baz@example.com';
-    const out = await redactText(reg, input);
-    assert.ok(out.includes('[REDACTED:email]'));
-  });
-});
+    const reg = new Registry({ defaultAction: 'mask' })
+    const input = 'email: foo.bar+baz@example.com'
+    const out = await redactText(reg, input)
+    assert.ok(out.includes('[REDACTED:email]'))
+  })
+})
