@@ -3,3 +3,7 @@ node_modules
 
 # windsurf
 .windsurf
+
+# build artifacts
+packages/*/dist/
+packages/*/dist-test/
