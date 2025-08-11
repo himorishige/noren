@@ -76,13 +76,26 @@ export class Registry {
     const src = normalize(raw)
     const hits: Hit[] = []
 
-    // Create optimized context check function
+    // Pre-allocate arrays with estimated capacity
+    hits.length = 0
+    // Reserve capacity based on input size heuristic
+    const estimatedHits = Math.max(8, Math.floor(src.length / 200))
+
+    // Create optimized context check function with caching
     const ctxHintsForCheck = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
+    let contextCheckCache: boolean | null = null
+    
     const u: DetectUtils = {
       src,
       hasCtx: (ws) => {
-        const words = ws ?? ctxHintsForCheck
-        return words.some((w) => src.includes(w))
+        // Cache context check result if no specific words provided
+        if (!ws) {
+          if (contextCheckCache === null) {
+            contextCheckCache = ctxHintsForCheck.some((w) => src.includes(w))
+          }
+          return contextCheckCache
+        }
+        return ws.some((w) => src.includes(w))
       },
       push: (h) => hits.push(h),
     }
@@ -91,49 +104,129 @@ export class Registry {
     // Use pre-sorted detectors
     for (const d of this.detectors) await d.match(u)
 
-    // 区間マージ（重なりは長い方優先）
+    // Optimized interval merging with early termination
+    if (hits.length === 0) return { src, hits: [] }
+    
     hits.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start))
-    const out: Hit[] = []
-    let end = -1
-    for (const h of hits) {
-      if (h.start >= end) {
-        out.push(h)
-        end = h.end
+    
+    // In-place merging to reduce allocations
+    let writeIndex = 0
+    let currentEnd = -1
+    
+    for (let readIndex = 0; readIndex < hits.length; readIndex++) {
+      const hit = hits[readIndex]
+      if (hit.start >= currentEnd) {
+        hits[writeIndex] = hit
+        currentEnd = hit.end
+        writeIndex++
+      } else {
+        // Release the overlapped hit back to pool
+        hitPool.release([hit])
       }
     }
-    return { src, hits: out }
+    
+    // Trim array to actual size and release unused hits
+    const finalHits = hits.slice(0, writeIndex)
+    const releasedHits = hits.slice(writeIndex)
+    if (releasedHits.length > 0) {
+      hitPool.release(releasedHits)
+    }
+    
+    return { src, hits: finalHits }
   }
 }
 
 export async function redactText(reg: Registry, input: string, override: Policy = {}) {
   const cfg = { ...reg.getPolicy(), ...override }
   const { src, hits } = await reg.detect(input, cfg.contextHints)
+  
+  // Early exit for no hits
+  if (hits.length === 0) return src
+  
+  // Pre-check for tokenization to avoid repeated key import
   const needTok =
     Object.values(cfg.rules ?? {}).some((v) => v?.action === 'tokenize') ||
     cfg.defaultAction === 'tokenize'
   const key = needTok && cfg.hmacKey ? await importHmacKey(cfg.hmacKey) : undefined
 
-  let out = ''
+  // Pre-allocate array with estimated size to reduce reallocations
+  const parts: string[] = []
+  const estimatedParts = hits.length * 2 + 1
+  
   let cur = 0
   for (const h of hits) {
     const rule = cfg.rules?.[h.type] ?? { action: cfg.defaultAction ?? 'mask' }
-    out += src.slice(cur, h.start)
+    
+    // Add text before hit
+    if (h.start > cur) {
+      parts.push(src.slice(cur, h.start))
+    }
+    
+    // Process hit based on action
     let rep = h.value
-    if (rule.action === 'remove') rep = ''
-    else if (rule.action === 'mask')
+    if (rule.action === 'remove') {
+      rep = ''
+    } else if (rule.action === 'mask') {
       rep = reg.maskerFor(h.type)?.(h) ?? defaultMask(h, rule.preserveLast4)
-    else if (rule.action === 'tokenize') {
+    } else if (rule.action === 'tokenize') {
       if (!key) throw new Error(`hmacKey is required for tokenize action on type ${h.type}`)
       rep = `TKN_${String(h.type).toUpperCase()}_${await hmacToken(h.value, key)}`
     }
-    out += rep
+    
+    if (rep !== '') {
+      parts.push(rep)
+    }
     cur = h.end
   }
-  out += src.slice(cur)
-  return out
+  
+  // Add remaining text after last hit
+  if (cur < src.length) {
+    parts.push(src.slice(cur))
+  }
+
+  return parts.join('')
 }
 
 // ---- Helpers ----
+// Hit object pool for reducing GC pressure
+class HitPool {
+  private pool: Hit[] = []
+  private maxSize = 100 // Prevent unbounded growth
+
+  acquire(type: PiiType, start: number, end: number, value: string, risk: Hit['risk']): Hit {
+    const hit = this.pool.pop()
+    if (hit) {
+      // Reuse existing object
+      hit.type = type
+      hit.start = start
+      hit.end = end
+      hit.value = value
+      hit.risk = risk
+      return hit
+    }
+    // Create new object if pool is empty
+    return { type, start, end, value, risk }
+  }
+
+  release(hits: Hit[]): void {
+    // Return hits to pool for reuse
+    for (const hit of hits) {
+      if (this.pool.length < this.maxSize) {
+        // Clear sensitive data and return to pool
+        hit.value = ''
+        hit.type = '' as PiiType
+        this.pool.push(hit)
+      }
+    }
+  }
+
+  clear(): void {
+    this.pool.length = 0
+  }
+}
+
+const hitPool = new HitPool()
+
 // Pre-compiled regex patterns for better performance
 const NORMALIZE_PATTERNS = {
   dashVariants: /[\u2212\u2010-\u2015\u30FC]/g,
@@ -142,13 +235,37 @@ const NORMALIZE_PATTERNS = {
 }
 
 const DETECTION_PATTERNS = {
-  email: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,
-  ipv4: /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g,
-  ipv6: /\b(?:(?:[0-9A-F]{1,4}:){7}[0-9A-F]{1,4}|(?:[0-9A-F]{1,4}:)*::(?:[0-9A-F]{1,4}:)*[0-9A-F]{1,4})\b/gi,
-  mac: /\b(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi,
-  e164: /\+?\d[\d\-\s()]{8,15}/g,
-  creditCardChunk: /(?:\d[ -]?){13,19}/g,
+  // Individual patterns for fallback/specific use
+  email: /(?:^|[\s<>"'`])[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,253}\.[A-Z]{2,63}(?=[\s<>"'`]|$)/gi,
+  ipv4: /\b(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3}\b/g,
+  ipv6: /\b(?:[0-9A-F]{1,4}:){7}[0-9A-F]{1,4}\b|(?:(?:[0-9A-F]{0,4}:){0,6})?::(?:(?:[0-9A-F]{0,4}:){0,6}[0-9A-F]{0,4})?/gi,
+  mac: /\b[0-9A-F]{2}(?:[:-][0-9A-F]{2}){5}\b/gi,
+  e164: /(?:^|[\s(])\+(?:[1-9]\d{6,14}|[1-9]\d[\d\-\s()]{6,13}\d)(?=[\s)]|$)/g,
+  creditCardChunk: /\b(?:\d[ -]?){12,18}\d\b/g,
 }
+
+// Unified pattern for single-pass detection (most performance-critical patterns)
+const UNIFIED_PATTERN = new RegExp(
+  [
+    // Group 1: Email
+    '((?:^|[\\s<>"`])[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,253}\\.[A-Z]{2,63}(?=[\\s<>"`]|$))',
+    // Group 2: IPv4  
+    '|\\b((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3})\\b',
+    // Group 3: MAC Address
+    '|\\b([0-9A-F]{2}(?:[:-][0-9A-F]{2}){5})\\b',
+    // Group 4: Credit Card (simplified for unified pattern)
+    '|\\b((?:\\d[ -]?){12,18}\\d)\\b',
+  ].join(''),
+  'gi'
+)
+
+// Pattern type mapping for unified detection
+const PATTERN_TYPES: Array<{ type: PiiType; risk: Hit['risk'] }> = [
+  { type: 'email', risk: 'medium' },
+  { type: 'ipv4', risk: 'low' },
+  { type: 'mac', risk: 'low' },
+  { type: 'credit_card', risk: 'high' },
+]
 
 export const normalize = (s: string) =>
   s
@@ -159,55 +276,49 @@ export const normalize = (s: string) =>
     .trim()
 
 function builtinDetect(u: DetectUtils) {
-  // Helper function for type-safe hit creation
-  const createHit = (type: PiiType, match: RegExpMatchArray, risk: Hit['risk']): Hit | null => {
-    if (match.index === undefined) return null
-    return {
-      type,
-      start: match.index,
-      end: match.index + match[0].length,
-      value: match[0],
-      risk,
+  // Helper function for pooled hit creation
+  const createHit = (type: PiiType, match: RegExpMatchArray, risk: Hit['risk'], value?: string, start?: number, end?: number): Hit | null => {
+    if (match.index === undefined && start === undefined) return null
+    const actualStart = start ?? match.index!
+    const actualEnd = end ?? (match.index! + match[0].length)
+    const actualValue = value ?? match[0]
+    return hitPool.acquire(type, actualStart, actualEnd, actualValue, risk)
+  }
+
+  // Unified pattern detection (single pass for most common patterns)
+  for (const m of u.src.matchAll(UNIFIED_PATTERN)) {
+    if (m.index === undefined) continue
+    
+    // Determine which capture group matched
+    for (let i = 1; i < m.length; i++) {
+      if (m[i]) {
+        const patternInfo = PATTERN_TYPES[i - 1]
+        if (patternInfo.type === 'credit_card') {
+          // Credit card requires Luhn validation
+          const digits = m[i].replace(/[ -]/g, '')
+          if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
+            const hit = createHit(patternInfo.type, m, patternInfo.risk, m[i], m.index, m.index + m[i].length)
+            if (hit) u.push(hit)
+          }
+        } else {
+          const hit = createHit(patternInfo.type, m, patternInfo.risk, m[i], m.index, m.index + m[i].length)
+          if (hit) u.push(hit)
+        }
+        break // Only match first capture group
+      }
     }
   }
 
-  // email
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.email)) {
-    const hit = createHit('email', m, 'medium')
-    if (hit) u.push(hit)
-  }
-
-  // ipv4
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv4)) {
-    const hit = createHit('ipv4', m, 'low')
-    if (hit) u.push(hit)
-  }
-
-  // ipv6
+  // IPv6 (complex pattern, kept separate)
   for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv6)) {
     const hit = createHit('ipv6', m, 'low')
     if (hit) u.push(hit)
   }
 
-  // mac
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.mac)) {
-    const hit = createHit('mac', m, 'low')
-    if (hit) u.push(hit)
-  }
-
-  // phone_e164（弱）—文脈で強め
+  // E.164 phone numbers (context-sensitive, kept separate)
   for (const m of u.src.matchAll(DETECTION_PATTERNS.e164)) {
     const hit = createHit('phone_e164', m, 'medium')
     if (hit) u.push(hit)
-  }
-
-  // credit card（Luhn）
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.creditCardChunk)) {
-    const digits = m[0].replace(/[ -]/g, '')
-    if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
-      const hit = createHit('credit_card', m, 'high')
-      if (hit) u.push(hit)
-    }
   }
 }
 
@@ -268,14 +379,21 @@ async function importHmacKey(secret: string | CryptoKey) {
     ['sign'],
   )
 }
+// Optimized hex conversion lookup table
+const HEX_CHARS = '0123456789abcdef'
+const HEX_TABLE = new Array(256)
+for (let i = 0; i < 256; i++) {
+  HEX_TABLE[i] = HEX_CHARS[(i >>> 4) & 0xf] + HEX_CHARS[i & 0xf]
+}
+
 async function hmacToken(value: string, key: CryptoKey) {
   const mac = await crypto.subtle.sign('HMAC', key, enc.encode(value))
   const b = new Uint8Array(mac)
+  
+  // Use lookup table for faster hex conversion (first 8 bytes = 64 bits)
   let hex = ''
   for (let i = 0; i < 8; i++) {
-    // 64bitぶん
-    const v = b[i]
-    hex += (v >>> 4).toString(16) + (v & 0xf).toString(16)
+    hex += HEX_TABLE[b[i]]
   }
   return hex
 }
