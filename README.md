@@ -1,274 +1,211 @@
-# Noren
+# Noren (暖簾)
 
-Edge‑native PII redaction and tokenization with country plugins (JP/US first).  
-Built on **Web Standards** (WHATWG Streams, WebCrypto, fetch). Node 20+ only.
+`Noren`は、**Web標準技術をベースに構築された、高速・軽量な個人情報(PII)マスキング＆トークナイズライブラリ**です。
 
-> Status: **alpha**. Interfaces may change.
+サーバーサイドNode.jsはもちろん、Cloudflare Workersのようなエッジコンピューティング環境や、Deno、Bunなど、Web標準APIをサポートする様々なJavaScriptランタイムで動作するように設計されています。
 
-## Features
-- **High Performance**: Pre-compiled regex patterns, optimized context hints, and efficient detection algorithms
-- Lightweight core: normalization, common detectors (email/IP/credit card), masking & HMAC tokenization
-- Pluggable country modules (JP/US) for local formats and dictionaries
-- Stream‑first: works with WHATWG `ReadableStream`/`TransformStream`
-- Web‑standards only: no Node‑specific APIs beyond the standard globals
-- Policy + dictionary hot‑reload via ETag/If‑None‑Match
-- **Enhanced Detection**: Improved IPv6 patterns, comprehensive Japanese phone numbers (060/070/080/090)
+> **ステータス: アルファ版**
+> 現在開発中のため、APIなどの仕様は将来的に変更される可能性があります。
 
-## Packages
-- `@himorishige/noren-core` — core APIs (global detectors, masking/tokenization)
-- `@himorishige/noren-plugin-jp` — Japan: phone/postal/MyNumber detectors + maskers
-- `@himorishige/noren-plugin-us` — US: phone/ZIP/SSN detectors + maskers
-- `@himorishige/noren-plugin-security` — HTTP headers, tokens, cookies security redaction
-- `@himorishige/noren-dict-reloader` — ETag‑based policy/dictionary hot‑reloader
+## 主な特長
 
-## Requirements
-- Node.js **20.10+**
+*   **⚡ 高速な処理性能**
+    *   正規表現パターンを事前にコンパイルし、検出アルゴリズムを最適化することで、大量のテキストデータでも高速に処理します。
 
-## Quick start
-```sh
-pnpm i
-pnpm build
-```
+*   **🧩 プラグインによる柔軟な拡張**
+    *   軽量なコア機能（共通PII検出、マスキング、トークナイズ）に加え、国別のプラグイン（日本、米国など）を組み合わせることで、各地域の固有フォーマット（マイナンバー、社会保障番号など）に柔軟に対応できます。
+
+*   **🌐 Web標準技術への準拠**
+    *   [WHATWG Streams](https://streams.spec.whatwg.org/)、[Web Crypto API](https://developer.mozilla.org/ja/docs/Web/API/Web_Crypto_API)、[fetch](https://developer.mozilla.org/ja/docs/Web/API/Fetch_API)といったWeb標準APIのみで構築されており、特定のJavaScriptランタイムに依存しません。
+
+*   **🔄 動的な辞書・ポリシー更新**
+    *   HTTPのETagを利用して、アプリケーションを停止することなく、検出ルールやカスタム辞書を動的に更新（ホットリロード）できます。
+
+*   **🛡️ 幅広いセキュリティ対応**
+    *   個人情報だけでなく、HTTPヘッダーに含まれる認証トークンやAPIキー、Cookieといった技術的な機密情報も検出し、安全に秘匿化できます。
+
+## パッケージ構成
+
+| パッケージ名                             | 説明                                                               |
+| :--------------------------------------- | :----------------------------------------------------------------- |
+| `@himorishige/noren-core`                | コアAPI。共通のPII（メールアドレス、IPアドレス等）検出、マスキング、トークナイズ機能を提供します。 |
+| `@himorishige/noren-plugin-jp`           | 日本向けプラグイン。電話番号、郵便番号、マイナンバー等を検出・マスクします。 |
+| `@himorishige/noren-plugin-us`           | 米国向けプラグイン。電話番号、ZIPコード、SSN等を検出・マスクします。 |
+| `@himorishige/noren-plugin-security`     | セキュリティプラグイン。HTTPヘッダー、APIトークン、Cookie等を秘匿化します。 |
+| `@himorishige/noren-dict-reloader`       | ETagを利用し、ポリシーや辞書を動的にリロードする機能を提供します。 |
+
+## 動作要件
+
+*   Node.js **20.10以上**
+
+## クイックスタート
+
+1.  **インストール**
+    ```sh
+    pnpm i
+    ```
+
+2.  **ビルド**
+    ```sh
+    pnpm build
+    ```
+
+3.  **基本的な使い方**
+    ```ts
+    import { Registry, redactText } from '@himorishige/noren-core';
+    import * as jp from '@himorishige/noren-plugin-jp';
+    import * as security from '@himorishige/noren-plugin-security';
+    import * as us from '@himorishige/noren-plugin-us';
+
+    // 検出・マスク処理のルールを定義するRegistryを作成
+    const reg = new Registry({
+      defaultAction: 'mask', // デフォルトのアクションはマスク
+      // 特定のPIIタイプに対するルールを個別に設定
+      rules: {
+        credit_card: { action: 'mask', preserveLast4: true }, // クレカは末尾4桁を保持
+        jp_my_number: { action: 'remove' }, // マイナンバーは完全に除去
+      },
+      // 検出精度を上げるためのヒントとなるキーワード
+      contextHints: ['TEL','電話','〒','住所','Zip','Address','SSN','Authorization','Bearer','Cookie']
+    });
+
+    // 各国・用途別のプラグインを登録
+    reg.use(jp.detectors, jp.maskers);
+    reg.use(us.detectors, us.maskers);
+    reg.use(security.detectors, security.maskers);
+
+    // 処理対象のテキスト
+    const input = '〒150-0001 TEL 090-1234-5678 / SSN 123-45-6789 / Card: 4242 4242 4242 4242 / Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature';
+
+    // PIIをマスク・除去（トークナイズする場合はhmacKeyを指定）
+    const out = await redactText(reg, input, { hmacKey: 'this-is-a-secure-key-16plus-chars' });
+
+    console.log(out);
+    // 出力: 〒•••-•••• TEL •••-••••-•••• / SSN •••-••-•••• / Card: **** **** **** 4242 / [REDACTED:AUTH]
+    ```
+
+## ユースケースと実践例
+
+`Noren`は、様々なシーンで機密データを保護するために活用できます。
+
+#### 🔒 カスタマーサポートのログ管理
+
+サポートの問い合わせログを外部システムに保存する前に、個人情報をマスクします。
 
 ```ts
-import { Registry, redactText } from '@himorishige/noren-core';
-import * as jp from '@himorishige/noren-plugin-jp';
-import * as security from '@himorishige/noren-plugin-security';
-import * as us from '@himorishige/noren-plugin-us';
-
-const reg = new Registry({
-  defaultAction: 'mask',
-  rules: { credit_card: { action: 'mask', preserveLast4: true }, jp_my_number: { action: 'remove' } },
-  contextHints: ['TEL','電話','〒','住所','Zip','Address','SSN','Authorization','Bearer','Cookie']
-});
-reg.use(jp.detectors, jp.maskers, ['〒','住所','TEL','Phone']);
-reg.use(us.detectors, us.maskers, ['Zip','Address','SSN','Phone']);
-reg.use(security.detectors, security.maskers, ['Authorization','Bearer','Cookie','X-API-Key','token']);
-
-const input = '〒150-0001 TEL 090-1234-5678 / SSN 123-45-6789 / Card: 4242 4242 4242 4242 / Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature';
-const out = await redactText(reg, input, { hmacKey: 'this-is-a-secure-key-16plus-chars' });
-console.log(out);
-```
-
-## Use Cases & Examples
-
-### Real-World Applications
-
-**🔒 Customer Support Systems**
-```ts
-// Mask customer data in support tickets before storing in external systems
 const supportTicket = `
-Customer: John Doe (john.doe@example.com)
-Phone: +1-555-123-4567
-Issue: Payment failed for card 4242 4242 4242 4242
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature
+顧客: 田中太郎 (tanaka@example.com)
+電話: 090-1234-5678
+問題: カード 4242 4242 4242 4242 の決済が失敗しました。
 `;
 const masked = await redactText(registry, supportTicket);
 console.log(masked);
-```
-**Output:**
-```
-Customer: John Doe ([REDACTED:email])
-Phone: [REDACTED:phone_e164]  
-Issue: Payment failed for card **** **** **** 4242
-[REDACTED:AUTH]
+/*
+顧客: 田中太郎 ([REDACTED:email])
+電話: •••-••••-••••
+問題: カード **** **** **** 4242 の決済が失敗しました。
+*/
 ```
 
-**📊 Analytics & Logging**  
+#### 📊 アプリケーションログのサニタイズ
+
+ログの構造を維持したまま、IPアドレスやメールアドレスなどの個人情報だけを安全に除去します。
+
 ```ts
-// Remove PII from application logs while preserving structure
 const logEntry = `
-[INFO] User 192.168.1.100 accessed account@company.com 
-[ERROR] Failed payment: SSN 123-45-6789, Card: 5555-4444-3333-2222
+[INFO] ユーザー 192.168.1.100 が account@company.com にアクセスしました。
+[ERROR] 決済失敗: SSN 123-45-6789, カード: 5555-4444-3333-2222
 `;
 const sanitized = await redactText(registry, logEntry);
 console.log(sanitized);
-```
-**Output:**
-```
-[INFO] User [REDACTED:ipv4] accessed [REDACTED:email]
-[ERROR] Failed payment: [REDACTED:us_ssn], Card: **** **** **** 2222
-```
-
-**🌐 Edge/CDN Processing**
-```ts
-// Pre-process user content at edge locations before forwarding
-const userContent = `Contact us: support@acme.com or call 080-1234-5678`;
-const stream = new ReadableStream({ /* user input */ })
-  .pipeThrough(createRedactionTransform())
-  .pipeTo(destinationStream);
+/*
+[INFO] ユーザー [REDACTED:ipv4] が [REDACTED:email] にアクセスしました。
+[ERROR] 決済失敗: [REDACTED:us_ssn], カード: **** **** **** 2222
+*/
 ```
 
-**🔄 Data Migration & ETL**
+#### 🔄 データ移行（ETL）でのトークン化
+
+データベース移行時に、元の値との関連性を保ちつつ、機密データをトークンに置き換えます。
+
 ```ts
-// Tokenize sensitive fields during database migrations
 const customerRecord = {
-  name: "田中太郎", 
-  email: "tanaka@example.jp",
-  phone: "090-1234-5678",
-  address: "〒150-0001 東京都渋谷区"
+  name: "佐藤花子",
+  email: "sato@example.jp",
+  phone: "070-9876-5432",
 };
 const tokenized = await redactText(registry, JSON.stringify(customerRecord), {
   rules: { email: { action: 'tokenize' }, phone_jp: { action: 'tokenize' } },
-  hmacKey: 'migration-secret-key-for-tokenization'
+  hmacKey: 'migration-secret-key-for-tokenization' // トークン化にはHMACキーが必須
 });
-console.log(tokenized);
-```
-**Output:**
-```json
+console.log(JSON.parse(tokenized));
+/*
 {
-  "name": "田中太郎",
-  "email": "TKN_EMAIL_a1b2c3d4e5f67890",
-  "phone": "TKN_PHONE_JP_9f8e7d6c5b4a3210",
-  "address": "〒•••-•••• 東京都渋谷区"
+  name: "佐藤花子",
+  email": "TKN_EMAIL_f3e2d1c0b9a85674",
+  phone": "TKN_PHONE_JP_6c7d8e9f0a1b2345"
 }
+*/
 ```
 
-**🧪 Development & Testing**
-```ts
-// Generate safe test data from production dumps
-const prodData = `
-User: alice@company.com, CC: 4111-1111-1111-1111
-Location: 192.168.100.50, ZIP: 94105
-`;
-const testData = await redactText(registry, prodData);
-console.log(testData);
-```
-**Output:**
-```
-User: [REDACTED:email], CC: **** **** **** 1111
-Location: [REDACTED:ipv4], ZIP: [REDACTED:us_zip]
-```
+#### 🔐 HTTPリクエスト/レスポンスの秘匿化
 
-**🔐 HTTP Security Headers & API Tokens**
+APIサーバーのログから、認証トークンや機密情報を含むヘッダーを秘匿化します。
+
 ```ts
-// Redact authentication tokens and sensitive headers from HTTP requests
 const httpLog = `
 POST /api/users HTTP/1.1
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature
 X-API-Key: sk_live_1234567890abcdef
-Cookie: session_id=abc123secret; theme=dark; user_pref=enabled
+Cookie: session_id=abc123secret;
 `;
-const sanitizedLog = await redactText(registry, httpLog, {
-  hmacKey: 'secure-key-for-http-logs'
-});
+const sanitizedLog = await redactText(registry, httpLog);
 console.log(sanitizedLog);
-```
-**Output:**
-```
+/*
 POST /api/users HTTP/1.1
 [REDACTED:AUTH]
 sk_live_****
-Cookie: se*****ret; theme=dark; user_pref=enabled
+Cookie: se*****ret;
+*/
 ```
 
-**📖 Custom Dictionary & Policy Management**
+#### 📖 カスタム辞書による独自ルールの適用
+
+社内固有のID（社員番号など）やプロジェクトコードといった、独自の機密情報を検出対象に追加します。
+
 ```ts
-// Use custom dictionaries for domain-specific PII detection with hot reloading
+// 1. 辞書やポリシーを定義したJSONファイルを用意
+// policy.json: {"defaultAction": "mask", "rules": {"employee_id": {"action": "tokenize"}}}
+// company-dict.json: {"entries": [{"pattern": "EMP\d{5}", "type": "employee_id", "risk": "high"}]}
+
+// 2. PolicyDictReloaderで動的に読み込む
 import { PolicyDictReloader } from '@himorishige/noren-dict-reloader';
-
-// Compile function: converts policy + dictionaries into a Registry
-function compile(policy, dicts) {
-  const registry = new Registry(policy);
-  
-  // Process each dictionary to create custom detectors/maskers
-  for (const dict of dicts) {
-    const { entries = [] } = dict;
-    const customDetectors = [];
-    const customMaskers = {};
-    
-    for (const entry of entries) {
-      // Create detector for each dictionary entry
-      if (entry.pattern) {
-        customDetectors.push({
-          id: `custom.${entry.type}`,
-          match: ({ src, push }) => {
-            const regex = new RegExp(entry.pattern, 'gi');
-            for (const m of src.matchAll(regex)) {
-              if (m.index !== undefined) {
-                push({
-                  type: entry.type,
-                  start: m.index,
-                  end: m.index + m[0].length,
-                  value: m[0],
-                  risk: entry.risk || 'medium'
-                });
-              }
-            }
-          }
-        });
-        // Create custom masker
-        customMaskers[entry.type] = () => `[REDACTED:${entry.type.toUpperCase()}]`;
-      }
-    }
-    
-    registry.use(customDetectors, customMaskers);
-  }
-  
-  return registry;
-}
-
-// Set up dictionary reloader with ETag-based hot reloading
-const reloader = new PolicyDictReloader({
-  policyUrl: 'https://example.com/policy.json',
-  dictManifestUrl: 'https://example.com/manifest.json',
-  compile,
-  onSwap: (newRegistry, changed) => {
-    console.log('Dictionary updated:', changed);
-    // Use newRegistry for subsequent redactions
-  },
-  onError: (error) => console.error('Reload failed:', error)
-});
-
+const reloader = new PolicyDictReloader({ /* ...設定... */ });
 await reloader.start();
 const registry = reloader.getCompiled();
 
-// Use the dictionary-enhanced registry
-const text = 'Employee ID: EMP12345, Project Code: PROJ-ALPHA-2024';
+// 3. カスタムルールでテキストを処理
+const text = '社員ID: EMP12345、プロジェクトコード: PROJ-ALPHA-2024';
 const redacted = await redactText(registry, text);
-console.log(redacted); // Employee ID: [REDACTED:EMPLOYEE_ID], Project Code: [REDACTED:PROJECT_CODE]
+console.log(redacted); // 社員ID: TKN_EMPLOYEE_ID_...、プロジェクトコード: [REDACTED:PROJECT_CODE]
 ```
 
-**Dictionary File Structure:**
-- **manifest.json**: `{"dicts": [{"id": "company", "url": "https://example.com/company-dict.json"}]}`
-- **policy.json**: `{"defaultAction": "mask", "rules": {"employee_id": {"action": "tokenize"}}}`
-- **company-dict.json**: `{"entries": [{"pattern": "EMP\\d{5}", "type": "employee_id", "risk": "high"}]}`
+その他のコードサンプルは`examples/`ディレクトリにあります。
 
-### Code Examples
-- `node examples/basic-redact.mjs` — basic masking
-- `node examples/tokenize.mjs` — HMAC‑based tokenization
-- `node examples/detect-dump.mjs` — dump detections
-- `node examples/stream-redact.mjs` — streaming redaction
-- `node examples/security-demo.mjs` — security plugin with HTTP headers & tokens
-- `node examples/dictionary-demo.mjs` — custom dictionaries with hot reloading
-- `pnpm add -w -D hono @hono/node-server && node examples/hono-server.mjs` — Hono endpoint (`/redact`)
+## マネージドサービスの利用（推奨）
 
-## Managed alternatives (recommended)
-For production or regulated workloads, consider **managed PII services**:
+コンプライアンス準拠が厳格に求められる本番環境や大規模なワークロードでは、各クラウドプロバイダーが提供するマネージドサービスの利用を強く推奨します。
 
-- **AWS**: [Amazon Comprehend — Detect/Redact PII](https://docs.aws.amazon.com/comprehend/latest/dg/how-pii.html)  
-  Also see **[Amazon Macie](https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html)** for sensitive data discovery in S3.
-- **Google Cloud**: [Sensitive Data Protection (Cloud DLP)](https://cloud.google.com/sensitive-data-protection/docs/deidentify-sensitive-data)
-- **Azure**: [Azure AI Language — PII detection](https://learn.microsoft.com/azure/ai-services/language-service/personally-identifiable-information/how-to/redact-text-pii)
+*   **AWS**: [Amazon Comprehend (PII検出・秘匿化)](https://docs.aws.amazon.com/comprehend/latest/dg/how-pii.html), [Amazon Macie (S3データ検出)](https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html)
+*   **Google Cloud**: [Sensitive Data Protection (Cloud DLP)](https://cloud.google.com/sensitive-data-protection/docs/deidentify-sensitive-data)
+*   **Azure**: [Azure AI Language (PII検出)](https://learn.microsoft.com/azure/ai-services/language-service/personally-identifiable-information/how-to/redact-text-pii)
 
-Noren is a **lightweight helper** for edge/dev/stream pre‑processing and **does not provide compliance guarantees**.
+`Noren`は、あくまで**エッジ環境や開発、ストリーミングの前処理などを補助する軽量なツール**であり、単体でGDPRやCCPAなどの法規制への準拠を保証するものではありません。
 
-## Performance
+## 免責事項
 
-Recent optimizations have significantly improved performance:
-- **Large text processing**: ~1.5ms for 100 PII elements
-- **Repeated detection**: 1000 iterations in ~7ms (0.007ms per call)  
-- **Context hint processing**: 500 iterations with 20+ hints in ~4.5ms
+本ソフトウェアは**現状のまま（AS IS）**提供され、いかなる保証もいたしません。個人情報の検出漏れや誤検出が発生する可能性があります。最終的な出力の確認と、各種法令への準拠は、利用者自身の責任で行ってください。本リポジトリのいかなる情報も、法的助言を構成するものではありません。
 
-### Security Requirements
-- **HMAC keys** must be at least 16 characters long for tokenization
-- **IPv6 detection** now supports compressed notation (`::`) and mixed formats
-- **Japanese phone numbers** include all current mobile prefixes (060, 070, 080, 090)
+## ライセンス
 
-## Disclaimer
-Noren is provided **"AS IS"**, without warranties of any kind. It may miss or misclassify personal data.  
-You are responsible for reviewing outputs and ensuring regulatory compliance (e.g., GDPR/CCPA, sectoral rules).  
-Not intended for safety‑critical use. Nothing in this repository constitutes legal advice.
-
-## License
-MIT © himorishige
+[MIT](./LICENSE) © himorishige
