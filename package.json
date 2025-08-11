@@ -8,6 +8,13 @@
   "scripts": {
     "build": "pnpm -r --filter ./packages/** run build",
     "typecheck": "pnpm -r --filter ./packages/** run typecheck",
-    "test": "pnpm -r --filter ./packages/** run test"
+    "test": "pnpm -r --filter ./packages/** run test",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format --check .",
+    "check": "biome ci ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.3"
   }
 }
