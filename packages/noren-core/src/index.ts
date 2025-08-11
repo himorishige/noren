@@ -120,7 +120,6 @@ export async function redactText(reg: Registry, input: string, override: Policy 
   const key = needTok && cfg.hmacKey ? await importHmacKey(cfg.hmacKey) : undefined
 
   const parts: string[] = []
-  const _estimatedParts = hits.length * 2 + 1
 
   let cur = 0
   for (const h of hits) {
