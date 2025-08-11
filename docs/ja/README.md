@@ -18,6 +18,7 @@
 - `@himorishige/noren-core` — コアAPI（共通検出器、マスク／トークナイズ）
 - `@himorishige/noren-plugin-jp` — 日本向け：電話／郵便番号／マイナンバーの検出とマスク
 - `@himorishige/noren-plugin-us` — 米国向け：電話／ZIP／SSNの検出とマスク
+- `@himorishige/noren-plugin-security` — HTTPヘッダー、トークン、Cookieのセキュリティ秘匿化
 - `@himorishige/noren-dict-reloader` — ETagを用いたポリシー・辞書のホットリロード
 
 ## 動作要件
@@ -32,17 +33,19 @@ pnpm build
 ```ts
 import { Registry, redactText } from '@himorishige/noren-core';
 import * as jp from '@himorishige/noren-plugin-jp';
+import * as security from '@himorishige/noren-plugin-security';
 import * as us from '@himorishige/noren-plugin-us';
 
 const reg = new Registry({
   defaultAction: 'mask',
   rules: { credit_card: { action: 'mask', preserveLast4: true }, jp_my_number: { action: 'remove' } },
-  contextHints: ['TEL','電話','〒','住所','Zip','Address','SSN','Social Security']
+  contextHints: ['TEL','電話','〒','住所','Zip','Address','SSN','Authorization','Bearer','Cookie']
 });
 reg.use(jp.detectors, jp.maskers, ['〒','住所','TEL','Phone']);
 reg.use(us.detectors, us.maskers, ['Zip','Address','SSN','Phone']);
+reg.use(security.detectors, security.maskers, ['Authorization','Bearer','Cookie','X-API-Key','token']);
 
-const input = '〒150-0001 TEL 090-1234-5678 / SSN 123-45-6789 / 4242 4242 4242 4242';
+const input = '〒150-0001 TEL 090-1234-5678 / SSN 123-45-6789 / Card: 4242 4242 4242 4242 / Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature';
 const out = await redactText(reg, input, { hmacKey: 'this-is-a-secure-key-16plus-chars' });
 console.log(out);
 ```
@@ -58,6 +61,7 @@ const supportTicket = `
 顧客: 田中太郎 (tanaka@example.com)
 電話: 090-1234-5678
 問題: カード 4242 4242 4242 4242 の決済が失敗
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature
 `;
 const masked = await redactText(registry, supportTicket);
 console.log(masked);
@@ -67,6 +71,7 @@ console.log(masked);
 顧客: 田中太郎 ([REDACTED:email])
 電話: •••-••••-••••
 問題: カード **** **** **** 4242 の決済が失敗
+[REDACTED:AUTH]
 ```
 
 **📊 分析・ログ処理**
@@ -162,11 +167,34 @@ console.log(processed);
 住所: 〒•••-•••• 東京都渋谷区道玄坂
 ```
 
+**🔐 HTTPセキュリティヘッダー・APIトークン**
+```ts
+// HTTPリクエストから認証トークンや機密ヘッダーを秘匿化
+const httpLog = `
+POST /api/users HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature
+X-API-Key: sk_live_1234567890abcdef
+Cookie: session_id=abc123secret; theme=dark; user_pref=enabled
+`;
+const sanitizedLog = await redactText(registry, httpLog, {
+  hmacKey: 'secure-key-for-http-logs'
+});
+console.log(sanitizedLog);
+```
+**出力結果:**
+```
+POST /api/users HTTP/1.1
+[REDACTED:AUTH]
+sk_live_****
+Cookie: se*****ret; theme=dark; user_pref=enabled
+```
+
 ### コードサンプル
 - `node examples/basic-redact.mjs` — 基本的なマスキング
 - `node examples/tokenize.mjs` — HMACベースのトークナイズ
 - `node examples/detect-dump.mjs` — 検出結果のダンプ
 - `node examples/stream-redact.mjs` — ストリームでの赤入れ処理
+- `node examples/security-demo.mjs` — securityプラグインによるHTTPヘッダー・トークン処理
 - `pnpm add -w -D hono @hono/node-server && node examples/hono-server.mjs` — Honoエンドポイント（`/redact`）
 
 ## マネージド代替（推奨）
