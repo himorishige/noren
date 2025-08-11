@@ -1,39 +1,39 @@
 // Security plugin types
 
 export interface SecurityConfig {
-  /** 許可するCookie名のリスト（これらはマスクされない） */
+  /** List of allowed cookie names (these will not be masked) */
   cookieAllowlist?: string[]
-  /** 許可するヘッダー名のリスト（これらはマスクされない） */
+  /** List of allowed header names (these will not be masked) */
   headerAllowlist?: string[]
-  /** 厳格モード - より保守的な検出を行う */
+  /** Strict mode - performs more conservative detection */
   strictMode?: boolean
-  /** JWT検出の最小長（デフォルト: 50） */
+  /** Minimum length for JWT detection (default: 50) */
   jwtMinLength?: number
-  /** API Key検出の最小長（デフォルト: 16） */
+  /** Minimum length for API key detection (default: 16) */
   apiKeyMinLength?: number
 }
 
-/** セキュリティ関連のPII種別 */
+/** Security-related PII types */
 export type SecurityPiiType =
   | 'sec_auth_header' // Authorization Bearer/Basic
-  | 'sec_api_key' // X-API-Key, X-Auth-Token等
-  | 'sec_cookie' // Cookie値（allowlistベース）
-  | 'sec_set_cookie' // Set-Cookie値
-  | 'sec_url_token' // token, access_token, api_key等
-  | 'sec_client_secret' // client_secret, client_id等
-  | 'sec_jwt_token' // JWT形式 (xxx.yyy.zzz)
-  | 'sec_uuid_token' // UUID形式のトークン
-  | 'sec_hex_token' // 長い16進数文字列
-  | 'sec_session_id' // セッションID形式
+  | 'sec_api_key' // X-API-Key, X-Auth-Token, etc.
+  | 'sec_cookie' // Cookie values (allowlist-based)
+  | 'sec_set_cookie' // Set-Cookie values
+  | 'sec_url_token' // token, access_token, api_key, etc.
+  | 'sec_client_secret' // client_secret, client_id, etc.
+  | 'sec_jwt_token' // JWT format (xxx.yyy.zzz)
+  | 'sec_uuid_token' // UUID format tokens
+  | 'sec_hex_token' // Long hexadecimal strings
+  | 'sec_session_id' // Session ID format
 
-/** Cookie解析結果 */
+/** Cookie parsing result */
 export interface CookieInfo {
   name: string
   value: string
   isAllowed: boolean
 }
 
-/** HTTPヘッダー解析結果 */
+/** HTTP header parsing result */
 export interface HeaderInfo {
   name: string
   value: string

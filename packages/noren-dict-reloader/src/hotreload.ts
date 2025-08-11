@@ -14,7 +14,7 @@ export type ReloaderOptions<TCompiled> = {
   jitter?: number
   onSwap?: (compiled: TCompiled, changed: string[]) => void
   onError?: (err: unknown) => void
-  compile: (policy: unknown, dicts: unknown[]) => TCompiled // 注入
+  compile: (policy: unknown, dicts: unknown[]) => TCompiled
 }
 
 export class PolicyDictReloader<TCompiled> {
@@ -63,7 +63,7 @@ export class PolicyDictReloader<TCompiled> {
     await this.tick(true)
   }
 
-  // ---- 内部 ----
+  // Internal implementation
   private nextDelay(ok: boolean) {
     if (ok) this.backoff = 0
     else

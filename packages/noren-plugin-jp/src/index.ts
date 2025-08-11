@@ -3,7 +3,7 @@ import type { Detector, Masker } from '@himorishige/noren-core'
 // Pre-compiled regex patterns for JP detectors
 const JP_PATTERNS = {
   postal: /\b\d{3}-?\d{4}\b/g,
-  cellPhone: /\b0(?:60|70|80|90)-?\d{4}-?\d{4}\b/g, // 060, 070, 080, 090を含む
+  cellPhone: /\b0(?:60|70|80|90)-?\d{4}-?\d{4}\b/g,
   landlinePhone: /\b0[1-9]\d?-?\d{3,4}-?\d{4}\b/g,
   internationalPhone: /\+81-?\d{1,4}-?\d{1,4}-?\d{3,4}\b/g,
   myNumber: /\b\d{12}\b/g,

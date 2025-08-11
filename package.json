@@ -15,6 +15,10 @@
     "check": "biome check ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.1.4"
+    "@biomejs/biome": "^2.1.4",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "rollup": "^4.46.2"
   }
 }

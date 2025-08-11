@@ -13,7 +13,6 @@ export const detectors: Detector[] = [
     priority: -10,
     // biome-ignore lint/correctness/noUnusedFunctionParameters: hasCtx reserved for future context-aware detection
     match: ({ src, push, hasCtx }) => {
-      // JWT検出は文脈に関係なく実行（JWTは構造的に明確なため）
       for (const m of src.matchAll(SECURITY_PATTERNS.jwt)) {
         if (m.index !== undefined) {
           push({
@@ -34,7 +33,7 @@ export const detectors: Detector[] = [
     priority: -5,
     // biome-ignore lint/correctness/noUnusedFunctionParameters: hasCtx reserved for future context-aware detection
     match: ({ src, push, hasCtx }) => {
-      // プリフィックス付きAPIキー（sk_, pk_, api_, key_）
+      // API keys with prefixes (sk_, pk_, api_, key_)
       for (const m of src.matchAll(SECURITY_PATTERNS.apiKey)) {
         if (m.index !== undefined) {
           push({
@@ -53,7 +52,7 @@ export const detectors: Detector[] = [
   {
     id: 'security.uuid',
     match: ({ src, push, hasCtx }) => {
-      // UUIDは文脈ヒント必須（UUIDは汎用的すぎるため）
+      // UUID requires context hints (too generic otherwise)
       if (!hasCtx([...SECURITY_CONTEXTS.auth, ...SECURITY_CONTEXTS.session])) return
 
       for (const m of src.matchAll(SECURITY_PATTERNS.uuid)) {
@@ -74,7 +73,7 @@ export const detectors: Detector[] = [
   {
     id: 'security.hex-token',
     match: ({ src, push, hasCtx }) => {
-      // 長い16進数は文脈ヒント必須
+      // Long hexadecimal requires context hints
       if (!hasCtx([...SECURITY_CONTEXTS.session, ...SECURITY_CONTEXTS.auth])) return
 
       for (const m of src.matchAll(SECURITY_PATTERNS.hexToken)) {
@@ -95,7 +94,7 @@ export const detectors: Detector[] = [
   {
     id: 'security.session-id',
     match: ({ src, push }) => {
-      // セッションID形式（名前=値）は構造的に検出
+      // Session ID format (name=value) detected structurally
       for (const m of src.matchAll(SECURITY_PATTERNS.sessionId)) {
         if (m.index !== undefined && m[1]) {
           push({
@@ -115,7 +114,7 @@ export const detectors: Detector[] = [
     id: 'security.auth-header',
     priority: -8,
     match: ({ src, push, hasCtx }) => {
-      // Authorization ヘッダーは文脈チェック必須
+      // Authorization header requires context check
       if (!hasCtx([...SECURITY_CONTEXTS.auth])) return
 
       for (const m of src.matchAll(SECURITY_PATTERNS.authHeader)) {
@@ -137,7 +136,7 @@ export const detectors: Detector[] = [
     id: 'security.api-key-header',
     priority: -6,
     match: ({ src, push, hasCtx }) => {
-      // APIキーヘッダーは文脈チェック必須
+      // API key header requires context check
       if (!hasCtx([...SECURITY_CONTEXTS.apiKey])) return
 
       for (const m of src.matchAll(SECURITY_PATTERNS.apiKeyHeader)) {
@@ -159,10 +158,10 @@ export const detectors: Detector[] = [
     id: 'security.url-tokens',
     // biome-ignore lint/correctness/noUnusedFunctionParameters: hasCtx reserved for future context-aware detection
     match: ({ src, push, hasCtx }) => {
-      // URLトークンは文脈に関係なく検出（構造的に明確なため）
+      // URL tokens detected regardless of context (structurally clear)
       for (const m of src.matchAll(SECURITY_PATTERNS.urlTokens)) {
         if (m.index !== undefined && m[2] && m[2].length >= 8) {
-          // パラメータ名に基づいてリスクレベルを決定
+          // Determine risk level based on parameter name
           const paramName = m[1].toLowerCase()
           const risk: 'low' | 'medium' | 'high' =
             paramName.includes('secret') ||
@@ -188,7 +187,7 @@ export const detectors: Detector[] = [
   {
     id: 'security.client-credentials',
     match: ({ src, push }) => {
-      // クライアント認証情報は常に検出
+      // Client credentials always detected
       for (const m of src.matchAll(SECURITY_PATTERNS.clientCredentials)) {
         if (m.index !== undefined && m[2] && m[2].length >= 8) {
           const paramName = m[1].toLowerCase()
@@ -211,7 +210,7 @@ export const detectors: Detector[] = [
   {
     id: 'security.cookie',
     match: ({ src, push, hasCtx }) => {
-      // Cookie検出は文脈チェック推奨
+      // Cookie detection with context check recommended
       if (!hasCtx([...SECURITY_CONTEXTS.cookie])) return
 
       for (const m of src.matchAll(SECURITY_PATTERNS.cookie)) {
@@ -219,9 +218,9 @@ export const detectors: Detector[] = [
           try {
             const cookies = parseCookieHeader(m[0])
 
-            // 各Cookie値を個別に検査してマスク対象を判定
+            // Check each cookie value individually for masking
             for (const cookie of cookies) {
-              // アローリストチェックはランタイムで行うため、ここでは全て検出
+              // Detect all here since allowlist check is done at runtime
               if (cookie.value.length >= 8) {
                 push({
                   type: 'sec_cookie',
@@ -230,11 +229,11 @@ export const detectors: Detector[] = [
                   value: m[0],
                   risk: 'medium',
                 })
-                break // 1つのCookieヘッダー全体をマスクするので1回だけpush
+                break // Only push once as we mask the entire Cookie header
               }
             }
           } catch {
-            // 解析失敗時はそのままスキップ
+            // Skip on parse failure
           }
         }
       }
@@ -245,7 +244,7 @@ export const detectors: Detector[] = [
   {
     id: 'security.set-cookie',
     match: ({ src, push, hasCtx }) => {
-      // Set-Cookie検出は文脈チェック推奨
+      // Set-Cookie detection with context check recommended
       if (!hasCtx([...SECURITY_CONTEXTS.cookie])) return
 
       for (const m of src.matchAll(SECURITY_PATTERNS.setCookie)) {
@@ -254,7 +253,7 @@ export const detectors: Detector[] = [
             const cookie = parseSetCookieHeader(m[0])
 
             if (cookie && cookie.value.length >= 8) {
-              // アローリストチェックはランタイムで行う
+              // Allowlist check is done at runtime
               push({
                 type: 'sec_set_cookie',
                 start: m.index,
@@ -264,7 +263,7 @@ export const detectors: Detector[] = [
               })
             }
           } catch {
-            // 解析失敗時はそのままスキップ
+            // Skip on parse failure
           }
         }
       }

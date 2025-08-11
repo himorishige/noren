@@ -48,6 +48,59 @@ console.log(redactedText);
 // Output: Contact: TKN_EMAIL_5de1e4e7a3b4b5c6, Card Number: **** **** **** 4242
 ```
 
+## Production Usage with Environment Variables
+
+For production environments, it's recommended to store the HMAC key in environment variables:
+
+```typescript
+import { Registry, redactText } from '@himorishige/noren-core';
+
+// .env file:
+// NOREN_HMAC_KEY=your-32-character-or-longer-secret-key-here-for-production
+
+const registry = new Registry({
+  defaultAction: 'tokenize',
+  hmacKey: process.env.NOREN_HMAC_KEY, // Load from environment variable
+});
+
+const inputText = 'Contact: user@example.com, Card: 4242-4242-4242-4242';
+const redactedText = await redactText(registry, inputText);
+
+console.log(redactedText);
+// Output: Contact: TKN_EMAIL_abc123def456789, Card: TKN_CREDIT_CARD_789abc123def456
+```
+
+### Security Best Practices
+
+- **Key Length**: Use at least 32 characters for the HMAC key (minimum requirement)
+- **Environment Variables**: Never hardcode keys in source code
+- **Key Rotation**: Regularly rotate HMAC keys in production
+- **Separate Keys**: Use different keys for development, staging, and production environments
+
+### Edge Runtime Support
+
+The library works in edge environments like Cloudflare Workers and Vercel Edge Functions:
+
+```typescript
+// Cloudflare Workers
+export default {
+  async fetch(request, env) {
+    const registry = new Registry({
+      hmacKey: env.NOREN_HMAC_KEY, // Cloudflare environment variable
+    });
+    // ... processing logic
+  }
+};
+
+// Vercel Edge Functions
+export default async function handler(request) {
+  const registry = new Registry({
+    hmacKey: process.env.NOREN_HMAC_KEY, // Vercel environment variable
+  });
+  // ... processing logic
+}
+```
+
 ## API Overview
 
 - `Registry`: The central class for managing detectors, maskers, and masking policies.

@@ -1,4 +1,4 @@
-// Noren Security Plugin - ヘッダー・トークンスクラバー
+// Noren Security Plugin - Header and token scrubber
 
 // Core exports
 export { detectors } from './detectors.js'

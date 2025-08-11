@@ -27,7 +27,18 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./min": "./dist/index.min.js",
+    "./types": "./dist/types.js",
+    "./utils": "./dist/utils.js",
+    "./patterns": "./dist/patterns.js",
+    "./detection": "./dist/detection.js",
+    "./masking": "./dist/masking.js",
+    "./pool": "./dist/pool.js",
+    "./lazy": "./dist/lazy.js"
   },
   "sideEffects": false,
   "engines": {
@@ -41,8 +52,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:min": "pnpm build && rollup -c",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prepublishOnly": "pnpm run build",
+    "prepublishOnly": "pnpm run build:min",
     "pretest": "pnpm run build && tsc -p tsconfig.test.json",
     "test": "node --test dist-test/test/**/*.test.js"
   },

@@ -1,43 +1,25 @@
-// Noren Core — 世界共通の薄い原理（Web標準のみ）
+// Noren Core - Global PII detection and masking (Web Standards only)
 
-export type PiiType =
-  | 'email'
-  | 'ipv4'
-  | 'ipv6'
-  | 'mac'
-  | 'phone_e164'
-  | 'credit_card'
-  | (string & {})
+export type { LazyPlugin } from './lazy.js'
+export { clearPluginCache } from './lazy.js'
+export type {
+  Action,
+  Detector,
+  DetectUtils,
+  Hit,
+  Masker,
+  PiiType,
+  Policy,
+} from './types'
 
-export type Hit = {
-  type: PiiType
-  start: number
-  end: number
-  value: string
-  risk: 'low' | 'medium' | 'high'
-}
+export { normalize } from './utils.js'
 
-export type Action = 'mask' | 'remove' | 'tokenize' | 'ignore'
-
-export type Policy = {
-  defaultAction?: Action
-  rules?: Partial<Record<PiiType, { action: Action; preserveLast4?: boolean }>>
-  contextHints?: string[]
-  hmacKey?: string | CryptoKey
-}
-
-export type DetectUtils = {
-  src: string // 正規化済み
-  hasCtx: (words?: string[]) => boolean // 文脈ゲート
-  push: (h: Hit) => void // 検出結果追加
-}
-
-export type Detector = {
-  id: string
-  priority?: number
-  match: (u: DetectUtils) => void | Promise<void>
-}
-export type Masker = (hit: Hit) => string
+import { builtinDetect } from './detection.js'
+import { type LazyPlugin, loadPlugin } from './lazy.js'
+import { defaultMask } from './masking.js'
+import { hitPool } from './pool.js'
+import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy } from './types.js'
+import { hmacToken, importHmacKey, normalize } from './utils.js'
 
 export class Registry {
   private detectors: Detector[] = []
@@ -51,18 +33,20 @@ export class Registry {
   }
 
   use(detectors: Detector[] = [], maskers: Record<string, Masker> = {}, ctx: string[] = []) {
-    // Add detectors and sort immediately
     for (const d of detectors) this.detectors.push(d)
     this.detectors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
 
-    // Add maskers
     for (const [k, m] of Object.entries(maskers)) this.maskers.set(k as PiiType, m)
 
-    // Update context hints using Set
     if (ctx.length) {
       for (const hint of ctx) this.contextHintsSet.add(hint)
       this.base.contextHints = Array.from(this.contextHintsSet)
     }
+  }
+
+  async useLazy(pluginName: string, plugin: LazyPlugin): Promise<void> {
+    const loaded = await loadPlugin(pluginName, plugin)
+    this.use(loaded.detectors, loaded.maskers, loaded.contextHints)
   }
 
   getPolicy() {
@@ -76,206 +60,95 @@ export class Registry {
     const src = normalize(raw)
     const hits: Hit[] = []
 
-    // Create optimized context check function
     const ctxHintsForCheck = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
+    let contextCheckCache: boolean | null = null
+
     const u: DetectUtils = {
       src,
       hasCtx: (ws) => {
-        const words = ws ?? ctxHintsForCheck
-        return words.some((w) => src.includes(w))
+        if (!ws) {
+          if (contextCheckCache === null) {
+            contextCheckCache = ctxHintsForCheck.some((w) => src.includes(w))
+          }
+          return contextCheckCache
+        }
+        return ws.some((w) => src.includes(w))
       },
       push: (h) => hits.push(h),
     }
 
     builtinDetect(u)
-    // Use pre-sorted detectors
     for (const d of this.detectors) await d.match(u)
 
-    // 区間マージ（重なりは長い方優先）
+    if (hits.length === 0) return { src, hits: [] }
+
     hits.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start))
-    const out: Hit[] = []
-    let end = -1
-    for (const h of hits) {
-      if (h.start >= end) {
-        out.push(h)
-        end = h.end
+
+    let writeIndex = 0
+    let currentEnd = -1
+
+    for (let readIndex = 0; readIndex < hits.length; readIndex++) {
+      const hit = hits[readIndex]
+      if (hit.start >= currentEnd) {
+        hits[writeIndex] = hit
+        currentEnd = hit.end
+        writeIndex++
+      } else {
+        hitPool.release([hit])
       }
     }
-    return { src, hits: out }
+
+    const finalHits = hits.slice(0, writeIndex)
+    const releasedHits = hits.slice(writeIndex)
+    if (releasedHits.length > 0) {
+      hitPool.release(releasedHits)
+    }
+
+    return { src, hits: finalHits }
   }
 }
 
 export async function redactText(reg: Registry, input: string, override: Policy = {}) {
   const cfg = { ...reg.getPolicy(), ...override }
   const { src, hits } = await reg.detect(input, cfg.contextHints)
+
+  if (hits.length === 0) return src
+
   const needTok =
     Object.values(cfg.rules ?? {}).some((v) => v?.action === 'tokenize') ||
     cfg.defaultAction === 'tokenize'
   const key = needTok && cfg.hmacKey ? await importHmacKey(cfg.hmacKey) : undefined
 
-  let out = ''
+  const parts: string[] = []
+  const _estimatedParts = hits.length * 2 + 1
+
   let cur = 0
   for (const h of hits) {
     const rule = cfg.rules?.[h.type] ?? { action: cfg.defaultAction ?? 'mask' }
-    out += src.slice(cur, h.start)
+
+    if (h.start > cur) {
+      parts.push(src.slice(cur, h.start))
+    }
+
     let rep = h.value
-    if (rule.action === 'remove') rep = ''
-    else if (rule.action === 'mask')
+    if (rule.action === 'remove') {
+      rep = ''
+    } else if (rule.action === 'mask') {
       rep = reg.maskerFor(h.type)?.(h) ?? defaultMask(h, rule.preserveLast4)
-    else if (rule.action === 'tokenize') {
+    } else if (rule.action === 'tokenize') {
       if (!key) throw new Error(`hmacKey is required for tokenize action on type ${h.type}`)
       rep = `TKN_${String(h.type).toUpperCase()}_${await hmacToken(h.value, key)}`
     }
-    out += rep
+
+    if (rep !== '') {
+      parts.push(rep)
+    }
     cur = h.end
   }
-  out += src.slice(cur)
-  return out
-}
 
-// ---- Helpers ----
-// Pre-compiled regex patterns for better performance
-const NORMALIZE_PATTERNS = {
-  dashVariants: /[\u2212\u2010-\u2015\u30FC]/g,
-  ideographicSpace: /\u3000/g,
-  multipleSpaces: /[ \t　]+/g,
-}
-
-const DETECTION_PATTERNS = {
-  email: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,
-  ipv4: /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g,
-  ipv6: /\b(?:(?:[0-9A-F]{1,4}:){7}[0-9A-F]{1,4}|(?:[0-9A-F]{1,4}:)*::(?:[0-9A-F]{1,4}:)*[0-9A-F]{1,4})\b/gi,
-  mac: /\b(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi,
-  e164: /\+?\d[\d\-\s()]{8,15}/g,
-  creditCardChunk: /(?:\d[ -]?){13,19}/g,
-}
-
-export const normalize = (s: string) =>
-  s
-    .normalize('NFKC')
-    .replace(NORMALIZE_PATTERNS.dashVariants, '-')
-    .replace(NORMALIZE_PATTERNS.ideographicSpace, ' ')
-    .replace(NORMALIZE_PATTERNS.multipleSpaces, ' ')
-    .trim()
-
-function builtinDetect(u: DetectUtils) {
-  // Helper function for type-safe hit creation
-  const createHit = (type: PiiType, match: RegExpMatchArray, risk: Hit['risk']): Hit | null => {
-    if (match.index === undefined) return null
-    return {
-      type,
-      start: match.index,
-      end: match.index + match[0].length,
-      value: match[0],
-      risk,
-    }
+  if (cur < src.length) {
+    parts.push(src.slice(cur))
   }
 
-  // email
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.email)) {
-    const hit = createHit('email', m, 'medium')
-    if (hit) u.push(hit)
-  }
-
-  // ipv4
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv4)) {
-    const hit = createHit('ipv4', m, 'low')
-    if (hit) u.push(hit)
-  }
-
-  // ipv6
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv6)) {
-    const hit = createHit('ipv6', m, 'low')
-    if (hit) u.push(hit)
-  }
-
-  // mac
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.mac)) {
-    const hit = createHit('mac', m, 'low')
-    if (hit) u.push(hit)
-  }
-
-  // phone_e164（弱）—文脈で強め
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.e164)) {
-    const hit = createHit('phone_e164', m, 'medium')
-    if (hit) u.push(hit)
-  }
-
-  // credit card（Luhn）
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.creditCardChunk)) {
-    const digits = m[0].replace(/[ -]/g, '')
-    if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
-      const hit = createHit('credit_card', m, 'high')
-      if (hit) u.push(hit)
-    }
-  }
-}
-
-// Maintaining original hit function for backwards compatibility
-// This function is used in external packages or user-defined plugins
-// biome-ignore lint/correctness/noUnusedVariables: kept for backwards compatibility with external packages
-function hit(type: PiiType, m: RegExpMatchArray, risk: Hit['risk']): Hit | null {
-  if (m.index === undefined) return null
-  return {
-    type,
-    start: m.index,
-    end: m.index + m[0].length,
-    value: m[0],
-    risk,
-  }
-}
-
-function luhn(d: string) {
-  let sum = 0
-  let dbl = false
-  for (let i = d.length - 1; i >= 0; i--) {
-    let x = d.charCodeAt(i) - 48
-    if (x < 0 || x > 9) return false
-    if (dbl) {
-      x *= 2
-      if (x > 9) x -= 9
-    }
-    sum += x
-    dbl = !dbl
-  }
-  return sum % 10 === 0
-}
-
-function defaultMask(h: Hit, keepLast4?: boolean) {
-  if (h.type === 'credit_card' && keepLast4) {
-    const last4 = h.value.replace(/\D/g, '').slice(-4)
-    return `**** **** **** ${last4}`
-  }
-  if (h.type === 'phone_e164') return h.value.replace(/\d/g, '•')
-  return `[REDACTED:${h.type}]`
-}
-
-// HMAC（トークン）— 出力は hex16 で簡潔に
-const enc = new TextEncoder()
-async function importHmacKey(secret: string | CryptoKey) {
-  if (typeof secret !== 'string') return secret
-
-  // Ensure minimum key length for security
-  if (secret.length < 16) {
-    throw new Error('HMAC key must be at least 16 characters long')
-  }
-
-  return crypto.subtle.importKey(
-    'raw',
-    enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  )
-}
-async function hmacToken(value: string, key: CryptoKey) {
-  const mac = await crypto.subtle.sign('HMAC', key, enc.encode(value))
-  const b = new Uint8Array(mac)
-  let hex = ''
-  for (let i = 0; i < 8; i++) {
-    // 64bitぶん
-    const v = b[i]
-    hex += (v >>> 4).toString(16) + (v & 0xf).toString(16)
-  }
-  return hex
+  return parts.join('')
 }
