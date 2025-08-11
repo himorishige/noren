@@ -52,3 +52,101 @@ await reloader.start();
 // 初期化されたRegistryインスタンスを取得して使用開始
 const initialRegistry = reloader.getCompiled();
 ```
+
+## 辞書ファイルとマニフェスト
+
+リローダーは `dictManifestUrl` で指定したマニフェストJSONと、そこから参照される1つ以上の辞書JSONを読み込む。
+
+- マニフェストの形式:
+
+```json
+{
+  "dicts": [
+    { "id": "company", "url": "https://example.com/dicts/company-dict.json" }
+  ]
+}
+```
+
+- 辞書ファイルの形式（論理グループごとに1ファイルを想定）:
+
+```json
+{
+  "entries": [
+    {
+      "pattern": "EMP\\d{5}",
+      "type": "employee_id",
+      "risk": "high",
+      "description": "Employee ID format: EMP followed by 5 digits"
+    }
+  ]
+}
+```
+
+補足:
+
+- `pattern`: JavaScript の正規表現ソース文字列（スラッシュ不要）。通常 `gu` フラグでのコンパイルを想定。
+- `type`: 検出タイプ。ビルトインに加えてカスタムの文字列も可。
+- `risk`: `low` | `medium` | `high` のいずれか。
+- `description`: 任意の説明（ドキュメント用途）。
+
+テンプレート:
+
+- パッケージ内の `docs/manifest.template.json` と `docs/dictionary.template.json` を参照。
+- ルートの `examples/dictionary-files/company-dict.json` も実例として利用可能。
+
+## 例: 辞書エントリを検出器として登録する compile()
+
+以下は、読み込んだ辞書をカスタム検出器に変換して `Registry` に登録する最小例。
+
+```ts
+import type { Detector, PiiType, Policy } from '@himorishige/noren-core'
+import { Registry } from '@himorishige/noren-core'
+
+type DictEntry = { pattern: string; type: string; risk: 'low' | 'medium' | 'high'; description?: string }
+type DictFile = { entries?: DictEntry[] }
+
+function compile(policy: unknown, dicts: unknown[]) {
+  const registry = new Registry((policy ?? {}) as Policy)
+  const detectors: Detector[] = []
+
+  for (const d of dicts) {
+    const entries = (d as DictFile).entries ?? []
+    for (const e of entries) {
+      if (!e?.pattern || !e?.type || !e?.risk) continue
+      let re: RegExp
+      try {
+        re = new RegExp(e.pattern, 'gu')
+      } catch {
+        continue
+      }
+      detectors.push({
+        id: `dict:${e.type}:${e.pattern}`,
+        priority: 100,
+        match: (u) => {
+          for (const m of u.src.matchAll(re)) {
+            if (m.index === undefined) continue
+            u.push({
+              type: e.type as PiiType,
+              start: m.index,
+              end: m.index + m[0].length,
+              value: m[0],
+              risk: e.risk,
+            })
+          }
+        },
+      })
+    }
+  }
+
+  // 必要ならマスカーやコンテキストヒントも同時登録できる:
+  // registry.use(detectors, { employee_id: (h) => `EMP_***${h.value.slice(-4)}` }, ['社員番号', 'employee'])
+  registry.use(detectors)
+  return registry
+}
+```
+
+## Tips
+
+- サーバー側は `ETag` または `Last-Modified` と、ブラウザ利用時は適切な CORS ヘッダーを返すこと。
+- `onSwap` の `changed` には `policy` / `manifest` / `dict:<id>` / `dict-removed:<id>` が入ることがある。
+- `forceReload()` は必要に応じて `_bust` パラメーターを付与してキャッシュを回避する。

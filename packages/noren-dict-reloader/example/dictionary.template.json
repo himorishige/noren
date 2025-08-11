@@ -1,0 +1,10 @@
+{
+  "entries": [
+    {
+      "pattern": "EMP\\d{5}",
+      "type": "employee_id",
+      "risk": "high",
+      "description": "Employee ID format: EMP followed by 5 digits"
+    }
+  ]
+}

@@ -54,3 +54,101 @@ await reloader.start();
 // Get the initial compiled Registry instance to start using it
 const initialRegistry = reloader.getCompiled();
 ```
+
+## Dictionary files and manifest
+
+The reloader expects a manifest JSON at `dictManifestUrl`, and one or more dictionary JSON files referenced by it.
+
+- Manifest format:
+
+```json
+{
+  "dicts": [
+    { "id": "company", "url": "https://example.com/dicts/company-dict.json" }
+  ]
+}
+```
+
+- Dictionary format (one file per logical group):
+
+```json
+{
+  "entries": [
+    {
+      "pattern": "EMP\\d{5}",
+      "type": "employee_id",
+      "risk": "high",
+      "description": "Employee ID format: EMP followed by 5 digits"
+    }
+  ]
+}
+```
+
+Notes:
+
+- `pattern`: JavaScript RegExp source string (no leading/trailing slashes). It will typically be compiled with flags `gu`.
+- `type`: a string PII type. Can be custom in addition to built-ins.
+- `risk`: one of `low` | `medium` | `high`.
+- `description`: optional, for documentation only.
+
+Templates:
+
+- See `docs/manifest.template.json` and `docs/dictionary.template.json` in this package.
+- A more complete example is in `examples/dictionary-files/company-dict.json` at the repo root.
+
+## Example: compile() that registers dictionary entries
+
+Below is a minimal compile function that turns the loaded dictionaries into custom detectors and registers them with `Registry`.
+
+```ts
+import type { Detector, PiiType, Policy } from '@himorishige/noren-core'
+import { Registry } from '@himorishige/noren-core'
+
+type DictEntry = { pattern: string; type: string; risk: 'low' | 'medium' | 'high'; description?: string }
+type DictFile = { entries?: DictEntry[] }
+
+function compile(policy: unknown, dicts: unknown[]) {
+  const registry = new Registry((policy ?? {}) as Policy)
+  const detectors: Detector[] = []
+
+  for (const d of dicts) {
+    const entries = (d as DictFile).entries ?? []
+    for (const e of entries) {
+      if (!e?.pattern || !e?.type || !e?.risk) continue
+      let re: RegExp
+      try {
+        re = new RegExp(e.pattern, 'gu')
+      } catch {
+        continue
+      }
+      detectors.push({
+        id: `dict:${e.type}:${e.pattern}`,
+        priority: 100,
+        match: (u) => {
+          for (const m of u.src.matchAll(re)) {
+            if (m.index === undefined) continue
+            u.push({
+              type: e.type as PiiType,
+              start: m.index,
+              end: m.index + m[0].length,
+              value: m[0],
+              risk: e.risk,
+            })
+          }
+        },
+      })
+    }
+  }
+
+  // Optionally, provide custom maskers or additional context hints:
+  // registry.use(detectors, { employee_id: (h) => `EMP_***${h.value.slice(-4)}` }, ['社員番号', 'employee'])
+  registry.use(detectors)
+  return registry
+}
+```
+
+## Tips
+
+- Ensure your server sends `ETag` or `Last-Modified` and proper CORS headers if used in browsers.
+- `onSwap` receives a `changed` list that may include: `policy`, `manifest`, `dict:<id>`, `dict-removed:<id>`.
+- `forceReload()` will bust caches by adding a `_bust` query param when needed.
