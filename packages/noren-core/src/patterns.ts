@@ -9,7 +9,7 @@ export const NORMALIZE_PATTERNS = {
 
 export const DETECTION_PATTERNS = {
   // Individual patterns for fallback/specific use  
-  email: /(?:^|[\s<>"'`])([A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,253}\.[A-Z]{2,63})(?=[\s<>"'`]|$)/gi,
+  email: /(?<![\w])([A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,253}\.[A-Z]{2,63})(?![\w])/gi,
   ipv4: /\b(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3}\b/g,
   ipv6: /(?:(?:[0-9A-F]{1,4}:){7}[0-9A-F]{1,4}|(?:(?:[0-9A-F]{0,4}:){0,6})?::(?:(?:[0-9A-F]{0,4}:){0,6}[0-9A-F]{0,4})?)/gi,
   mac: /\b[0-9A-F]{2}(?:[:-][0-9A-F]{2}){5}\b/gi,
@@ -20,8 +20,8 @@ export const DETECTION_PATTERNS = {
 // Unified pattern for single-pass detection (most performance-critical patterns)
 export const UNIFIED_PATTERN = new RegExp(
   [
-    // Group 1: Email
-    '(?:^|[\\s<>"`])([A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,253}\\.[A-Z]{2,63})(?=[\\s<>"`]|$)',
+    // Group 1: Email  
+    '(?<![\\w])([A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,253}\\.[A-Z]{2,63})(?![\\w])',
     // Group 2: IPv4
     '|\\b((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3})\\b',
     // Group 3: IPv6
