@@ -1,2 +1,5 @@
 # pnpm
 node_modules
+
+# windsurf
+.windsurf
