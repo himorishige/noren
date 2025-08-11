@@ -1,0 +1,13 @@
+{
+  "name": "noren",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/** run build",
+    "typecheck": "pnpm -r --filter ./packages/** run typecheck",
+    "test": "pnpm -r --filter ./packages/** run test"
+  }
+}
