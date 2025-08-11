@@ -155,7 +155,12 @@ async function conditionalGet(
   }
 
   const res = await fetch(reqUrl, { method: 'GET', headers: h })
-  if (res.status === 304) return { status: 304 as const, meta: prev ?? {} }
+  if (res.status === 304) {
+    if (!prev) {
+      throw new Error(`304 Not Modified from ${reqUrl} without previous metadata`)
+    }
+    return { status: 304 as const, meta: prev }
+  }
   if (!res.ok) throw new Error(`fetch ${reqUrl} -> ${res.status}`)
 
   const text = await res.text()
