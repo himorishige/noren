@@ -38,7 +38,7 @@ export class HitPool {
       const randomBytes = new Uint8Array(hit.value.length)
       crypto.getRandomValues(randomBytes)
       // Convert to string and overwrite original
-      const randomString = Array.from(randomBytes, b => String.fromCharCode(b)).join('')
+      const randomString = Array.from(randomBytes, (b) => String.fromCharCode(b)).join('')
       hit.value = randomString
     }
     // Clear to empty values
