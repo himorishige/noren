@@ -36,7 +36,7 @@ WHATWG Streamsでチャンク跨ぎ対応のストリーム赤入れ。ファイ
 
 ```sh
 # サンプルテキストで流す
-node examples/stream-redact.mjs
+node examples/detect-dump.mjs
 
 # ファイルを流す（例: input.txt を作ってから）
 node examples/stream-redact.mjs input.txt > redacted.txt

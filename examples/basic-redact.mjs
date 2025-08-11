@@ -20,5 +20,5 @@ US: SSN 123-45-6789, Zip 94105, Phone (415) 555-0123
 Card: 4242 4242 4242 4242
 `
 
-const out = await redactText(reg, input, { hmacKey: 'dev-secret' })
+const out = await redactText(reg, input, { hmacKey: 'development-secret-key-for-basic-example' })
 console.log(out)

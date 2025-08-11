@@ -47,7 +47,122 @@ const out = await redactText(reg, input, { hmacKey: 'this-is-a-secure-key-16plus
 console.log(out);
 ```
 
-## サンプル
+## 使用事例とサンプル
+
+### 実際の活用場面
+
+**🔒 カスタマーサポートシステム**
+```ts
+// サポートチケットの顧客データを外部システム保存前にマスク
+const supportTicket = `
+顧客: 田中太郎 (tanaka@example.com)
+電話: 090-1234-5678
+問題: カード 4242 4242 4242 4242 の決済が失敗
+`;
+const masked = await redactText(registry, supportTicket);
+console.log(masked);
+```
+**出力結果:**
+```
+顧客: 田中太郎 ([REDACTED:email])
+電話: •••-••••-••••
+問題: カード **** **** **** 4242 の決済が失敗
+```
+
+**📊 分析・ログ処理**
+```ts
+// アプリケーションログから個人情報を除去しつつ構造を保持
+const logEntry = `
+[INFO] ユーザー 192.168.1.100 が account@company.com にアクセス
+[ERROR] 決済失敗: SSN 123-45-6789, カード: 5555-4444-3333-2222
+`;
+const sanitized = await redactText(registry, logEntry);
+console.log(sanitized);
+```
+**出力結果:**
+```
+[INFO] ユーザー [REDACTED:ipv4] が [REDACTED:email] にアクセス
+[ERROR] 決済失敗: [REDACTED:us_ssn], カード: **** **** **** 2222
+```
+
+**🌐 エッジ・CDN処理**
+```ts
+// エッジロケーションでユーザーコンテンツを転送前に前処理
+const userContent = `お問い合わせ: support@acme.com または 080-1234-5678`;
+const stream = new ReadableStream({ /* ユーザー入力 */ })
+  .pipeThrough(createRedactionTransform())
+  .pipeTo(destinationStream);
+```
+
+**🔄 データ移行・ETL**
+```ts
+// データベース移行時に機密フィールドをトークン化
+const customerRecord = {
+  name: "佐藤花子", 
+  email: "sato@example.jp",
+  phone: "070-9876-5432",
+  address: "〒100-0001 東京都千代田区千代田"
+};
+const tokenized = await redactText(registry, JSON.stringify(customerRecord), {
+  rules: { email: { action: 'tokenize' }, phone_jp: { action: 'tokenize' } },
+  hmacKey: 'migration-secret-key-for-tokenization'
+});
+console.log(tokenized);
+```
+**出力結果:**
+```json
+{
+  "name": "佐藤花子",
+  "email": "TKN_EMAIL_f3e2d1c0b9a85674",
+  "phone": "TKN_PHONE_JP_6c7d8e9f0a1b2345",
+  "address": "〒•••-•••• 東京都千代田区千代田"
+}
+```
+
+**🧪 開発・テスト環境**
+```ts
+// 本番データダンプから安全なテストデータを生成
+const prodData = `
+ユーザー: alice@company.com, カード: 4111-1111-1111-1111
+場所: 192.168.100.50, 郵便番号: 〒100-0001
+`;
+const testData = await redactText(registry, prodData);
+console.log(testData);
+```
+**出力結果:**
+```
+ユーザー: [REDACTED:email], カード: **** **** **** 1111
+場所: [REDACTED:ipv4], 郵便番号: 〒•••-••••
+```
+
+**📱 モバイルアプリ・Web API**
+```ts
+// フォーム送信データをサーバー処理前にクライアントサイドで前処理
+const formData = `
+氏名: 山田太郎
+メール: yamada@example.jp  
+電話: 060-1111-2222
+住所: 〒150-0043 東京都渋谷区道玄坂
+`;
+const processed = await redactText(registry, formData, {
+  rules: { 
+    email: { action: 'tokenize' },
+    phone_jp: { action: 'mask' },
+    jp_postal: { action: 'mask' }
+  },
+  hmacKey: 'mobile-app-secret-key-for-tokenization'
+});
+console.log(processed);
+```
+**出力結果:**
+```
+氏名: 山田太郎
+メール: TKN_EMAIL_8a9b0c1d2e3f4567
+電話: •••-••••-••••
+住所: 〒•••-•••• 東京都渋谷区道玄坂
+```
+
+### コードサンプル
 - `node examples/basic-redact.mjs` — 基本的なマスキング
 - `node examples/tokenize.mjs` — HMACベースのトークナイズ
 - `node examples/detect-dump.mjs` — 検出結果のダンプ

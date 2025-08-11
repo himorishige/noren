@@ -27,12 +27,12 @@ function createRedactionTransform(window = 96) {
       const buf = tail + text
       const cut = Math.max(0, buf.length - window)
       const head = buf.slice(0, cut)
-      const red = await redactText(reg, head, { hmacKey: 'dev-secret' })
+      const red = await redactText(reg, head, { hmacKey: 'development-secret-key-for-server-example' })
       controller.enqueue(enc.encode(red))
       tail = buf.slice(cut)
     },
     async flush(controller) {
-      const red = await redactText(reg, tail, { hmacKey: 'dev-secret' })
+      const red = await redactText(reg, tail, { hmacKey: 'development-secret-key-for-server-example' })
       controller.enqueue(new TextEncoder().encode(red))
     },
   })

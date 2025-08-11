@@ -47,7 +47,95 @@ const out = await redactText(reg, input, { hmacKey: 'this-is-a-secure-key-16plus
 console.log(out);
 ```
 
-## Examples
+## Use Cases & Examples
+
+### Real-World Applications
+
+**🔒 Customer Support Systems**
+```ts
+// Mask customer data in support tickets before storing in external systems
+const supportTicket = `
+Customer: John Doe (john.doe@example.com)
+Phone: +1-555-123-4567
+Issue: Payment failed for card 4242 4242 4242 4242
+`;
+const masked = await redactText(registry, supportTicket);
+console.log(masked);
+```
+**Output:**
+```
+Customer: John Doe ([REDACTED:email])
+Phone: [REDACTED:phone_e164]  
+Issue: Payment failed for card **** **** **** 4242
+```
+
+**📊 Analytics & Logging**  
+```ts
+// Remove PII from application logs while preserving structure
+const logEntry = `
+[INFO] User 192.168.1.100 accessed account@company.com 
+[ERROR] Failed payment: SSN 123-45-6789, Card: 5555-4444-3333-2222
+`;
+const sanitized = await redactText(registry, logEntry);
+console.log(sanitized);
+```
+**Output:**
+```
+[INFO] User [REDACTED:ipv4] accessed [REDACTED:email]
+[ERROR] Failed payment: [REDACTED:us_ssn], Card: **** **** **** 2222
+```
+
+**🌐 Edge/CDN Processing**
+```ts
+// Pre-process user content at edge locations before forwarding
+const userContent = `Contact us: support@acme.com or call 080-1234-5678`;
+const stream = new ReadableStream({ /* user input */ })
+  .pipeThrough(createRedactionTransform())
+  .pipeTo(destinationStream);
+```
+
+**🔄 Data Migration & ETL**
+```ts
+// Tokenize sensitive fields during database migrations
+const customerRecord = {
+  name: "田中太郎", 
+  email: "tanaka@example.jp",
+  phone: "090-1234-5678",
+  address: "〒150-0001 東京都渋谷区"
+};
+const tokenized = await redactText(registry, JSON.stringify(customerRecord), {
+  rules: { email: { action: 'tokenize' }, phone_jp: { action: 'tokenize' } },
+  hmacKey: 'migration-secret-key-for-tokenization'
+});
+console.log(tokenized);
+```
+**Output:**
+```json
+{
+  "name": "田中太郎",
+  "email": "TKN_EMAIL_a1b2c3d4e5f67890",
+  "phone": "TKN_PHONE_JP_9f8e7d6c5b4a3210",
+  "address": "〒•••-•••• 東京都渋谷区"
+}
+```
+
+**🧪 Development & Testing**
+```ts
+// Generate safe test data from production dumps
+const prodData = `
+User: alice@company.com, CC: 4111-1111-1111-1111
+Location: 192.168.100.50, ZIP: 94105
+`;
+const testData = await redactText(registry, prodData);
+console.log(testData);
+```
+**Output:**
+```
+User: [REDACTED:email], CC: **** **** **** 1111
+Location: [REDACTED:ipv4], ZIP: [REDACTED:us_zip]
+```
+
+### Code Examples
 - `node examples/basic-redact.mjs` — basic masking
 - `node examples/tokenize.mjs` — HMAC‑based tokenization
 - `node examples/detect-dump.mjs` — dump detections
