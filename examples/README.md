@@ -1,105 +1,105 @@
-# Noren サンプルコード集
+# Noren Code Examples
 
-`Noren`ライブラリの様々な機能やユースケースを実演するサンプルコード集です。
+This directory contains a collection of sample code demonstrating the various features and use cases of the `Noren` library.
 
-## 実行前の準備
+## Prerequisites
 
-すべてのサンプルを実行する前に、プロジェクトのルートディレクトリで依存パッケージのインストールとビルドを完了させてください。
+Before running any of the examples, please install the dependencies and build the project from the root directory.
 
 ```sh
-# 依存パッケージのインストール
+# Install dependencies
 pnpm i
 
-# 全パッケージのビルド
+# Build all packages
 pnpm build
 ```
 
 ---
 
-## 1. 基本的なマスキング処理 (`basic-redact.mjs`)
+## 1. Basic Masking (`basic-redact.mjs`)
 
-**概要:**
-コア機能と日米プラグインを使い、テキストに含まれる個人情報（電話番号、クレジットカード番号など）を基本的なルールでマスク（`****`のような文字列に置換）します。`Noren`の最も基本的な使い方です。
+**Overview:**
+This example demonstrates the most basic usage of `Noren`. It uses the core library and the JP/US plugins to mask personal information (phone numbers, credit card numbers, etc.) in a text string with default rules.
 
-**実行方法:**
+**How to run:**
 ```sh
 node examples/basic-redact.mjs
 ```
 
-## 2. HMACによるトークン化 (`tokenize.mjs`)
+## 2. HMAC-based Tokenization (`tokenize.mjs`)
 
-**概要:**
-個人情報を、元の値と一対一で対応する一意なトークン文字列に変換する「トークン化」のサンプルです。HMACを利用することで、同じ入力値は常に同じトークンに変換されるため、データの匿名性を保ちつつ、ユーザーごとの行動分析などが可能になります。
+**Overview:**
+This example shows how to perform "tokenization," which converts PII into a unique, deterministic token string. By using HMAC, the same input value will always be converted to the same token, allowing for data analysis while maintaining anonymity.
 
-**実行方法:**
+**How to run:**
 ```sh
 node examples/tokenize.mjs
 ```
 
-## 3. 検出されたPIIの確認 (`detect-dump.mjs`)
+## 3. Dumping Detected PII (`detect-dump.mjs`)
 
-**概要:**
-テキストをマスクする代わりに、どの部分がどの種類の個人情報として検出されたかの詳細な一覧を出力します。マスキングルールのデバッグや、検出精度の確認に役立ちます。
+**Overview:**
+Instead of masking the text, this script outputs a detailed list of which parts of the text were identified as what type of PII. This is useful for debugging masking rules and checking detection accuracy.
 
-**実行方法:**
+**How to run:**
 ```sh
 node examples/detect-dump.mjs
 ```
 
-## 4. ストリーム処理 (`stream-redact.mjs`)
+## 4. Stream Processing (`stream-redact.mjs`)
 
-**概要:**
-WHATWG Streams APIを利用して、大きなファイルを効率的に処理するサンプルです。ファイル全体をメモリに読み込むことなく、チャンク（断片）ごとにデータを処理するため、メモリ消費量を抑えることができます。チャンクの境界をまたいで存在する個人情報も正しく検出します。
+**Overview:**
+This example demonstrates how to process large files efficiently using the WHATWG Streams API. It processes data in chunks without loading the entire file into memory, which reduces memory consumption. It correctly detects PII that spans across chunk boundaries.
 
-**実行方法:**
+**How to run:**
 ```sh
-# サンプルテキストファイルを入力として処理し、結果を標準出力に表示
+# Process a sample text file and print the result to standard output
 node examples/stream-redact.mjs examples/basic-sample.txt
 
-# 結果をファイルに保存する場合
+# Save the result to a file
 node examples/stream-redact.mjs examples/basic-sample.txt > redacted-output.txt
 ```
 
-## 5. セキュリティ情報のマスキング (`security-demo.mjs`)
+## 5. Masking Security-related Information (`security-demo.mjs`)
 
-**概要:**
-`@himorishige/noren-plugin-security`プラグインを使用し、HTTPヘッダーに含まれる認証トークン（JWT）、APIキー、Cookieといった、技術的な機密情報をマスキングするサンプルです。
+**Overview:**
+This example uses the `@himorishige/noren-plugin-security` plugin to mask sensitive technical information such as JWTs, API keys, and cookies in HTTP headers.
 
-**実行方法:**
+**How to run:**
 ```sh
 node examples/security-demo.mjs
 ```
 
-## 6. カスタム辞書と動的リロード (`dictionary-demo.mjs`)
+## 6. Custom Dictionaries and Hot-Reloading (`dictionary-demo.mjs`)
 
-**概要:**
-`@himorishige/noren-dict-reloader`を使用し、独自の検出ルールを定義した「カスタム辞書」を読み込むサンプルです。社員番号や製品コードなど、プロジェクト固有の機密情報パターンを定義できます。また、ETagを利用して、サーバーを再起動せずに辞書を動的に更新する「ホットリロード」機能も実演します。
+**Overview:**
+This example demonstrates how to use `@himorishige/noren-dict-reloader` to load custom detection rules from a "custom dictionary." You can define patterns for project-specific sensitive information, such as employee IDs or product codes. It also showcases the "hot-reloading" feature, which uses ETags to dynamically update dictionaries without restarting the server.
 
-サンプル辞書は `examples/dictionary-files/` にあります。
+Sample dictionary files are located in `examples/dictionary-files/`.
 
-**実行方法:**
+**How to run:**
 ```sh
 node examples/dictionary-demo.mjs
 ```
 
-## 7. Webサーバーとの連携 (Hono) (`hono-server.mjs`)
+## 7. Web Server Integration (Hono) (`hono-server.mjs`)
 
-**概要:**
-軽量なWebフレームワーク`Hono`と連携し、実際に動作するAPIサーバーを構築するサンプルです。`/redact`エンドポイントにPOSTされたリクエストボディをストリーム処理し、個人情報をマスクした結果をレスポンスとして返します。
+**Overview:**
+This example shows how to build a working API server using the lightweight web framework `Hono`. It creates a `/redact` endpoint that processes a POST request body as a stream and returns the result with PII redacted.
 
-**実行前の準備:**
-このサンプルを実行するには、`Hono`のパッケージを追加インストールする必要があります。
+**Prerequisites:**
+You need to install `Hono` packages to run this example.
 ```sh
 pnpm add hono @hono/node-server
 ```
 
-**実行方法:**
-1.  まず、以下のコマンドでAPIサーバーを起動します。
+**How to run:**
+1.  First, start the API server with the following command:
     ```sh
     node examples/hono-server.mjs
     # > Listening on http://localhost:8787
     ```
-2.  次に、別のターミナルを開き、`curl`コマンドでサーバーにリクエストを送信します。
+2.  Next, open another terminal and send a request to the server using `curl`.
     ```sh
     curl -sS http://localhost:8787/redact -X POST --data-binary @examples/basic-sample.txt
     ```

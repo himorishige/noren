@@ -1,22 +1,22 @@
 # @himorishige/noren-plugin-security
 
-Noren PIIマスキングライブラリのプラグインで、APIキー、JWT、CookieといったWebアプリケーションのセキュリティに関連する機密情報の検出とマスキングに特化しています。
+A plugin for the Noren PII masking library that specializes in detecting and masking sensitive information related to web application security, such as API keys, JWTs, and cookies.
 
-## 主な機能
+## Features
 
-- **多様なトークン検出**: JWT（JSON Web Token）、プレフィックス付きAPIキー（`sk_`など）、セッションID、UUIDなどを構造的に検出します。
-- **HTTPヘッダー対応**: `Authorization`や`X-API-Key`などの機密情報を含むHTTPヘッダーを丸ごと秘匿化します。
-- **Cookieの選択的マスキング**: `Cookie`および`Set-Cookie`ヘッダーを解析し、事前に定義した許可リスト（Allowlist）に含まれないCookieのみを安全にマスクします。ワイルドカード（`*`）も利用可能です。
-- **URLパラメータのスキャン**: `access_token`や`client_secret`など、URLに含まれがちな機密パラメータを検出します。
-- **柔軟な設定**: `createSecurityMaskers`関数を通じて、Cookieの許可リストなどの挙動をカスタマイズできます。
+- **Diverse Token Detection**: Structurally detects JWTs (JSON Web Tokens), prefixed API keys (`sk_`, etc.), session IDs, and UUIDs.
+- **HTTP Header Support**: Redacts entire sensitive HTTP headers like `Authorization` and `X-API-Key`.
+- **Selective Cookie Masking**: Parses `Cookie` and `Set-Cookie` headers and safely masks only the cookies not included in a predefined allowlist. Wildcards (`*`) are supported.
+- **URL Parameter Scanning**: Detects sensitive parameters often found in URLs, such as `access_token` and `client_secret`.
+- **Flexible Configuration**: The `createSecurityMaskers` function allows you to customize behavior, such as the cookie allowlist.
 
-## インストール
+## Installation
 
 ```sh
 pnpm add @himorishige/noren-plugin-security @himorishige/noren-core
 ```
 
-## 基本的な使い方
+## Basic Usage
 
 ```typescript
 import { Registry, redactText } from '@himorishige/noren-core';
@@ -27,7 +27,7 @@ const registry = new Registry({
   contextHints: ['Authorization', 'Cookie', 'Bearer', 'token', 'API-Key'],
 });
 
-// セキュリティプラグインを登録
+// Register the security plugin
 registry.use(securityPlugin.detectors, securityPlugin.maskers);
 
 const httpLog = `
@@ -47,40 +47,40 @@ Cookie: session_id=ab****56; theme=dark
 */
 ```
 
-### Cookieの許可リスト機能
+### Cookie Allowlist Feature
 
-特定のCookie（例: UI設定など）をマスキング対象から除外できます。
+You can exclude specific cookies (e.g., for UI preferences) from being masked.
 
 ```typescript
 import { createSecurityMaskers } from '@himorishige/noren-plugin-security';
 
-// 許可するCookie名を指定して、カスタムマスカーを作成
+// Create custom maskers with an allowlist for specific cookie names
 const customMaskers = createSecurityMaskers({
-  cookieAllowlist: ['theme', 'lang', 'consent_*'], // ワイルドカードも利用可能
+  cookieAllowlist: ['theme', 'lang', 'consent_*'], // Wildcards are supported
 });
 
-// カスタムマスカーを登録
+// Register the custom maskers
 registry.use(securityPlugin.detectors, customMaskers);
 
 const cookieHeader = 'Cookie: session_token=secret123; theme=dark; consent_analytics=true';
 const result = await redactText(registry, cookieHeader);
 
-// 結果: "Cookie: session_token=se****23; theme=dark; consent_analytics=true"
-// 'theme'と'consent_analytics'は許可リストに含まれるため、マスクされない
+// Result: "Cookie: session_token=se****23; theme=dark; consent_analytics=true"
+// 'theme' and 'consent_analytics' are not masked because they are in the allowlist.
 console.log(result);
 ```
 
-## 検出対象
+## Detected Types
 
-| PIIタイプ | 説明 | リスク |
-| :--- | :--- | :--- |
-| `sec_jwt_token` | JWT (JSON Web Token) | High |
-| `sec_api_key` | APIキー (`sk_`, `pk_` 等) | High |
-| `sec_auth_header` | `Authorization` ヘッダー | High |
-| `sec_session_id` | セッションID (`session=...`) | High |
-| `sec_url_token` | URLパラメータ内のトークン | High |
-| `sec_client_secret` | OAuthクライアントシークレット | High |
-| `sec_cookie` | Cookieの値 | Medium |
-| `sec_set_cookie` | `Set-Cookie` の値 | Medium |
-| `sec_uuid_token` | UUID形式のトークン | Medium |
-| `sec_hex_token` | 長い16進数文字列のトークン | Medium |
+| PII Type          | Description                     | Risk   |
+| :---------------- | :------------------------------ | :----- |
+| `sec_jwt_token`   | JWT (JSON Web Token)            | High   |
+| `sec_api_key`     | API Key (`sk_`, `pk_`, etc.)    | High   |
+| `sec_auth_header` | `Authorization` Header          | High   |
+| `sec_session_id`  | Session ID (`session=...`)      | High   |
+| `sec_url_token`   | Token in URL parameter          | High   |
+| `sec_client_secret`| OAuth Client Secret            | High   |
+| `sec_cookie`      | Cookie value                    | Medium |
+| `sec_set_cookie`  | `Set-Cookie` value              | Medium |
+| `sec_uuid_token`  | UUID-formatted token            | Medium |
+| `sec_hex_token`   | Long hexadecimal string token   | Medium |

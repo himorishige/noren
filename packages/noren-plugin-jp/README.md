@@ -1,51 +1,51 @@
 # @himorishige/noren-plugin-jp
 
-Noren PIIマスキングライブラリのプラグインで、日本の個人情報（PII）に特化した検出器とマスカーを提供します。
+A plugin for the Noren PII masking library that provides detectors and maskers specific to Japanese Personally Identifiable Information (PII).
 
-## 主な機能
+## Features
 
-- **日本固有のPII検出**: 日本で利用される主要な個人情報を検出します。
-  - **電話番号**: 携帯電話（090/080/070/060）、市外局番から始まる固定電話、国際電話番号（+81）
-  - **郵便番号**: `123-4567` や `1234567` といった形式
-  - **マイナンバー**: 12桁の個人番号
-- **文脈に応じた高精度な検出**: `「電話」`、`「〒」`、`「マイナンバー」`といった周辺のキーワード（コンテキストヒント）を手がかりに、誤検出を減らし、検出精度を高めます。
-- **適切なマスキング**: 各PIIの特性に応じたマスキング処理を提供します。（例: `〒123-4567` → `〒•••-••••`）
+- **Detection of Japan-Specific PII**: Detects major types of PII used in Japan.
+  - **Phone Numbers**: Mobile (090/080/070/060), landlines with area codes, and international format (+81).
+  - **Postal Codes**: Formats like `123-4567` and `1234567`.
+  - **My Number**: 12-digit individual identification numbers.
+- **High-Accuracy Contextual Detection**: Improves detection accuracy and reduces false positives by using surrounding keywords (context hints) like `"電話"` (phone), `"〒"` (postal mark), and `"マイナンバー"` (My Number).
+- **Appropriate Masking**: Provides masking appropriate for each PII type (e.g., `〒123-4567` → `〒•••-••••`).
 
-## インストール
+## Installation
 
 ```sh
 pnpm add @himorishige/noren-plugin-jp @himorishige/noren-core
 ```
 
-## 基本的な使い方
+## Basic Usage
 
 ```typescript
 import { Registry, redactText } from '@himorishige/noren-core';
 import * as jpPlugin from '@himorishige/noren-plugin-jp';
 
-// Registryを初期化
+// Initialize the Registry
 const registry = new Registry({
   defaultAction: 'mask',
-  // 検出精度向上のため、関連キーワードをヒントとして設定
+  // Set relevant keywords as hints to improve detection accuracy
   contextHints: ['電話', '住所', '〒', 'マイナンバー'],
 });
 
-// 日本向けプラグインの検出器とマスカーを登録
+// Register the detectors and maskers from the Japan plugin
 registry.use(jpPlugin.detectors, jpPlugin.maskers);
 
-const inputText = '私の電話番号は090-1234-5678で、住所は〒150-0001です。';
+const inputText = 'My phone number is 090-1234-5678, and my address is 〒150-0001.';
 
-// 秘匿化処理を実行
+// Execute the redaction process
 const redactedText = await redactText(registry, inputText);
 
 console.log(redactedText);
-// 出力: 私の電話番号は•••-••••-••••で、住所は〒•••-••••です。
+// Output: My phone number is •••-••••-••••, and my address is 〒•••-••••.
 ```
 
-## 検出対象
+## Detected Types
 
-| PIIタイプ      | 説明           | マスク例 (`mask`) |
-| :------------- | :------------- | :---------------- |
-| `phone_jp`     | 日本の電話番号 | `•••-••••-••••`   |
-| `jp_postal`    | 日本の郵便番号 | `〒•••-••••`      |
-| `jp_my_number` | マイナンバー   | `[REDACTED:MYNUMBER]` |
+| PII Type       | Description          | Masking Example (`mask`) |
+| :------------- | :------------------- | :----------------------- |
+| `phone_jp`     | Japanese phone number| `•••-••••-••••`          |
+| `jp_postal`    | Japanese postal code | `〒•••-••••`             |
+| `jp_my_number` | My Number            | `[REDACTED:MYNUMBER]`    |
