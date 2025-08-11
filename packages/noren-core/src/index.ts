@@ -253,7 +253,7 @@ function defaultMask(h: Hit, keepLast4?: boolean) {
 const enc = new TextEncoder()
 async function importHmacKey(secret: string | CryptoKey) {
   if (typeof secret !== 'string') return secret
-  
+
   // Ensure minimum key length for security
   if (secret.length < 16) {
     throw new Error('HMAC key must be at least 16 characters long')
