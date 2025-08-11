@@ -1,1 +1,1 @@
-export * from './hotreload';
+export * from './hotreload'
