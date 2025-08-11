@@ -42,6 +42,9 @@ describe('noren-plugin-jp detectors', () => {
 
     const hitsCtx = runDetect(`${text} マイナンバーあり`)
     assert.ok(hitsCtx.find((h) => h.type === 'jp_my_number'))
-    assert.equal(maskers.jp_my_number({ value: '123456789012' } as unknown as Hit), '[REDACTED:MYNUMBER]')
+    assert.equal(
+      maskers.jp_my_number({ value: '123456789012' } as unknown as Hit),
+      '[REDACTED:MYNUMBER]',
+    )
   })
 })

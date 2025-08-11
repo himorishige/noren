@@ -28,7 +28,12 @@ describe('PolicyDictReloader basic', () => {
       }
       if (url.startsWith(MANIFEST_URL)) {
         return new Response(
-          JSON.stringify({ dicts: [{ id: 'd1', url: DICT1_URL }, { id: 'd2', url: DICT2_URL }] }),
+          JSON.stringify({
+            dicts: [
+              { id: 'd1', url: DICT1_URL },
+              { id: 'd2', url: DICT2_URL },
+            ],
+          }),
           { status: 200, headers: { etag: 'W/"m1"' } },
         )
       }
