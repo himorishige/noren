@@ -46,6 +46,59 @@ console.log(redactedText);
 // 出力: 連絡先: TKN_EMAIL_5de1e4e7a3b4b5c6, カード番号: **** **** **** 4242
 ```
 
+## 本番環境での環境変数の利用
+
+本番環境では、HMACキーを環境変数に保存することを推奨します：
+
+```typescript
+import { Registry, redactText } from '@himorishige/noren-core';
+
+// .env ファイル:
+// NOREN_HMAC_KEY=your-32-character-or-longer-secret-key-here-for-production
+
+const registry = new Registry({
+  defaultAction: 'tokenize',
+  hmacKey: process.env.NOREN_HMAC_KEY, // 環境変数から読み込み
+});
+
+const inputText = '連絡先: user@example.com, カード: 4242-4242-4242-4242';
+const redactedText = await redactText(registry, inputText);
+
+console.log(redactedText);
+// 出力: 連絡先: TKN_EMAIL_abc123def456789, カード: TKN_CREDIT_CARD_789abc123def456
+```
+
+### セキュリティのベストプラクティス
+
+- **キーの長さ**: HMACキーは最低32文字以上を使用する（必須要件）
+- **環境変数**: ソースコードにキーをハードコードしない
+- **キーローテーション**: 本番環境では定期的にHMACキーを更新する
+- **環境分離**: 開発・ステージング・本番環境で異なるキーを使用する
+
+### Edgeランタイムサポート
+
+ライブラリはCloudflare WorkersやVercel Edge Functionsなどのエッジ環境でも動作します：
+
+```typescript
+// Cloudflare Workers
+export default {
+  async fetch(request, env) {
+    const registry = new Registry({
+      hmacKey: env.NOREN_HMAC_KEY, // Cloudflareの環境変数
+    });
+    // ... 処理ロジック
+  }
+};
+
+// Vercel Edge Functions
+export default async function handler(request) {
+  const registry = new Registry({
+    hmacKey: process.env.NOREN_HMAC_KEY, // Vercelの環境変数
+  });
+  // ... 処理ロジック
+}
+```
+
 ## API概要
 
 - `Registry`: 検出器、マスカー、マスキングポリシーを一元管理する中央クラス。

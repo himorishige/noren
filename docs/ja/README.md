@@ -86,6 +86,32 @@
     // 出力: 〒•••-•••• TEL •••-••••-•••• / SSN •••-••-•••• / Card: **** **** **** 4242 / [REDACTED:AUTH]
     ```
 
+4.  **本番環境での環境変数利用**
+
+    本番環境では、HMACキーを環境変数に安全に保存してください：
+
+    ```ts
+    // .env ファイル:
+    // NOREN_HMAC_KEY=your-32-character-or-longer-secret-key-here-for-production
+
+    const reg = new Registry({
+      defaultAction: 'tokenize',
+      hmacKey: process.env.NOREN_HMAC_KEY, // 環境変数から読み込み
+    });
+
+    const input = 'Email: user@example.com, Card: 4242 4242 4242 4242';
+    const out = await redactText(reg, input);
+    console.log(out);
+    // 出力: Email: TKN_EMAIL_abc123def456789, Card: TKN_CREDIT_CARD_789def456123abc
+    ```
+
+    **セキュリティのベストプラクティス:**
+    - HMACキーは最低32文字以上を使用する（必須要件）
+    - ソースコードにシークレットをハードコードしない
+    - 開発・ステージング・本番環境で異なるキーを使用する
+    - 本番環境では定期的にキーをローテーションする
+    ```
+
 ## ユースケースと実践例
 
 `Noren`は、様々なシーンで機密データを保護するために活用できます。

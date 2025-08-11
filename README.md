@@ -90,6 +90,32 @@ It is designed to run in various JavaScript environments that support web standa
     // Output: 〒•••-•••• TEL •••-••••-•••• / SSN •••-••-•••• / Card: **** **** **** 4242 / [REDACTED:AUTH]
     ```
 
+4.  **Production Usage with Environment Variables**
+
+    For production environments, store the HMAC key securely in environment variables:
+
+    ```ts
+    // .env file:
+    // NOREN_HMAC_KEY=your-32-character-or-longer-secret-key-here-for-production
+
+    const reg = new Registry({
+      defaultAction: 'tokenize',
+      hmacKey: process.env.NOREN_HMAC_KEY, // Load from environment variable
+    });
+
+    const input = 'Email: user@example.com, Card: 4242 4242 4242 4242';
+    const out = await redactText(reg, input);
+    console.log(out);
+    // Output: Email: TKN_EMAIL_abc123def456789, Card: TKN_CREDIT_CARD_789def456123abc
+    ```
+
+    **Security Best Practices:**
+    - Use at least 32 characters for HMAC keys (minimum requirement)
+    - Never hardcode secrets in source code
+    - Use different keys for development, staging, and production
+    - Rotate keys regularly in production environments
+    ```
+
 ## Use Cases & Examples
 
 `Noren` can be used to protect sensitive data in various scenarios.

@@ -34,5 +34,5 @@ JP Phone: 080-9999-8888
 US Phone: +1 650 555 0000
 `
 
-const out = await redactText(reg, input, { hmacKey: 'development-secret-key-for-tokenize-example' })
+const out = await redactText(reg, input, { hmacKey: 'development-secret-key-for-tokenize-example-32-chars' })
 console.log(out)
