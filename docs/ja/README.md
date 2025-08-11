@@ -189,12 +189,85 @@ sk_live_****
 Cookie: se*****ret; theme=dark; user_pref=enabled
 ```
 
+**📖 カスタム辞書・ポリシー管理**
+```ts
+// ドメイン固有のPII検出用カスタム辞書とホットリロード機能を使用
+import { PolicyDictReloader } from '@himorishige/noren-dict-reloader';
+
+// コンパイル関数：ポリシー + 辞書を Registry に変換
+function compile(policy, dicts) {
+  const registry = new Registry(policy);
+  
+  // 各辞書を処理してカスタム検出器・マスカーを作成
+  for (const dict of dicts) {
+    const { entries = [] } = dict;
+    const customDetectors = [];
+    const customMaskers = {};
+    
+    for (const entry of entries) {
+      // 辞書エントリごとに検出器を作成
+      if (entry.pattern) {
+        customDetectors.push({
+          id: `custom.${entry.type}`,
+          match: ({ src, push }) => {
+            const regex = new RegExp(entry.pattern, 'gi');
+            for (const m of src.matchAll(regex)) {
+              if (m.index !== undefined) {
+                push({
+                  type: entry.type,
+                  start: m.index,
+                  end: m.index + m[0].length,
+                  value: m[0],
+                  risk: entry.risk || 'medium'
+                });
+              }
+            }
+          }
+        });
+        // カスタムマスカーを作成
+        customMaskers[entry.type] = () => `[REDACTED:${entry.type.toUpperCase()}]`;
+      }
+    }
+    
+    registry.use(customDetectors, customMaskers);
+  }
+  
+  return registry;
+}
+
+// ETagベースホットリロード対応の辞書リローダーをセットアップ
+const reloader = new PolicyDictReloader({
+  policyUrl: 'https://example.com/policy.json',
+  dictManifestUrl: 'https://example.com/manifest.json',
+  compile,
+  onSwap: (newRegistry, changed) => {
+    console.log('辞書が更新されました:', changed);
+    // 以降のマスキング処理で newRegistry を使用
+  },
+  onError: (error) => console.error('リロード失敗:', error)
+});
+
+await reloader.start();
+const registry = reloader.getCompiled();
+
+// 辞書強化版registryを使用
+const text = '社員ID: EMP12345、プロジェクトコード: PROJ-ALPHA-2024';
+const redacted = await redactText(registry, text);
+console.log(redacted); // 社員ID: [REDACTED:EMPLOYEE_ID]、プロジェクトコード: [REDACTED:PROJECT_CODE]
+```
+
+**辞書ファイル構造:**
+- **manifest.json**: `{"dicts": [{"id": "company", "url": "https://example.com/company-dict.json"}]}`
+- **policy.json**: `{"defaultAction": "mask", "rules": {"employee_id": {"action": "tokenize"}}}`
+- **company-dict.json**: `{"entries": [{"pattern": "EMP\\d{5}", "type": "employee_id", "risk": "high"}]}`
+
 ### コードサンプル
 - `node examples/basic-redact.mjs` — 基本的なマスキング
 - `node examples/tokenize.mjs` — HMACベースのトークナイズ
 - `node examples/detect-dump.mjs` — 検出結果のダンプ
 - `node examples/stream-redact.mjs` — ストリームでの赤入れ処理
 - `node examples/security-demo.mjs` — securityプラグインによるHTTPヘッダー・トークン処理
+- `node examples/dictionary-demo.mjs` — カスタム辞書とホットリロード機能
 - `pnpm add -w -D hono @hono/node-server && node examples/hono-server.mjs` — Honoエンドポイント（`/redact`）
 
 ## マネージド代替（推奨）

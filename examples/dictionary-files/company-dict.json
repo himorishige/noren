@@ -1,0 +1,34 @@
+{
+  "entries": [
+    {
+      "pattern": "EMP\\d{5}",
+      "type": "employee_id",
+      "risk": "high",
+      "description": "Employee ID format: EMP followed by 5 digits"
+    },
+    {
+      "pattern": "PROJ-[A-Z]+-\\d{4}",
+      "type": "project_code",
+      "risk": "medium",
+      "description": "Project code format: PROJ-NAME-YEAR"
+    },
+    {
+      "pattern": "社員番号[：:]?\\s*[A-Z0-9]{6,}",
+      "type": "employee_id",
+      "risk": "high",
+      "description": "Japanese employee number format"
+    },
+    {
+      "pattern": "プロジェクト[：:]?\\s*[A-Z0-9-]{8,}",
+      "type": "project_code",
+      "risk": "medium",
+      "description": "Japanese project code format"
+    },
+    {
+      "pattern": "部署[：:]?\\s*[A-Z]{2,4}-\\d{2}",
+      "type": "department_code",
+      "risk": "low",
+      "description": "Department code format"
+    }
+  ]
+}

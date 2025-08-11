@@ -162,12 +162,85 @@ sk_live_****
 Cookie: se*****ret; theme=dark; user_pref=enabled
 ```
 
+**📖 Custom Dictionary & Policy Management**
+```ts
+// Use custom dictionaries for domain-specific PII detection with hot reloading
+import { PolicyDictReloader } from '@himorishige/noren-dict-reloader';
+
+// Compile function: converts policy + dictionaries into a Registry
+function compile(policy, dicts) {
+  const registry = new Registry(policy);
+  
+  // Process each dictionary to create custom detectors/maskers
+  for (const dict of dicts) {
+    const { entries = [] } = dict;
+    const customDetectors = [];
+    const customMaskers = {};
+    
+    for (const entry of entries) {
+      // Create detector for each dictionary entry
+      if (entry.pattern) {
+        customDetectors.push({
+          id: `custom.${entry.type}`,
+          match: ({ src, push }) => {
+            const regex = new RegExp(entry.pattern, 'gi');
+            for (const m of src.matchAll(regex)) {
+              if (m.index !== undefined) {
+                push({
+                  type: entry.type,
+                  start: m.index,
+                  end: m.index + m[0].length,
+                  value: m[0],
+                  risk: entry.risk || 'medium'
+                });
+              }
+            }
+          }
+        });
+        // Create custom masker
+        customMaskers[entry.type] = () => `[REDACTED:${entry.type.toUpperCase()}]`;
+      }
+    }
+    
+    registry.use(customDetectors, customMaskers);
+  }
+  
+  return registry;
+}
+
+// Set up dictionary reloader with ETag-based hot reloading
+const reloader = new PolicyDictReloader({
+  policyUrl: 'https://example.com/policy.json',
+  dictManifestUrl: 'https://example.com/manifest.json',
+  compile,
+  onSwap: (newRegistry, changed) => {
+    console.log('Dictionary updated:', changed);
+    // Use newRegistry for subsequent redactions
+  },
+  onError: (error) => console.error('Reload failed:', error)
+});
+
+await reloader.start();
+const registry = reloader.getCompiled();
+
+// Use the dictionary-enhanced registry
+const text = 'Employee ID: EMP12345, Project Code: PROJ-ALPHA-2024';
+const redacted = await redactText(registry, text);
+console.log(redacted); // Employee ID: [REDACTED:EMPLOYEE_ID], Project Code: [REDACTED:PROJECT_CODE]
+```
+
+**Dictionary File Structure:**
+- **manifest.json**: `{"dicts": [{"id": "company", "url": "https://example.com/company-dict.json"}]}`
+- **policy.json**: `{"defaultAction": "mask", "rules": {"employee_id": {"action": "tokenize"}}}`
+- **company-dict.json**: `{"entries": [{"pattern": "EMP\\d{5}", "type": "employee_id", "risk": "high"}]}`
+
 ### Code Examples
 - `node examples/basic-redact.mjs` — basic masking
 - `node examples/tokenize.mjs` — HMAC‑based tokenization
 - `node examples/detect-dump.mjs` — dump detections
 - `node examples/stream-redact.mjs` — streaming redaction
 - `node examples/security-demo.mjs` — security plugin with HTTP headers & tokens
+- `node examples/dictionary-demo.mjs` — custom dictionaries with hot reloading
 - `pnpm add -w -D hono @hono/node-server && node examples/hono-server.mjs` — Hono endpoint (`/redact`)
 
 ## Managed alternatives (recommended)

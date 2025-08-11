@@ -1,0 +1,40 @@
+{
+  "entries": [
+    {
+      "pattern": "ACC-\\d{8,12}",
+      "type": "account_number",
+      "risk": "high",
+      "description": "Account number format"
+    },
+    {
+      "pattern": "CID[：:]?\\s*[A-Z0-9]{10,}",
+      "type": "customer_id",
+      "risk": "high",
+      "description": "Customer ID format"
+    },
+    {
+      "pattern": "口座番号[：:]?\\s*\\d{7,8}",
+      "type": "bank_account",
+      "risk": "high",
+      "description": "Japanese bank account number"
+    },
+    {
+      "pattern": "顧客番号[：:]?\\s*[A-Z0-9]{8,}",
+      "type": "customer_id",
+      "risk": "high",
+      "description": "Japanese customer number"
+    },
+    {
+      "pattern": "取引番号[：:]?\\s*[A-Z0-9]{12,}",
+      "type": "transaction_id",
+      "risk": "medium",
+      "description": "Transaction ID format"
+    },
+    {
+      "pattern": "IBAN[：:]?\\s*[A-Z]{2}\\d{2}[A-Z0-9]{4}\\d{7}[A-Z0-9]{0,16}",
+      "type": "iban",
+      "risk": "high",
+      "description": "International Bank Account Number"
+    }
+  ]
+}
