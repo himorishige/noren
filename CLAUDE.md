@@ -51,11 +51,32 @@ pnpm format:check # Check formatting without changing files
 pnpm check
 ```
 
+### Run examples
+```sh
+# Basic PII redaction example
+node examples/basic-redact.mjs
+
+# Tokenization example
+node examples/tokenize.mjs
+
+# Stream processing example
+node examples/stream-redact.mjs examples/basic-sample.txt
+
+# Security plugin example
+node examples/security-demo.mjs
+
+# Custom dictionary example
+node examples/dictionary-demo.mjs
+
+# Web server example (requires hono installation)
+node examples/hono-server.mjs
+```
+
 ## Architecture
 
 ### Monorepo Structure (pnpm workspaces)
 
-The project uses pnpm workspaces with four main packages:
+The project uses pnpm workspaces with five main packages:
 
 1. **@himorishige/noren-core** (`packages/noren-core/`)
    - Core detection logic for global PII types (email, IP, credit card)
@@ -71,7 +92,12 @@ The project uses pnpm workspaces with four main packages:
    - US-specific detectors: phone numbers, ZIP codes, SSN
    - US context hints and masking patterns
 
-4. **@himorishige/noren-dict-reloader** (`packages/noren-dict-reloader/`)
+4. **@himorishige/noren-plugin-security** (`packages/noren-plugin-security/`)
+   - Security-focused detectors: JWT tokens, API keys, HTTP headers, cookies
+   - Technical credential detection and masking
+   - Cookie allowlist functionality for selective masking
+
+5. **@himorishige/noren-dict-reloader** (`packages/noren-dict-reloader/`)
    - ETag-based policy and dictionary hot-reloading
    - Fetch API integration for dynamic updates
 
@@ -120,6 +146,18 @@ Updated to support all current Japanese mobile numbers:
 ### IPv6 Detection
 Enhanced IPv6 pattern to support compressed notation (`::`) and mixed formats.
 
+## Examples and Use Cases
+
+The `examples/` directory contains comprehensive samples demonstrating various use cases:
+
+- **basic-redact.mjs**: Basic PII masking with core and regional plugins
+- **tokenize.mjs**: HMAC-based tokenization for data anonymization
+- **detect-dump.mjs**: Detailed PII detection analysis for debugging
+- **stream-redact.mjs**: Efficient streaming processing for large files
+- **security-demo.mjs**: HTTP header and API token redaction
+- **dictionary-demo.mjs**: Custom dictionaries with hot-reloading
+- **hono-server.mjs**: Web server integration example
+
 ## Development Notes
 
 - The project is in **alpha** status - interfaces may change
@@ -128,3 +166,6 @@ Enhanced IPv6 pattern to support compressed notation (`::`) and mixed formats.
 - Keep core lightweight, push complexity to plugins when possible
 - All optimizations maintain backward compatibility
 - Benchmark tests are available in `packages/noren-core/test/benchmark.test.ts`
+- Security plugin enables protection of technical credentials (JWT, API keys, cookies)
+- Custom dictionary support allows for company-specific PII patterns
+- ETag-based hot-reloading enables runtime policy updates
