@@ -43,15 +43,26 @@ export class Registry {
   private detectors: Detector[] = []
   private maskers = new Map<PiiType, Masker>()
   private base: Policy
+  private contextHintsSet: Set<string>
+
   constructor(base: Policy) {
     this.base = base
+    this.contextHintsSet = new Set(base.contextHints ?? [])
   }
 
   use(detectors: Detector[] = [], maskers: Record<string, Masker> = {}, ctx: string[] = []) {
+    // Add detectors and sort immediately
     for (const d of detectors) this.detectors.push(d)
+    this.detectors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
+
+    // Add maskers
     for (const [k, m] of Object.entries(maskers)) this.maskers.set(k as PiiType, m)
-    if (ctx.length)
-      this.base.contextHints = Array.from(new Set([...(this.base.contextHints ?? []), ...ctx]))
+
+    // Update context hints using Set
+    if (ctx.length) {
+      for (const hint of ctx) this.contextHintsSet.add(hint)
+      this.base.contextHints = Array.from(this.contextHintsSet)
+    }
   }
 
   getPolicy() {
@@ -64,14 +75,21 @@ export class Registry {
   async detect(raw: string, ctxHints = this.base.contextHints ?? []) {
     const src = normalize(raw)
     const hits: Hit[] = []
+
+    // Create optimized context check function
+    const ctxHintsForCheck = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
     const u: DetectUtils = {
       src,
-      hasCtx: (ws) => (ws ?? ctxHints).some((w) => src.includes(w)),
+      hasCtx: (ws) => {
+        const words = ws ?? ctxHintsForCheck
+        return words.some((w) => src.includes(w))
+      },
       push: (h) => hits.push(h),
     }
+
     builtinDetect(u)
-    const sorted = [...this.detectors].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
-    for (const d of sorted) await d.match(u)
+    // Use pre-sorted detectors
+    for (const d of this.detectors) await d.match(u)
 
     // 区間マージ（重なりは長い方優先）
     hits.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start))
@@ -116,48 +134,95 @@ export async function redactText(reg: Registry, input: string, override: Policy 
 }
 
 // ---- Helpers ----
+// Pre-compiled regex patterns for better performance
+const NORMALIZE_PATTERNS = {
+  dashVariants: /[\u2212\u2010-\u2015\u30FC]/g,
+  ideographicSpace: /\u3000/g,
+  multipleSpaces: /[ \t　]+/g,
+}
+
+const DETECTION_PATTERNS = {
+  email: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,
+  ipv4: /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g,
+  ipv6: /\b(?:(?:[0-9A-F]{1,4}:){7}[0-9A-F]{1,4}|(?:[0-9A-F]{1,4}:)*::(?:[0-9A-F]{1,4}:)*[0-9A-F]{1,4})\b/gi,
+  mac: /\b(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi,
+  e164: /\+?\d[\d\-\s()]{8,15}/g,
+  creditCardChunk: /(?:\d[ -]?){13,19}/g,
+}
+
 export const normalize = (s: string) =>
   s
     .normalize('NFKC')
-    .replace(/[\u2212\u2010-\u2015\u30FC]/g, '-')
-    .replace(/\u3000/g, ' ')
-    .replace(/[ \t　]+/g, ' ')
+    .replace(NORMALIZE_PATTERNS.dashVariants, '-')
+    .replace(NORMALIZE_PATTERNS.ideographicSpace, ' ')
+    .replace(NORMALIZE_PATTERNS.multipleSpaces, ' ')
     .trim()
 
 function builtinDetect(u: DetectUtils) {
-  // email
-  const emailRe = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi
-  for (const m of u.src.matchAll(emailRe)) u.push(hit('email', m as RegExpExecArray, 'medium'))
+  // Helper function for type-safe hit creation
+  const createHit = (type: PiiType, match: RegExpMatchArray, risk: Hit['risk']): Hit | null => {
+    if (match.index === undefined) return null
+    return {
+      type,
+      start: match.index,
+      end: match.index + match[0].length,
+      value: match[0],
+      risk,
+    }
+  }
 
-  // ipv4/ipv6/mac
-  const ipv4 = /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g
-  const ipv6 = /\b(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}\b/gi
-  const mac = /\b(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi
-  for (const re of [ipv4, ipv6, mac]) {
-    const type: PiiType = re === mac ? 'mac' : re === ipv6 ? 'ipv6' : 'ipv4'
-    for (const m of u.src.matchAll(re)) u.push(hit(type, m as RegExpExecArray, 'low'))
+  // email
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.email)) {
+    const hit = createHit('email', m, 'medium')
+    if (hit) u.push(hit)
+  }
+
+  // ipv4
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv4)) {
+    const hit = createHit('ipv4', m, 'low')
+    if (hit) u.push(hit)
+  }
+
+  // ipv6
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv6)) {
+    const hit = createHit('ipv6', m, 'low')
+    if (hit) u.push(hit)
+  }
+
+  // mac
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.mac)) {
+    const hit = createHit('mac', m, 'low')
+    if (hit) u.push(hit)
   }
 
   // phone_e164（弱）—文脈で強め
-  const e164 = /\+?\d[\d\-\s()]{8,15}/g
-  for (const m of u.src.matchAll(e164)) u.push(hit('phone_e164', m as RegExpExecArray, 'medium'))
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.e164)) {
+    const hit = createHit('phone_e164', m, 'medium')
+    if (hit) u.push(hit)
+  }
 
   // credit card（Luhn）
-  const chunk = /(?:\d[ -]?){13,19}/g
-  for (const m of u.src.matchAll(chunk)) {
+  for (const m of u.src.matchAll(DETECTION_PATTERNS.creditCardChunk)) {
     const digits = m[0].replace(/[ -]/g, '')
-    if (digits.length >= 13 && digits.length <= 19 && luhn(digits))
-      u.push(hit('credit_card', m as RegExpExecArray, 'high'))
+    if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
+      const hit = createHit('credit_card', m, 'high')
+      if (hit) u.push(hit)
+    }
   }
 }
 
-const hit = (type: PiiType, m: RegExpExecArray, risk: Hit['risk']): Hit => ({
-  type,
-  start: m.index,
-  end: m.index + m[0].length,
-  value: m[0],
-  risk,
-})
+// Maintaining original hit function for backwards compatibility
+// This function is used in external packages or user-defined plugins
+function hit(type: PiiType, m: RegExpMatchArray, risk: Hit['risk']): Hit | null {
+  if (m.index === undefined) return null
+  return {
+    type,
+    start: m.index,
+    end: m.index + m[0].length,
+    value: m[0],
+    risk,
+  }
+}
 
 function luhn(d: string) {
   let sum = 0
@@ -188,6 +253,12 @@ function defaultMask(h: Hit, keepLast4?: boolean) {
 const enc = new TextEncoder()
 async function importHmacKey(secret: string | CryptoKey) {
   if (typeof secret !== 'string') return secret
+
+  // Ensure minimum key length for security
+  if (secret.length < 16) {
+    throw new Error('HMAC key must be at least 16 characters long')
+  }
+
   return crypto.subtle.importKey(
     'raw',
     enc.encode(secret),

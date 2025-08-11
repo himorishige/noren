@@ -1,12 +1,27 @@
 import type { Detector, Masker } from '@himorishige/noren-core'
 
+// Pre-compiled regex patterns for JP detectors
+const JP_PATTERNS = {
+  postal: /\b\d{3}-?\d{4}\b/g,
+  cellPhone: /\b0(?:60|70|80|90)-?\d{4}-?\d{4}\b/g, // 060, 070, 080, 090を含む
+  landlinePhone: /\b0[1-9]\d?-?\d{3,4}-?\d{4}\b/g,
+  internationalPhone: /\+81-?\d{1,4}-?\d{1,4}-?\d{3,4}\b/g,
+  myNumber: /\b\d{12}\b/g,
+}
+
+// Context hints as constants for better performance
+const JP_CONTEXTS = {
+  postal: ['〒', '住所', 'Address', 'Zip'],
+  phone: ['TEL', '電話', 'Phone'],
+  myNumber: ['マイナンバー', '個人番号'],
+}
+
 export const detectors: Detector[] = [
   {
     id: 'jp.postal',
     match: ({ src, push, hasCtx }) => {
-      if (!hasCtx(['〒', '住所', 'Address', 'Zip'])) return
-      const re = /\b\d{3}-?\d{4}\b/g
-      for (const m of src.matchAll(re))
+      if (!hasCtx(JP_CONTEXTS.postal)) return
+      for (const m of src.matchAll(JP_PATTERNS.postal))
         push({
           type: 'jp_postal',
           start: m.index,
@@ -19,10 +34,8 @@ export const detectors: Detector[] = [
   {
     id: 'jp.phone',
     match: ({ src, push, hasCtx }) => {
-      const reCell = /\b0(?:70|80|90)-?\d{4}-?\d{4}\b/g
-      const reLand = /\b0[1-9]\d?-?\d{3,4}-?\d{4}\b/g
-      const reIntl = /\+81-?\d{1,4}-?\d{1,4}-?\d{3,4}\b/g
-      for (const m of src.matchAll(reCell))
+      // Cell phone detection
+      for (const m of src.matchAll(JP_PATTERNS.cellPhone))
         push({
           type: 'phone_jp',
           start: m.index,
@@ -30,7 +43,9 @@ export const detectors: Detector[] = [
           value: m[0],
           risk: 'medium',
         })
-      for (const m of src.matchAll(reLand))
+
+      // Landline phone detection
+      for (const m of src.matchAll(JP_PATTERNS.landlinePhone))
         push({
           type: 'phone_jp',
           start: m.index,
@@ -38,8 +53,10 @@ export const detectors: Detector[] = [
           value: m[0],
           risk: 'low',
         })
-      if (hasCtx(['TEL', '電話', 'Phone']))
-        for (const m of src.matchAll(reIntl))
+
+      // International phone with context check
+      if (hasCtx(JP_CONTEXTS.phone))
+        for (const m of src.matchAll(JP_PATTERNS.internationalPhone))
           push({
             type: 'phone_jp',
             start: m.index,
@@ -53,9 +70,8 @@ export const detectors: Detector[] = [
     id: 'jp.mynumber',
     priority: -10,
     match: ({ src, push, hasCtx }) => {
-      if (!hasCtx(['マイナンバー', '個人番号'])) return
-      const re = /\b\d{12}\b/g
-      for (const m of src.matchAll(re))
+      if (!hasCtx(JP_CONTEXTS.myNumber)) return
+      for (const m of src.matchAll(JP_PATTERNS.myNumber))
         push({
           type: 'jp_my_number',
           start: m.index,
