@@ -11,10 +11,10 @@
     "test": "pnpm -r --filter './packages/**' run --if-present test",
     "lint": "biome lint .",
     "format": "biome format --write .",
-    "format:check": "biome format --check .",
-    "check": "biome ci ."
+    "format:check": "biome format .",
+    "check": "biome check ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.3"
+    "@biomejs/biome": "^2.1.4"
   }
 }

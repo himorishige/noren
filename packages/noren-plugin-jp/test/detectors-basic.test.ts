@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import type { DetectUtils, Detector, Hit } from '@himorishige/noren-core'
+import type { Detector, DetectUtils, Hit } from '@himorishige/noren-core'
 import { detectors, maskers } from '@himorishige/noren-plugin-jp'
 
 function runDetect(src: string, ctxHints: string[] = []): Hit[] {
@@ -30,7 +30,7 @@ describe('noren-plugin-jp detectors', () => {
     const masked = maskers.phone_jp({ value: '03-1234-5678' } as unknown as Hit)
     // after masking there should be no digits
     assert.equal(masked.replace(/\D/g, '').length, 0)
-    assert.ok(/^[•\-]+$/.test(masked.replace(/\d/g, '•')))
+    assert.ok(/^[•-]+$/.test(masked.replace(/\d/g, '•')))
   })
 
   it('detects jp.mynumber only with context', () => {

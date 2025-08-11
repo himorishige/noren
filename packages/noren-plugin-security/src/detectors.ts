@@ -1,6 +1,8 @@
 import type { Detector } from '@himorishige/noren-core'
 import { SECURITY_CONTEXTS, SECURITY_PATTERNS } from './patterns.js'
+// biome-ignore lint/correctness/noUnusedImports: type imported for future configuration features
 import type { SecurityConfig } from './types.js'
+// biome-ignore lint/correctness/noUnusedImports: functions used in cookie/header detection below
 import { isCookieAllowed, parseCookieHeader, parseSetCookieHeader } from './utils.js'
 
 /** Security plugin detectors */
@@ -9,6 +11,7 @@ export const detectors: Detector[] = [
   {
     id: 'security.jwt',
     priority: -10,
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: hasCtx reserved for future context-aware detection
     match: ({ src, push, hasCtx }) => {
       // JWT検出は文脈に関係なく実行（JWTは構造的に明確なため）
       for (const m of src.matchAll(SECURITY_PATTERNS.jwt)) {
@@ -29,6 +32,7 @@ export const detectors: Detector[] = [
   {
     id: 'security.api-key',
     priority: -5,
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: hasCtx reserved for future context-aware detection
     match: ({ src, push, hasCtx }) => {
       // プリフィックス付きAPIキー（sk_, pk_, api_, key_）
       for (const m of src.matchAll(SECURITY_PATTERNS.apiKey)) {
@@ -153,6 +157,7 @@ export const detectors: Detector[] = [
   // URL Token Parameter Detection
   {
     id: 'security.url-tokens',
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: hasCtx reserved for future context-aware detection
     match: ({ src, push, hasCtx }) => {
       // URLトークンは文脈に関係なく検出（構造的に明確なため）
       for (const m of src.matchAll(SECURITY_PATTERNS.urlTokens)) {

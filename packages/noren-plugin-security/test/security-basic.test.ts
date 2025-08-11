@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import type { DetectUtils, Detector, Hit } from '@himorishige/noren-core'
+import type { Detector, DetectUtils, Hit } from '@himorishige/noren-core'
 import {
-  type SecurityConfig,
   createSecurityMaskers,
   detectors,
   maskers,
+  type SecurityConfig,
 } from '@himorishige/noren-plugin-security'
 
 function runDetect(src: string, ctxHints: string[] = []): Hit[] {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import type { DetectUtils, Detector, Hit } from '@himorishige/noren-core'
+import type { Detector, DetectUtils, Hit } from '@himorishige/noren-core'
 import { detectors, maskers } from '@himorishige/noren-plugin-us'
 
 function runDetect(src: string, ctxHints: string[] = []): Hit[] {
