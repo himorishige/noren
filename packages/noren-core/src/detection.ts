@@ -4,11 +4,11 @@ import { DETECTION_PATTERNS, PATTERN_TYPES, UNIFIED_PATTERN } from './patterns.j
 import { hitPool } from './pool.js'
 import type { DetectUtils, Hit, PiiType } from './types.js'
 import {
+  forEachChunk,
   isFalsePositive,
   isInputSafeForRegex,
   luhn,
   preprocessForPiiDetection,
-  forEachChunk,
   SECURITY_LIMITS,
 } from './utils.js'
 
@@ -112,7 +112,11 @@ export function builtinDetect(u: DetectUtils) {
 
     // Process E164 phone numbers
     DETECTION_PATTERNS.e164.lastIndex = 0
-    for (let m = DETECTION_PATTERNS.e164.exec(text); m !== null; m = DETECTION_PATTERNS.e164.exec(text)) {
+    for (
+      let m = DETECTION_PATTERNS.e164.exec(text);
+      m !== null;
+      m = DETECTION_PATTERNS.e164.exec(text)
+    ) {
       // Skip false positives for phone numbers
       if (isFalsePositive(m[0], 'phone_e164')) {
         continue
