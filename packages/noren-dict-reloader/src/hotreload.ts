@@ -31,7 +31,9 @@ export type LoaderFn = (
 ) => Promise<LoaderResult>
 
 export class PolicyDictReloader<TCompiled> {
-  private opts: Required<Omit<ReloaderOptions<TCompiled>, 'onSwap' | 'onError' | 'compile' | 'load'>> &
+  private opts: Required<
+    Omit<ReloaderOptions<TCompiled>, 'onSwap' | 'onError' | 'compile' | 'load'>
+  > &
     Pick<ReloaderOptions<TCompiled>, 'onSwap' | 'onError' | 'compile'>
   private timer: ReturnType<typeof setTimeout> | null = null
   private running = false

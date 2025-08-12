@@ -1,6 +1,6 @@
+import { createHash } from 'node:crypto'
 import { readFile, stat } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
-import { createHash } from 'node:crypto'
 import type { LoaderFn, LoaderResult } from './hotreload.js'
 import { defaultLoader } from './hotreload.js'
 
