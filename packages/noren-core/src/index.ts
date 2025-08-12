@@ -2,6 +2,7 @@
 
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
+export { HitPool } from './pool.js'
 export type {
   Action,
   Detector,
@@ -11,8 +12,7 @@ export type {
   PiiType,
   Policy,
 } from './types'
-
-export { normalize } from './utils.js'
+export { hmacToken, importHmacKey, normalize } from './utils.js'
 
 import { builtinDetect } from './detection.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'
@@ -20,6 +20,34 @@ import { defaultMask } from './masking.js'
 import { hitPool } from './pool.js'
 import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy } from './types.js'
 import { hmacToken, importHmacKey, normalize } from './utils.js'
+
+// Risk level weights for tiebreaker comparison
+const RISK_WEIGHTS = { high: 3, medium: 2, low: 1 } as const
+
+/**
+ * Resolve conflicts between hits with same priority
+ * Returns true if current hit should replace the existing hit
+ */
+function resolveSamePriorityConflict(current: Hit, existing: Hit): boolean {
+  // 1. Prefer higher risk levels
+  const currentRiskWeight = RISK_WEIGHTS[current.risk]
+  const existingRiskWeight = RISK_WEIGHTS[existing.risk]
+
+  if (currentRiskWeight !== existingRiskWeight) {
+    return currentRiskWeight > existingRiskWeight
+  }
+
+  // 2. Prefer longer hits (more specific matches)
+  const currentLength = current.end - current.start
+  const existingLength = existing.end - existing.start
+
+  if (currentLength !== existingLength) {
+    return currentLength > existingLength
+  }
+
+  // 3. As final tiebreaker, prefer hits that appear earlier in text
+  return current.start < existing.start
+}
 
 export class Registry {
   private detectors: Detector[] = []
@@ -34,7 +62,7 @@ export class Registry {
 
   use(detectors: Detector[] = [], maskers: Record<string, Masker> = {}, ctx: string[] = []) {
     for (const d of detectors) this.detectors.push(d)
-    this.detectors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
+    this.detectors.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
 
     for (const [k, m] of Object.entries(maskers)) this.maskers.set(k as PiiType, m)
 
@@ -61,6 +89,7 @@ export class Registry {
     const hits: Hit[] = []
 
     const ctxHintsForCheck = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
+    const srcLower = src.toLowerCase()
     let contextCheckCache: boolean | null = null
 
     const u: DetectUtils = {
@@ -68,17 +97,29 @@ export class Registry {
       hasCtx: (ws) => {
         if (!ws) {
           if (contextCheckCache === null) {
-            contextCheckCache = ctxHintsForCheck.some((w) => src.includes(w))
+            contextCheckCache = ctxHintsForCheck.some((w) => srcLower.includes(w.toLowerCase()))
           }
           return contextCheckCache
         }
-        return ws.some((w) => src.includes(w))
+        return ws.some((w) => srcLower.includes(w.toLowerCase()))
       },
       push: (h) => hits.push(h),
     }
 
     builtinDetect(u)
-    for (const d of this.detectors) await d.match(u)
+    for (const d of this.detectors) {
+      const originalPush = u.push
+      // Override push to set detector priority if not already set
+      u.push = (hit: Hit) => {
+        if (hit.priority === undefined) {
+          hit.priority = d.priority ?? 0
+        }
+        originalPush(hit)
+      }
+      await d.match(u)
+      // Restore original push
+      u.push = originalPush
+    }
 
     if (hits.length === 0) return { src, hits: [] }
 
@@ -88,13 +129,38 @@ export class Registry {
     let currentEnd = -1
 
     for (let readIndex = 0; readIndex < hits.length; readIndex++) {
-      const hit = hits[readIndex]
-      if (hit.start >= currentEnd) {
-        hits[writeIndex] = hit
-        currentEnd = hit.end
+      const currentHit = hits[readIndex]
+
+      if (currentHit.start >= currentEnd) {
+        // No overlap, keep this hit
+        hits[writeIndex] = currentHit
+        currentEnd = currentHit.end
         writeIndex++
       } else {
-        hitPool.release([hit])
+        // Overlap detected - check if current hit has higher priority
+        const lastAcceptedHit = hits[writeIndex - 1]
+        const currentPriority = currentHit.priority ?? 0
+        const lastPriority = lastAcceptedHit.priority ?? 0
+
+        if (currentPriority < lastPriority) {
+          // Current hit has higher priority (lower number = higher priority), replace the last one
+          hitPool.release([lastAcceptedHit])
+          hits[writeIndex - 1] = currentHit
+          currentEnd = currentHit.end
+        } else if (currentPriority === lastPriority) {
+          // Same priority - use tiebreaker rules
+          const shouldReplace = resolveSamePriorityConflict(currentHit, lastAcceptedHit)
+          if (shouldReplace) {
+            hitPool.release([lastAcceptedHit])
+            hits[writeIndex - 1] = currentHit
+            currentEnd = currentHit.end
+          } else {
+            hitPool.release([currentHit])
+          }
+        } else {
+          // Keep the existing hit, discard current one
+          hitPool.release([currentHit])
+        }
       }
     }
 
@@ -120,7 +186,6 @@ export async function redactText(reg: Registry, input: string, override: Policy 
   const key = needTok && cfg.hmacKey ? await importHmacKey(cfg.hmacKey) : undefined
 
   const parts: string[] = []
-  const _estimatedParts = hits.length * 2 + 1
 
   let cur = 0
   for (const h of hits) {

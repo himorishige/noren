@@ -18,7 +18,8 @@ export function builtinDetect(u: DetectUtils) {
     const actualStart = start ?? match.index ?? 0
     const actualEnd = end ?? (match.index ?? 0) + match[0].length
     const actualValue = value ?? match[0]
-    return hitPool.acquire(type, actualStart, actualEnd, actualValue, risk)
+    // Built-in detectors have low default priority
+    return hitPool.acquire(type, actualStart, actualEnd, actualValue, risk, 10)
   }
 
   for (const m of u.src.matchAll(UNIFIED_PATTERN)) {
@@ -41,24 +42,33 @@ export function builtinDetect(u: DetectUtils) {
             if (hit) u.push(hit)
           }
         } else {
+          let actualStart = m.index
+          let actualEnd = m.index + m[i].length
+
+          // For email, calculate actual position within the match
+          if (patternInfo.type === 'email') {
+            const fullMatch = m[0]
+            const emailMatch = m[i]
+            const emailIndex = fullMatch.indexOf(emailMatch)
+            if (emailIndex !== -1) {
+              actualStart = m.index + emailIndex
+              actualEnd = actualStart + emailMatch.length
+            }
+          }
+
           const hit = createHit(
             patternInfo.type as PiiType,
             m,
             patternInfo.risk,
             m[i],
-            m.index,
-            m.index + m[i].length,
+            actualStart,
+            actualEnd,
           )
           if (hit) u.push(hit)
         }
         break
       }
     }
-  }
-
-  for (const m of u.src.matchAll(DETECTION_PATTERNS.ipv6)) {
-    const hit = createHit('ipv6', m, 'low')
-    if (hit) u.push(hit)
   }
 
   for (const m of u.src.matchAll(DETECTION_PATTERNS.e164)) {

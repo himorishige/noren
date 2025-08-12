@@ -15,6 +15,7 @@ export type Hit = {
   end: number
   value: string
   risk: 'low' | 'medium' | 'high'
+  priority?: number
 }
 
 export type Action = 'mask' | 'remove' | 'tokenize' | 'ignore'

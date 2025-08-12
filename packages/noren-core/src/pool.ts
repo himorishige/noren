@@ -6,7 +6,14 @@ export class HitPool {
   private pool: Hit[] = []
   private maxSize = 100 // Prevent unbounded growth
 
-  acquire(type: PiiType, start: number, end: number, value: string, risk: Hit['risk']): Hit {
+  acquire(
+    type: PiiType,
+    start: number,
+    end: number,
+    value: string,
+    risk: Hit['risk'],
+    priority?: number,
+  ): Hit {
     const hit = this.pool.pop()
     if (hit) {
       // Reuse existing object
@@ -15,17 +22,18 @@ export class HitPool {
       hit.end = end
       hit.value = value
       hit.risk = risk
+      hit.priority = priority
       return hit
     }
     // Create new object if pool is empty
-    return { type, start, end, value, risk }
+    return { type, start, end, value, risk, priority }
   }
 
   release(hits: Hit[]): void {
     // Return hits to pool for reuse
     for (const hit of hits) {
       if (this.pool.length < this.maxSize) {
-        // Clear sensitive data securely
+        // Clear sensitive data securely before pooling
         this.securelyWipeHit(hit)
         this.pool.push(hit)
       }
@@ -33,7 +41,7 @@ export class HitPool {
   }
 
   private securelyWipeHit(hit: Hit): void {
-    // Overwrite sensitive data with random values before clearing
+    // Overwrite sensitive data with random values before pooling
     if (hit.value.length > 0) {
       const randomBytes = new Uint8Array(hit.value.length)
       crypto.getRandomValues(randomBytes)
@@ -41,9 +49,7 @@ export class HitPool {
       const randomString = Array.from(randomBytes, (b) => String.fromCharCode(b)).join('')
       hit.value = randomString
     }
-    // Clear to empty values
-    hit.value = ''
-    hit.type = '' as PiiType
+    // Note: Don't clear to empty values - acquire() will overwrite all properties
   }
 
   clear(): void {

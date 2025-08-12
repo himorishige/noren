@@ -1,13 +1,20 @@
 // Utility functions (separate module for tree-shaking)
 import { NORMALIZE_PATTERNS } from './patterns.js'
 
-export const normalize = (s: string) =>
-  s
+export const normalize = (s: string) => {
+  // Don't normalize empty strings or strings with only whitespace
+  // to preserve original content when no PII is present
+  const normalized = s
     .normalize('NFKC')
     .replace(NORMALIZE_PATTERNS.dashVariants, '-')
     .replace(NORMALIZE_PATTERNS.ideographicSpace, ' ')
     .replace(NORMALIZE_PATTERNS.multipleSpaces, ' ')
-    .trim()
+
+  // Only trim if the result would not be empty
+  // This preserves single spaces and other whitespace-only inputs
+  const trimmed = normalized.trim()
+  return trimmed.length > 0 ? trimmed : normalized
+}
 
 // Luhn algorithm for credit card validation
 export function luhn(d: string) {
@@ -36,7 +43,10 @@ for (let i = 0; i < 256; i++) {
 const enc = new TextEncoder()
 
 export async function importHmacKey(secret: string | CryptoKey) {
-  if (typeof secret !== 'string') return secret
+  if (typeof secret !== 'string') {
+    if (secret instanceof CryptoKey) return secret
+    throw new Error('HMAC key must be at least 32 characters long')
+  }
 
   // Ensure minimum key length for security
   if (secret.length < 32) {
