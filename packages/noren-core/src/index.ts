@@ -62,7 +62,7 @@ export class Registry {
 
   use(detectors: Detector[] = [], maskers: Record<string, Masker> = {}, ctx: string[] = []) {
     for (const d of detectors) this.detectors.push(d)
-    this.detectors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
+    this.detectors.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
 
     for (const [k, m] of Object.entries(maskers)) this.maskers.set(k as PiiType, m)
 
@@ -142,8 +142,8 @@ export class Registry {
         const currentPriority = currentHit.priority ?? 0
         const lastPriority = lastAcceptedHit.priority ?? 0
 
-        if (currentPriority > lastPriority) {
-          // Current hit has higher priority, replace the last one
+        if (currentPriority < lastPriority) {
+          // Current hit has higher priority (lower number = higher priority), replace the last one
           hitPool.release([lastAcceptedHit])
           hits[writeIndex - 1] = currentHit
           currentEnd = currentHit.end

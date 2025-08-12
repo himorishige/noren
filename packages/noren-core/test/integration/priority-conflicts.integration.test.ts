@@ -17,13 +17,94 @@ import { Registry, redactText } from '@himorishige/noren-core'
  */
 
 describe('Priority Conflict Resolution', () => {
+  it('should handle negative priority detectors correctly', async () => {
+    const reg = new Registry({ defaultAction: 'mask' })
+
+    // Create detectors with negative and positive priorities
+    const highNegativePriorityDetector = {
+      id: 'high-negative-priority',
+      priority: -5, // Very high priority (security-style)
+      match: (u: DetectUtils) => {
+        const pattern = /SECRET-\w{8}/g
+        for (const match of u.src.matchAll(pattern)) {
+          if (match.index !== undefined) {
+            u.push({
+              type: 'security_token',
+              start: match.index,
+              end: match.index + match[0].length,
+              value: match[0],
+              risk: 'high' as const,
+            })
+          }
+        }
+      },
+    }
+
+    const lowNegativePriorityDetector = {
+      id: 'low-negative-priority',
+      priority: -1, // Lower priority than -5
+      match: (u: DetectUtils) => {
+        const pattern = /SECRET-\w{8}/g
+        for (const match of u.src.matchAll(pattern)) {
+          if (match.index !== undefined) {
+            u.push({
+              type: 'generic_secret',
+              start: match.index,
+              end: match.index + match[0].length,
+              value: match[0],
+              risk: 'medium' as const,
+            })
+          }
+        }
+      },
+    }
+
+    const positivePriorityDetector = {
+      id: 'positive-priority',
+      priority: 100, // Standard positive priority
+      match: (u: DetectUtils) => {
+        const pattern = /SECRET-\w{8}/g
+        for (const match of u.src.matchAll(pattern)) {
+          if (match.index !== undefined) {
+            u.push({
+              type: 'standard_token',
+              start: match.index,
+              end: match.index + match[0].length,
+              value: match[0],
+              risk: 'low' as const,
+            })
+          }
+        }
+      },
+    }
+
+    reg.use([positivePriorityDetector, lowNegativePriorityDetector, highNegativePriorityDetector])
+
+    const testText = 'Token: SECRET-ABCD1234'
+    const result = await redactText(reg, testText)
+
+    console.log(`Negative priority test: "${testText}" -> "${result}"`)
+
+    // Should detect with highest priority (most negative = -5)
+    assert.ok(
+      result.includes('[REDACTED:security_token]'),
+      'Should use highest priority detector (-5)',
+    )
+    assert.ok(
+      !result.includes('[REDACTED:generic_secret]'),
+      'Should not use lower negative priority',
+    )
+    assert.ok(!result.includes('[REDACTED:standard_token]'), 'Should not use positive priority')
+    assert.ok(!result.includes('SECRET-ABCD1234'), 'Original token should be masked')
+  })
+
   it('should resolve overlapping detections by priority', async () => {
     const reg = new Registry({ defaultAction: 'mask' })
 
     // Create detectors with different priorities for overlapping patterns
     const lowPriorityDetector = {
       id: 'low-priority-email',
-      priority: 50,
+      priority: 50, // Lower priority than builtin (10)
       match: (u: DetectUtils) => {
         // Matches broader email-like patterns
         const pattern = /\b\w+@\w+\.\w+\b/g
@@ -43,7 +124,7 @@ describe('Priority Conflict Resolution', () => {
 
     const mediumPriorityDetector = {
       id: 'medium-priority-email',
-      priority: 100,
+      priority: 5, // Higher priority than builtin (10)
       match: (u: DetectUtils) => {
         // Matches specific corporate email patterns
         const pattern = /\b\w+@company\.com\b/g
@@ -63,7 +144,7 @@ describe('Priority Conflict Resolution', () => {
 
     const highPriorityDetector = {
       id: 'high-priority-email',
-      priority: 200,
+      priority: 1, // Highest priority
       match: (u: DetectUtils) => {
         // Matches sensitive admin email patterns
         const pattern = /\badmin@company\.com\b/g
@@ -97,8 +178,8 @@ describe('Priority Conflict Resolution', () => {
       },
       {
         text: 'Send to user@example.com for info',
-        expectedType: 'generic_email', // Only low priority matches
-        description: 'Only low priority matches',
+        expectedType: 'email', // Builtin detector wins (priority 10 > 50)
+        description: 'Builtin detector wins over low priority',
       },
     ]
 
@@ -449,7 +530,7 @@ describe('Priority Conflict Resolution', () => {
     // Detector for full credit card numbers
     const fullCardDetector = {
       id: 'full-card',
-      priority: 150,
+      priority: 5, // Higher priority than builtin (10)
       match: (u: DetectUtils) => {
         const pattern = /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g
         for (const match of u.src.matchAll(pattern)) {
@@ -469,7 +550,7 @@ describe('Priority Conflict Resolution', () => {
     // Detector for last 4 digits of cards
     const last4Detector = {
       id: 'last-4',
-      priority: 80, // Lower priority
+      priority: 20, // Lower priority than full card and builtin
       match: (u: DetectUtils) => {
         const pattern = /\b\d{4}\b/g
         for (const match of u.src.matchAll(pattern)) {
