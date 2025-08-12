@@ -165,11 +165,36 @@ const reloader = new PolicyDictReloader({
 await reloader.start()
 ```
 
-Notes:
+  Notes:
+  
+  - `fileLoader` computes ETag from the SHA-256 of file contents and uses file mtime as Last-Modified.
+  - Non-`file://` URLs are delegated to the built-in HTTP(S) loader.
+  - You can supply your own loader as a `LoaderFn` to fetch from custom stores.
+  - `file://` URLs must be absolute and cannot include query or hash. Invalid URLs throw an error.
+  - File I/O errors include details (path and original error message) to aid debugging.
 
-- `fileLoader` computes ETag from the SHA-256 of file contents and uses file mtime as Last-Modified.
-- Non-`file://` URLs are delegated to the built-in HTTP(S) loader.
-- You can supply your own loader as a `LoaderFn` to fetch from custom stores.
+### Restrict file access with baseDir
+
+You can restrict which files can be read by the file loader using `createFileLoader` with a `baseDir` option. The loader resolves symlinks via `realpath()` and rejects paths outside `baseDir`.
+
+```ts
+import { PolicyDictReloader, createFileLoader } from '@himorishige/noren-dict-reloader'
+
+const load = createFileLoader(undefined, { baseDir: '/app/config' })
+
+const reloader = new PolicyDictReloader({
+  policyUrl: 'file:///app/config/policy.json',
+  dictManifestUrl: 'file:///app/config/manifest.json',
+  compile,
+  load,
+})
+await reloader.start()
+```
+
+Security notes:
+
+- Prefer setting `baseDir` when using `file://` to mitigate path traversal via symlinks.
+- Queries and fragments on `file://` URLs are rejected.
 
 ## Cloudflare Workers examples (KV / R2)
 

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
-import { readFile, stat } from 'node:fs/promises'
+import { readFile, realpath, stat } from 'node:fs/promises'
+import { resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { LoaderFn, LoaderResult } from './hotreload.js'
 import { defaultLoader } from './hotreload.js'
@@ -18,18 +19,49 @@ function toLastModifiedString(ms: number): string {
  * Create a LoaderFn that supports file:// URLs in Node.js.
  * Non-file schemes are delegated to the provided fallback (default: HTTP loader).
  */
-export function createFileLoader(fallback: LoaderFn = defaultLoader): LoaderFn {
+export function createFileLoader(
+  fallback: LoaderFn = defaultLoader,
+  opts?: { baseDir?: string },
+): LoaderFn {
   return async (url: string, prev, headers, force): Promise<LoaderResult> => {
     if (!url.startsWith('file://')) {
       return fallback(url, prev, headers, force)
     }
 
-    const p = fileURLToPath(new URL(url))
-    const st = await stat(p)
+    let parsedUrl: URL
+    try {
+      parsedUrl = new URL(url)
+    } catch {
+      throw new Error(`Invalid file URL: ${url}`)
+    }
 
-    const text = await readFile(p, 'utf8')
-    const etag = `W/"sha256:${sha256Hex(text)}"`
-    const lastModified = toLastModifiedString(st.mtimeMs)
+    if (parsedUrl.search || parsedUrl.hash) {
+      throw new Error(`Invalid file URL (query/hash not allowed): ${url}`)
+    }
+
+    let text: string
+    let etag: string
+    let lastModified: string
+    try {
+      const p = fileURLToPath(parsedUrl)
+      // Resolve symlinks and normalize to mitigate path traversal via symlinks
+      const real = await realpath(p)
+      if (opts?.baseDir) {
+        const base = resolve(opts.baseDir)
+        const baseWithSep = base.endsWith(sep) ? base : base + sep
+        const realWithSep = real.endsWith(sep) ? real : real + sep
+        if (!realWithSep.startsWith(baseWithSep)) {
+          throw new Error(`Access outside of baseDir is not allowed: ${real}`)
+        }
+      }
+      const st = await stat(real)
+      text = await readFile(real, 'utf8')
+      etag = `W/"sha256:${sha256Hex(text)}"`
+      lastModified = toLastModifiedString(st.mtimeMs)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      throw new Error(`File access failed for ${url}: ${msg}`)
+    }
 
     if (!force && prev && (prev.etag === etag || prev.lastModified === lastModified)) {
       return { status: 304, meta: prev }

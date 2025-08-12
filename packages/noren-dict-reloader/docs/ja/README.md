@@ -168,6 +168,31 @@ await reloader.start()
 - `fileLoader` はファイル内容の SHA-256 を ETag とし、ファイルの mtime を Last-Modified 相当として扱う。
 - `file://` 以外のURLはビルトインの HTTP(S) ローダーにフォールバックする。
 - 独自ストレージ向けに、`LoaderFn` 型のローダーを自作して `load` に渡すことも可能。
+- `file://` URL は絶対パスのみ有効で、query/hash は使用不可。無効な URL は例外になる。
+- ファイル入出力エラー時は、パスと元エラーメッセージを含む詳細なエラーを返す。
+
+### baseDir で読み取り範囲を制限
+
+`createFileLoader` に `baseDir` を渡すと、指定ディレクトリ配下のみ読み取り可能にできる。ローダーは `realpath()` によりシンボリックリンクを解決し、`baseDir` を外れるパスを拒否する。
+
+```ts
+import { PolicyDictReloader, createFileLoader } from '@himorishige/noren-dict-reloader'
+
+const load = createFileLoader(undefined, { baseDir: '/app/config' })
+
+const reloader = new PolicyDictReloader({
+  policyUrl: 'file:///app/config/policy.json',
+  dictManifestUrl: 'file:///app/config/manifest.json',
+  compile,
+  load,
+})
+await reloader.start()
+```
+
+セキュリティ注意:
+
+- `file://` 利用時は可能なら `baseDir` を設定して、シンボリックリンク経由のパストラバーサルを抑止する。
+- `file://` の query や fragment は拒否される。
 
 ## Cloudflare Workers 例 (KV / R2)
 
