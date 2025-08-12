@@ -2,18 +2,57 @@ name: CI
 
 on:
   pull_request:
-    branches: 
+    branches:
       - main
   push:
-    branches: 
+    branches:
       - main
 
 jobs:
-  build-test:
+  # Detect changes to determine if changeset is needed
+  detect-changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      need_changeset: ${{ steps.diff.outputs.need_changeset }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Ensure origin/main exists (PR)
+        if: github.event_name == 'pull_request'
+        run: git fetch origin main:refs/remotes/origin/main --depth=1
+
+      - name: Detect release-relevant changes (PR)
+        id: diff
+        if: github.event_name == 'pull_request'
+        run: |
+          set -e
+          FILES="$(git diff --name-only origin/main...HEAD || true)"
+          echo "Changed files:"
+          echo "$FILES"
+          if echo "$FILES" | grep -E '^packages/[^/]+/(src/|package.json)'; then
+            echo "need_changeset=true" >> $GITHUB_OUTPUT
+            echo "Detected changes in package source or package.json"
+          else
+            echo "need_changeset=false" >> $GITHUB_OUTPUT
+            echo "No release-relevant package changes detected"
+          fi
+
+      - name: Set changeset not needed for push events
+        if: github.event_name == 'push'
+        run: echo "need_changeset=false" >> $GITHUB_OUTPUT
+
+  # Core CI: Always required tests
+  quality:
+    name: Code Quality
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
-      group: ci-${{ github.ref }}
+      group: ci-quality-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
@@ -49,39 +88,50 @@ jobs:
       - name: Test
         run: pnpm -r --filter ./packages/** run test
 
-      - name: Ensure origin/main exists (PR)
-        if: github.event_name == 'pull_request'
+  # Changeset check: Optional warning-based check
+  changeset-check:
+    name: Changeset Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: detect-changes
+    continue-on-error: true # Don't fail the entire CI if changeset is missing
+    if: >
+      github.event_name == 'pull_request' &&
+      needs.detect-changes.outputs.need_changeset == 'true' &&
+      !contains(github.event.pull_request.labels.*.name, 'skip-changeset') &&
+      github.head_ref != 'changeset-release/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Ensure origin/main exists
         run: git fetch origin main:refs/remotes/origin/main --depth=1
 
-      - name: Detect release-relevant changes (PR)
-        id: diff
-        if: github.event_name == 'pull_request'
-        run: |
-          set -e
-          FILES="$(git diff --name-only origin/main...HEAD || true)"
-          echo "Changed files:"
-          echo "$FILES"
-          if echo "$FILES" | grep -E '^packages/[^/]+/(src/|package.json)'; then
-            echo "need_changeset=true" >> $GITHUB_OUTPUT
-            echo "Detected changes in package source or package.json"
-          else
-            echo "need_changeset=false" >> $GITHUB_OUTPUT
-            echo "No release-relevant package changes detected"
-          fi
-
-      - name: Check for changeset (only on PR)
-        if: >
-          github.event_name == 'pull_request' &&
-          steps.diff.outputs.need_changeset == 'true' &&
-          !contains(github.event.pull_request.labels.*.name, 'skip-changeset') &&
-          github.head_ref != 'changeset-release/main' &&
-          !startsWith(github.head_ref, 'release/')
+      - name: Check for changeset
         run: |
           if ! pnpm changeset status --since=origin/main; then
-            echo "❌ No changeset found. Please run 'pnpm changeset' to add a changeset for your changes."
+            echo "⚠️ No changeset found. Please run 'pnpm changeset' to add a changeset for your changes."
             echo "If this PR doesn't require a release (e.g., docs/CI/tests only), you can either:"
             echo "  - add label 'skip-changeset' to this PR to bypass the check, or"
             echo "  - add an empty changeset: pnpm changeset --empty"
+            echo "::warning title=Missing Changeset::No changeset found for package changes. Add a changeset or use 'skip-changeset' label."
             exit 1
           else
             echo "✅ Changeset found!"
