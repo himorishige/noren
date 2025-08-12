@@ -72,6 +72,37 @@ node examples/dictionary-demo.mjs
 node examples/hono-server.mjs
 ```
 
+### Release Management (Changesets)
+
+```sh
+# Create a changeset for your changes
+pnpm changeset
+
+# Check current changeset status
+pnpm changeset:status
+
+# Version packages (for maintainers)
+pnpm changeset:version
+
+# Publish packages (automated via GitHub Actions)
+pnpm changeset:publish
+```
+
+#### Release Workflow
+
+1. **Development**: Make changes to packages
+2. **Changeset Creation**: Run `pnpm changeset` to document changes
+3. **Pull Request**: Create PR with changeset files
+4. **Release**: GitHub Actions automatically handles versioning and publishing when merged to main
+
+#### Prerelease Workflow
+
+- **Alpha releases**: Push to `alpha` branch
+- **Beta releases**: Push to `beta` branch  
+- **Release candidates**: Push to `rc` branch
+
+Each prerelease branch triggers automatic prerelease publishing with appropriate tags.
+
 ## Architecture
 
 ### Monorepo Structure (pnpm workspaces)

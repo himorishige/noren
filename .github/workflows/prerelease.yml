@@ -1,0 +1,76 @@
+name: Prerelease
+
+on:
+  push:
+    branches:
+      - develop
+      - alpha
+      - beta
+      - rc
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  prerelease:
+    name: Prerelease
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeCheck
+        run: pnpm typecheck
+
+      - name: Run Tests
+        run: pnpm test
+
+      - name: Run Linting
+        run: pnpm check
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Determine prerelease tag
+        id: tag
+        run: |
+          if [[ ${{ github.ref_name }} == "alpha" ]]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+          elif [[ ${{ github.ref_name }} == "beta" ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
+          elif [[ ${{ github.ref_name }} == "rc" ]]; then
+            echo "tag=rc" >> $GITHUB_OUTPUT
+          else
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release Pull Request or Publish to npm (Prerelease)
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: pnpm changeset:publish --tag ${{ steps.tag.outputs.tag }}
+          version: pnpm changeset:version --snapshot ${{ steps.tag.outputs.tag }}
+          commit: "chore: release prerelease packages (${{ steps.tag.outputs.tag }})"
+          title: "chore: release prerelease packages (${{ steps.tag.outputs.tag }})"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Send notification if prerelease publish happens
+        if: steps.changesets.outputs.published == 'true'
+        run: echo "A new prerelease version (${{ steps.tag.outputs.tag }}) was published!"
