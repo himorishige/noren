@@ -12,9 +12,12 @@ export {
   type ContextFeatures,
   type ContextMarkers,
   type DocumentStructure,
+  type ValidatedDocumentStructure,
   detectContextMarkers,
   detectDocumentStructure,
   extractContextFeatures,
+  validateDocumentStructure,
+  extractValidatedContextFeatures,
 } from './context-detection.js'
 export {
   CONSERVATIVE_CONTEXTUAL_CONFIG,

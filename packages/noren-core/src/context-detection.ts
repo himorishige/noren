@@ -18,6 +18,19 @@ export interface DocumentStructure {
 }
 
 /**
+ * Enhanced document structure with validation confidence
+ */
+export interface ValidatedDocumentStructure extends DocumentStructure {
+  validation: {
+    json_confidence: number     // 0-1: How confident we are it's valid JSON
+    xml_confidence: number      // 0-1: How confident we are it's valid XML  
+    csv_confidence: number      // 0-1: How confident we are it's valid CSV
+    format_errors: string[]     // List of detected format issues
+    recovery_suggestions: string[] // Suggested fallback interpretations
+  }
+}
+
+/**
  * Context markers detected around PII patterns
  */
 export interface ContextMarkers {
@@ -26,6 +39,12 @@ export interface ContextMarkers {
   sample_marker_nearby: boolean
   dummy_marker_nearby: boolean
   placeholder_marker_nearby: boolean
+  // P2-Sprint2: Locale-specific placeholders
+  date_placeholder_nearby: boolean
+  currency_placeholder_nearby: boolean
+  address_placeholder_nearby: boolean
+  phone_placeholder_nearby: boolean
+  name_placeholder_nearby: boolean
   distance_to_nearest_marker: number
   marker_language: 'ja' | 'en' | 'mixed' | 'unknown'
 }
@@ -72,6 +91,49 @@ export function detectDocumentStructure(text: string): DocumentStructure {
 }
 
 /**
+ * P2-Sprint2: Enhanced document structure detection with validation
+ */
+export function validateDocumentStructure(text: string): ValidatedDocumentStructure {
+  const basic = detectDocumentStructure(text)
+  const validation = {
+    json_confidence: 0,
+    xml_confidence: 0, 
+    csv_confidence: 0,
+    format_errors: [] as string[],
+    recovery_suggestions: [] as string[]
+  }
+  
+  // Validate JSON if detected
+  if (basic.json_like) {
+    const jsonValidation = validateJSON(text)
+    validation.json_confidence = jsonValidation.confidence
+    validation.format_errors.push(...jsonValidation.errors)
+    validation.recovery_suggestions.push(...jsonValidation.suggestions)
+  }
+  
+  // Validate XML if detected  
+  if (basic.xml_like) {
+    const xmlValidation = validateXML(text)
+    validation.xml_confidence = xmlValidation.confidence
+    validation.format_errors.push(...xmlValidation.errors)
+    validation.recovery_suggestions.push(...xmlValidation.suggestions)
+  }
+  
+  // Validate CSV if detected
+  if (basic.csv_like) {
+    const csvValidation = validateCSV(text)
+    validation.csv_confidence = csvValidation.confidence
+    validation.format_errors.push(...csvValidation.errors)
+    validation.recovery_suggestions.push(...csvValidation.suggestions)
+  }
+  
+  return {
+    ...basic,
+    validation
+  }
+}
+
+/**
  * Detect context markers around a specific position
  */
 export function detectContextMarkers(text: string, position: number): ContextMarkers {
@@ -91,7 +153,13 @@ export function detectContextMarkers(text: string, position: number): ContextMar
     test: ['test:', 'test', 'testing', 'test case', 'unit test'],
     sample: ['sample:', 'sample', 'samples', 'sample data'],
     dummy: ['dummy:', 'dummy', 'mock', 'fake', 'placeholder'],
-    placeholder: ['placeholder', 'xxx', 'yyy', 'zzz', 'todo', 'tbd', 'fixme']
+    placeholder: ['placeholder', 'xxx', 'yyy', 'zzz', 'todo', 'tbd', 'fixme'],
+    // P2-Sprint2: Locale-specific placeholders (English)
+    date_placeholder: ['date', 'birthday', 'dob', 'YYYY-MM-DD', 'MM/DD/YYYY', 'DD/MM/YYYY'],
+    currency_placeholder: ['amount', 'price', '$', 'USD', 'EUR', '€', '£', 'GBP'],
+    address_placeholder: ['address', 'street', 'city', 'state', 'zip', 'postal', 'country'],
+    phone_placeholder: ['phone', 'tel', 'mobile', 'cell', 'number'],
+    name_placeholder: ['name', 'firstname', 'lastname', 'john', 'jane', 'smith', 'doe']
   }
   
   const jaMarkers = {
@@ -99,7 +167,13 @@ export function detectContextMarkers(text: string, position: number): ContextMar
     test: ['テスト:', 'テスト', '試験', 'ﾃｽﾄ', '検証'],
     sample: ['サンプル:', 'サンプル', '見本', 'ｻﾝﾌﾟﾙ'],
     dummy: ['ダミー:', 'ダミー', '偽', 'ﾀﾞﾐｰ', '仮'],
-    placeholder: ['プレースホルダ', '置換子', '仮置き', '未定']
+    placeholder: ['プレースホルダ', '置換子', '仮置き', '未定'],
+    // P2-Sprint2: Locale-specific placeholders (Japanese)
+    date_placeholder: ['日付', '年月日', 'YYYY/MM/DD', 'YYYY-MM-DD', '令和', '平成'],
+    currency_placeholder: ['金額', '価格', '円', '¥', 'JPY'],
+    address_placeholder: ['住所', '所在地', '都道府県', '市区町村', '丁目', '番地'],
+    phone_placeholder: ['電話番号', 'TEL', '携帯', 'FAX'],
+    name_placeholder: ['氏名', '名前', '苗字', '姓名', '田中', '佐藤', '山田']
   }
   
   let nearestDistance = Infinity
@@ -108,7 +182,13 @@ export function detectContextMarkers(text: string, position: number): ContextMar
     test_marker_nearby: false, 
     sample_marker_nearby: false,
     dummy_marker_nearby: false,
-    placeholder_marker_nearby: false
+    placeholder_marker_nearby: false,
+    // P2-Sprint2: Locale-specific placeholders
+    date_placeholder_nearby: false,
+    currency_placeholder_nearby: false,
+    address_placeholder_nearby: false,
+    phone_placeholder_nearby: false,
+    name_placeholder_nearby: false
   }
   
   let hasJaMarkers = false
@@ -119,7 +199,8 @@ export function detectContextMarkers(text: string, position: number): ContextMar
     for (const marker of markers) {
       // Check line context first (higher priority - same line)
       if (lineContext.includes(marker)) {
-        results[`${category}_marker_nearby` as keyof typeof results] = true
+        const resultKey = category.endsWith('_placeholder') ? `${category}_nearby` : `${category}_marker_nearby`
+        results[resultKey as keyof typeof results] = true
         nearestDistance = Math.min(nearestDistance, 0) // Same line = 0 distance
         hasEnMarkers = true
         continue // Skip window check if found in same line
@@ -128,7 +209,8 @@ export function detectContextMarkers(text: string, position: number): ContextMar
       // Check window context
       const idx = context.indexOf(marker)
       if (idx !== -1) {
-        results[`${category}_marker_nearby` as keyof typeof results] = true
+        const resultKey = category.endsWith('_placeholder') ? `${category}_nearby` : `${category}_marker_nearby`
+        results[resultKey as keyof typeof results] = true
         nearestDistance = Math.min(nearestDistance, Math.abs(idx - windowSize))
         hasEnMarkers = true
       }
@@ -139,7 +221,8 @@ export function detectContextMarkers(text: string, position: number): ContextMar
     for (const marker of markers) {
       // Check line context first (higher priority - same line)
       if (lineContext.includes(marker)) {
-        results[`${category}_marker_nearby` as keyof typeof results] = true
+        const resultKey = category.endsWith('_placeholder') ? `${category}_nearby` : `${category}_marker_nearby`
+        results[resultKey as keyof typeof results] = true
         nearestDistance = Math.min(nearestDistance, 0) // Same line = 0 distance
         hasJaMarkers = true
         continue // Skip window check if found in same line
@@ -148,7 +231,8 @@ export function detectContextMarkers(text: string, position: number): ContextMar
       // Check window context
       const idx = context.indexOf(marker)
       if (idx !== -1) {
-        results[`${category}_marker_nearby` as keyof typeof results] = true
+        const resultKey = category.endsWith('_placeholder') ? `${category}_nearby` : `${category}_marker_nearby`
+        results[resultKey as keyof typeof results] = true
         nearestDistance = Math.min(nearestDistance, Math.abs(idx - windowSize))
         hasJaMarkers = true
       }
@@ -188,6 +272,21 @@ export function extractContextFeatures(text: string, position: number): ContextF
     language,
     high_entropy_nearby,
     repetition_detected
+  }
+}
+
+/**
+ * P2-Sprint2: Enhanced context extraction with validation-aware features
+ */
+export function extractValidatedContextFeatures(text: string, position: number): ContextFeatures & {
+  validatedStructure: ValidatedDocumentStructure
+} {
+  const basicFeatures = extractContextFeatures(text, position)
+  const validatedStructure = validateDocumentStructure(text)
+  
+  return {
+    ...basicFeatures,
+    validatedStructure
   }
 }
 
@@ -384,4 +483,229 @@ function detectRepetition(text: string, position: number): boolean {
   const totalWords = words.length
   
   return maxCount / totalWords > 0.5
+}
+
+// P2-Sprint2: Format validation functions
+
+interface ValidationResult {
+  confidence: number      // 0-1: How confident we are the format is valid
+  errors: string[]       // List of specific errors found
+  suggestions: string[]  // Recovery suggestions if errors found
+}
+
+/**
+ * Validate JSON structure and content
+ */
+function validateJSON(text: string): ValidationResult {
+  const result: ValidationResult = {
+    confidence: 0,
+    errors: [],
+    suggestions: []
+  }
+  
+  // Try to extract JSON-like portions
+  const jsonCandidates = extractJSONCandidates(text)
+  
+  if (jsonCandidates.length === 0) {
+    result.errors.push('No JSON structures found despite json_like detection')
+    result.suggestions.push('Treat as plain text with JSON-like patterns')
+    return result
+  }
+  
+  let validCount = 0
+  let totalCount = 0
+  
+  for (const candidate of jsonCandidates) {
+    totalCount++
+    
+    try {
+      JSON.parse(candidate)
+      validCount++
+    } catch (error) {
+      result.errors.push(`Invalid JSON: ${(error as Error).message}`)
+      
+      // Suggest recovery strategies based on common issues
+      if (candidate.includes("'")) {
+        result.suggestions.push('Replace single quotes with double quotes')
+      }
+      if (candidate.match(/\w+\s*:/)) {
+        result.suggestions.push('Add quotes around unquoted keys')
+      }
+      if (candidate.includes(',}') || candidate.includes(',]')) {
+        result.suggestions.push('Remove trailing commas')
+      }
+    }
+  }
+  
+  result.confidence = validCount / totalCount
+  
+  // If partially valid, suggest treating as mixed content
+  if (result.confidence > 0 && result.confidence < 1) {
+    result.suggestions.push('Treat as mixed content with embedded JSON')
+  }
+  
+  return result
+}
+
+/**
+ * Validate XML structure and tag matching
+ */
+function validateXML(text: string): ValidationResult {
+  const result: ValidationResult = {
+    confidence: 0,
+    errors: [],
+    suggestions: []
+  }
+  
+  const tagPattern = /<([^>]+)>/g
+  const tags: string[] = []
+  let match
+  
+  while ((match = tagPattern.exec(text)) !== null) {
+    tags.push(match[1])
+  }
+  
+  if (tags.length === 0) {
+    result.errors.push('No XML tags found despite xml_like detection')
+    result.suggestions.push('Treat as plain text with angle bracket content')
+    return result
+  }
+  
+  // Track opening and closing tags
+  const tagStack: string[] = []
+  let validTags = 0
+  let totalTags = 0
+  
+  for (const tag of tags) {
+    totalTags++
+    
+    if (tag.startsWith('/')) {
+      // Closing tag
+      const tagName = tag.slice(1).trim()
+      const lastOpen = tagStack.pop()
+      
+      if (lastOpen === tagName) {
+        validTags++
+      } else {
+        result.errors.push(`Mismatched closing tag: expected </${lastOpen}>, got </${tagName}>`)
+      }
+    } else if (tag.endsWith('/')) {
+      // Self-closing tag
+      validTags++
+    } else {
+      // Opening tag
+      const tagName = tag.split(/\s/)[0]
+      tagStack.push(tagName)
+      validTags++
+    }
+  }
+  
+  // Check for unclosed tags
+  if (tagStack.length > 0) {
+    result.errors.push(`Unclosed tags: ${tagStack.join(', ')}`)
+    result.suggestions.push('Add missing closing tags or treat as HTML fragment')
+    // Penalize confidence for unclosed tags
+    result.confidence = Math.max(0, validTags / Math.max(totalTags, 1) - (tagStack.length * 0.2))
+  } else {
+    result.confidence = Math.min(validTags / Math.max(totalTags, 1), 1)
+  }
+  
+  return result
+}
+
+/**
+ * Validate CSV structure and consistency
+ */
+function validateCSV(text: string): ValidationResult {
+  const result: ValidationResult = {
+    confidence: 0,
+    errors: [],
+    suggestions: []
+  }
+  
+  const lines = text.split('\n').filter(line => line.trim().length > 0)
+  
+  if (lines.length < 2) {
+    result.errors.push('Insufficient lines for CSV validation')
+    result.suggestions.push('Treat as single-line data')
+    return result
+  }
+  
+  // Try to determine the most likely delimiter
+  const delimiters = [',', '\t', ';', '|']
+  let bestDelimiter = ','
+  let bestConsistency = 0
+  
+  for (const delimiter of delimiters) {
+    const counts = lines.map(line => 
+      (line.match(new RegExp(`\\${delimiter}`, 'g')) || []).length
+    )
+    
+    if (counts.every(count => count > 0)) {
+      const avgCount = counts.reduce((a, b) => a + b) / counts.length
+      const variance = counts.reduce((acc, count) => acc + Math.pow(count - avgCount, 2), 0) / counts.length
+      const consistency = 1 / (1 + variance)
+      
+      if (consistency > bestConsistency) {
+        bestConsistency = consistency
+        bestDelimiter = delimiter
+      }
+    }
+  }
+  
+  // Check for mixed delimiters (additional penalty)
+  const mixedDelimiters = delimiters.filter(d => 
+    lines.some(line => line.includes(d))
+  )
+  
+  if (mixedDelimiters.length > 1) {
+    result.errors.push(`Multiple delimiter types detected: ${mixedDelimiters.join(', ')}`)
+    result.suggestions.push('Standardize on a single delimiter type')
+    bestConsistency *= 0.5  // Penalize mixed delimiter usage
+  }
+  
+  result.confidence = bestConsistency
+  
+  if (bestConsistency < 0.7) {
+    result.errors.push(`Inconsistent delimiter usage (${bestDelimiter})`)
+    result.suggestions.push('Treat as semi-structured text or try different delimiter')
+  }
+  
+  // Check for quoted fields consistency
+  const quotedFieldPattern = /"[^"]*"/g
+  const hasQuotedFields = lines.some(line => quotedFieldPattern.test(line))
+  const allLinesConsistent = lines.every(line => {
+    const quotedCount = (line.match(quotedFieldPattern) || []).length
+    const delimiterCount = (line.match(new RegExp(`\\${bestDelimiter}`, 'g')) || []).length
+    return quotedCount <= delimiterCount + 1
+  })
+  
+  if (hasQuotedFields && !allLinesConsistent) {
+    result.errors.push('Inconsistent quoted field usage')
+    result.suggestions.push('Check for unescaped quotes or malformed fields')
+  }
+  
+  return result
+}
+
+/**
+ * Extract potential JSON objects from text
+ */
+function extractJSONCandidates(text: string): string[] {
+  const candidates: string[] = []
+  
+  // Look for object patterns { ... }
+  const objectPattern = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g
+  let match
+  while ((match = objectPattern.exec(text)) !== null) {
+    candidates.push(match[0])
+  }
+  
+  // Look for array patterns [ ... ]
+  const arrayPattern = /\[[^\[\]]*(?:\[[^\[\]]*\][^\[\]]*)*\]/g
+  while ((match = arrayPattern.exec(text)) !== null) {
+    candidates.push(match[0])
+  }
+  
+  return candidates
 }
