@@ -1,6 +1,6 @@
 {
   "name": "@himorishige/noren-plugin-security",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Security-focused plugin for Noren (JWT tokens, API keys, HTTP headers, cookies)",
   "keywords": [
     "pii",
