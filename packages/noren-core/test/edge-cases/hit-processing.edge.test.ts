@@ -84,7 +84,7 @@ describe('Hit Processing Complex Scenarios', () => {
       { length: 100 },
       (_, i) =>
         `Line ${i}: user${i}@example.com, IP: 192.168.${i % 256}.${(i * 2) % 256}, MAC: 00:11:22:33:${i.toString(16).padStart(2, '0')}:${((i + 1) % 256).toString(16).padStart(2, '0')}`,
-    ).join('\\n')
+    ).join('\n')
 
     const startTime = Date.now()
     const result = await redactText(reg, largePiiData)
@@ -256,7 +256,7 @@ describe('Hit Processing Complex Scenarios', () => {
       `[2024-01-01 10:00:00] INFO: User admin@test.com connected from 192.168.1.100`,
 
       // CSV-like format
-      `name,email,ip\\nJohn Doe,john@company.com,192.168.1.50`,
+      `name,email,ip\nJohn Doe,john@company.com,192.168.1.50`,
 
       // URL with parameters
       `https://api.example.com/user?email=user@domain.com&ip=192.168.1.1`,
