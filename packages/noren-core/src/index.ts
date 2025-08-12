@@ -101,7 +101,7 @@ export class Registry {
 
     for (let readIndex = 0; readIndex < hits.length; readIndex++) {
       const currentHit = hits[readIndex]
-      
+
       if (currentHit.start >= currentEnd) {
         // No overlap, keep this hit
         hits[writeIndex] = currentHit
@@ -112,7 +112,7 @@ export class Registry {
         const lastAcceptedHit = hits[writeIndex - 1]
         const currentPriority = currentHit.priority ?? 0
         const lastPriority = lastAcceptedHit.priority ?? 0
-        
+
         if (currentPriority > lastPriority) {
           // Current hit has higher priority, replace the last one
           hitPool.release([lastAcceptedHit])

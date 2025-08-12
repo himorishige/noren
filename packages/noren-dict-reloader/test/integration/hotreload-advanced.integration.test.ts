@@ -63,13 +63,13 @@ describe('Hot-reload System Integration', () => {
           return new Response('', { status: 304 })
         }
 
-        const responseData = serverState.malformedJson 
+        const responseData = serverState.malformedJson
           ? '{"invalid": json malformed'
           : JSON.stringify(serverState.policyData)
 
         return new Response(responseData, {
           status: 200,
-          headers: { 
+          headers: {
             etag: serverState.policyETag,
             'last-modified': new Date().toUTCString(),
           },
@@ -195,12 +195,15 @@ describe('Hot-reload System Integration', () => {
     await reloader.forceReload()
 
     console.log(`Network errors test: ${errors.length} errors caught`)
-    console.log('Errors:', errors.map(e => (e as Error).message))
+    console.log(
+      'Errors:',
+      errors.map((e) => (e as Error).message),
+    )
 
     // Should have caught network error
     assert.ok(errors.length > 0, 'Should have caught network errors')
-    
-    const networkError = errors.find(e => (e as Error).message.includes('Network error'))
+
+    const networkError = errors.find((e) => (e as Error).message.includes('Network error'))
     assert.ok(networkError, 'Should have specific network error')
 
     // Compiled data should still be available (previous version)
@@ -261,7 +264,7 @@ describe('Hot-reload System Integration', () => {
     const initialFetchCount = fetchCallCount
 
     // Wait for a few polling cycles
-    await new Promise(resolve => setTimeout(resolve, 200))
+    await new Promise((resolve) => setTimeout(resolve, 200))
     reloader.stop()
 
     console.log(`ETag validation test:`)
@@ -270,7 +273,7 @@ describe('Hot-reload System Integration', () => {
     console.log(`  Fetch history length: ${fetchHistory.length}`)
 
     // Should have made conditional requests with If-None-Match headers
-    const conditionalRequests = fetchHistory.filter(h => h.headers['if-none-match'])
+    const conditionalRequests = fetchHistory.filter((h) => h.headers['if-none-match'])
     console.log(`  Conditional requests: ${conditionalRequests.length}`)
 
     // Should use ETags for conditional requests
@@ -318,9 +321,7 @@ describe('Hot-reload System Integration', () => {
     console.log(`  Errors: ${errors.length}`)
 
     // Should have caught compilation error
-    const compilationError = errors.find(e => 
-      (e as Error).message.includes('Compilation failed')
-    )
+    const compilationError = errors.find((e) => (e as Error).message.includes('Compilation failed'))
     assert.ok(compilationError, 'Should catch compilation error')
 
     // Should retain previous working compilation
@@ -339,7 +340,7 @@ describe('Hot-reload System Integration', () => {
 
     // Should have new successful compilation
     assert.ok(swaps.length > initialSwapCount, 'Should have recovery swap')
-    
+
     reloader.stop()
   })
 
@@ -349,7 +350,7 @@ describe('Hot-reload System Integration', () => {
 
     let compilationDelay = 0
     function slowCompile(policy: unknown, dicts: unknown[]): Promise<ReturnType<typeof compile>> {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         setTimeout(() => {
           resolve({
             policy,
@@ -366,7 +367,8 @@ describe('Hot-reload System Integration', () => {
       dictManifestUrl: 'https://example.com/manifest.json',
       compile: slowCompile,
       intervalMs: 100,
-      onSwap: (compiled, changed) => swaps.push({ compiled: compiled as ReturnType<typeof compile>, changed }),
+      onSwap: (compiled, changed) =>
+        swaps.push({ compiled: compiled as ReturnType<typeof compile>, changed }),
       onError: (error) => errors.push(error),
     })
 
@@ -454,8 +456,8 @@ describe('Hot-reload System Integration', () => {
     assert.equal(updatedCompilation.dicts.length, 3, 'Should have 3 dictionaries after update')
 
     // Check change tracking
-    const manifestChangeSwap = swaps.find(swap => 
-      swap.changed.includes('manifest') && swap.changed.includes('dict:dict3')
+    const manifestChangeSwap = swaps.find(
+      (swap) => swap.changed.includes('manifest') && swap.changed.includes('dict:dict3'),
     )
     assert.ok(manifestChangeSwap, 'Should track manifest and new dictionary changes')
 
@@ -477,9 +479,7 @@ describe('Hot-reload System Integration', () => {
     assert.equal(finalCompilation.dicts.length, 2, 'Should have 2 dictionaries after removal')
 
     // Check removal tracking
-    const removalSwap = swaps.find(swap => 
-      swap.changed.includes('dict-removed:dict2')
-    )
+    const removalSwap = swaps.find((swap) => swap.changed.includes('dict-removed:dict2'))
     assert.ok(removalSwap, 'Should track dictionary removal')
 
     reloader.stop()
@@ -512,11 +512,14 @@ describe('Hot-reload System Integration', () => {
     serverState.serverError = true
 
     // Let the reloader run and encounter errors
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
     console.log(`Exponential backoff test:`)
     console.log(`  Errors encountered: ${errors.length}`)
-    console.log(`  Error timestamps:`, errorTimestamps.map(t => t - initialSuccessTime))
+    console.log(
+      `  Error timestamps:`,
+      errorTimestamps.map((t) => t - initialSuccessTime),
+    )
 
     // Should have multiple errors due to retries
     assert.ok(errors.length >= 2, 'Should have multiple retry attempts')
@@ -526,7 +529,7 @@ describe('Hot-reload System Integration', () => {
       const interval1 = errorTimestamps[1] - errorTimestamps[0]
       const interval2 = errorTimestamps[2] - errorTimestamps[1]
       console.log(`  Retry intervals: ${interval1}ms, ${interval2}ms`)
-      
+
       // Second interval should generally be longer (backoff behavior)
       // Note: Due to jitter and timing, this might not always be strictly increasing
       console.log('✓ Exponential backoff behavior observed')
@@ -538,7 +541,7 @@ describe('Hot-reload System Integration', () => {
     serverState.policyData = { rules: { email: { action: 'mask' } }, version: 999 }
 
     // Wait for recovery
-    await new Promise(resolve => setTimeout(resolve, 200))
+    await new Promise((resolve) => setTimeout(resolve, 200))
 
     console.log(`  Final swaps: ${swaps.length}`)
     console.log(`  Final errors: ${errors.length}`)

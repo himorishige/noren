@@ -44,7 +44,7 @@ export function builtinDetect(u: DetectUtils) {
         } else {
           let actualStart = m.index
           let actualEnd = m.index + m[i].length
-          
+
           // For email, calculate actual position within the match
           if (patternInfo.type === 'email') {
             const fullMatch = m[0]
@@ -55,7 +55,7 @@ export function builtinDetect(u: DetectUtils) {
               actualEnd = actualStart + emailMatch.length
             }
           }
-          
+
           const hit = createHit(
             patternInfo.type as PiiType,
             m,
@@ -70,7 +70,6 @@ export function builtinDetect(u: DetectUtils) {
       }
     }
   }
-
 
   for (const m of u.src.matchAll(DETECTION_PATTERNS.e164)) {
     const hit = createHit('phone_e164', m, 'medium')

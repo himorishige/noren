@@ -134,7 +134,7 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
 
     for (const pattern of invalidMACs) {
       const result = await redactText(reg, pattern)
-      
+
       // Special case: 7 octets will detect first 6 as valid MAC
       if (pattern.includes('00:11:22:33:44:55:66')) {
         assert.ok(result.includes('[REDACTED:mac]'), `7-octet pattern detects first 6: ${pattern}`)

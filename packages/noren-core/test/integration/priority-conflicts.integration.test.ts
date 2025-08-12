@@ -111,20 +111,20 @@ describe('Priority Conflict Resolution', () => {
       // Should contain the expected type
       assert.ok(
         result.includes(`[REDACTED:${testCase.expectedType}]`),
-        `Should detect ${testCase.expectedType} for: ${testCase.text}`
+        `Should detect ${testCase.expectedType} for: ${testCase.text}`,
       )
 
       // Should not contain lower priority types for overlapping matches
       if (testCase.expectedType === 'admin_email') {
         assert.ok(
-          !result.includes('[REDACTED:generic_email]') && 
-          !result.includes('[REDACTED:corporate_email]'),
-          'Should not have lower priority detections for admin email'
+          !result.includes('[REDACTED:generic_email]') &&
+            !result.includes('[REDACTED:corporate_email]'),
+          'Should not have lower priority detections for admin email',
         )
       } else if (testCase.expectedType === 'corporate_email') {
         assert.ok(
           !result.includes('[REDACTED:generic_email]'),
-          'Should not have generic email detection for corporate email'
+          'Should not have generic email detection for corporate email',
         )
       }
     }
@@ -184,17 +184,21 @@ describe('Priority Conflict Resolution', () => {
 
       const testText = 'Data contains PATTERN-1234 for testing'
       const result = await redactText(testReg, testText)
-      
+
       console.log(`Same priority test (${orderTest.order}): "${result}"`)
 
       // Should detect exactly one pattern (no duplicates)
       const redactionCount = (result.match(/\[REDACTED:/g) || []).length
-      assert.equal(redactionCount, 1, 'Should have exactly one detection for same-priority conflict')
+      assert.equal(
+        redactionCount,
+        1,
+        'Should have exactly one detection for same-priority conflict',
+      )
 
       // Document which one wins (implementation-dependent)
       const hasA = result.includes('[REDACTED:pattern_type_a]')
       const hasB = result.includes('[REDACTED:pattern_type_b]')
-      
+
       assert.ok(hasA || hasB, 'Should have one of the same-priority detections')
       assert.ok(!(hasA && hasB), 'Should not have both same-priority detections')
 
@@ -287,7 +291,7 @@ describe('Priority Conflict Resolution', () => {
 
     for (const loadingOrder of loadingOrders) {
       const testReg = new Registry({ defaultAction: 'mask' })
-      
+
       // Load plugins in specified order
       for (const detectors of loadingOrder.loadSequence) {
         testReg.use(detectors)
@@ -421,17 +425,17 @@ describe('Priority Conflict Resolution', () => {
 
       // Check expected detection type
       const hasExpectedType = result.includes(`[REDACTED:${contextTest.expectedType}]`)
-      
+
       if (hasExpectedType) {
         console.log('✓ Expected detection type found')
         assert.ok(!result.includes('555-123-4567'), 'Phone number should be redacted')
       } else {
         console.log('⚠ Expected type not found, checking alternatives...')
-        
+
         // Document actual behavior for context-sensitive priority conflicts
         const detectedTypes = result.match(/\[REDACTED:(\w+)\]/g) || []
         console.log(`Actual detections: ${detectedTypes.join(', ')}`)
-        
+
         // At minimum, should have some detection
         assert.ok(detectedTypes.length > 0, 'Should have some phone detection')
         assert.ok(!result.includes('555-123-4567'), 'Phone should be redacted regardless of type')
@@ -516,7 +520,7 @@ describe('Priority Conflict Resolution', () => {
       for (const expectedType of overlapTest.expectedDetections) {
         const hasDetection = result.includes(`[REDACTED:${expectedType}]`)
         console.log(`  ${expectedType}: ${hasDetection ? '✓' : '✗'}`)
-        
+
         if (!hasDetection) {
           // Document actual behavior for debugging
           const actualDetections = result.match(/\[REDACTED:(\w+)\]/g) || []
@@ -527,9 +531,12 @@ describe('Priority Conflict Resolution', () => {
       // Verify original sensitive data is not present
       const originalNumbers = overlapTest.text.match(/\d{4}/g) || []
       for (const number of originalNumbers) {
-        if (number !== '****') { // Skip masked parts
-          assert.ok(!result.includes(number) || result.includes('****'), 
-            `Number ${number} should be redacted or in masked format`)
+        if (number !== '****') {
+          // Skip masked parts
+          assert.ok(
+            !result.includes(number) || result.includes('****'),
+            `Number ${number} should be redacted or in masked format`,
+          )
         }
       }
     }
@@ -591,7 +598,7 @@ describe('Priority Conflict Resolution', () => {
             if (match.index !== undefined) {
               // Check if it's a valid IP range
               const parts = match[0].split('.')
-              if (parts.every(part => parseInt(part) <= 255)) {
+              if (parts.every((part) => parseInt(part) <= 255)) {
                 u.push({
                   type: 'network_ip',
                   start: match.index,
@@ -624,7 +631,7 @@ describe('Priority Conflict Resolution', () => {
 
     for (const combination of pluginCombinations) {
       console.log(`\nTesting plugin combination: ${combination.name}`)
-      
+
       const testReg = new Registry({ defaultAction: 'mask' })
       testReg.use(combination.detectors)
 
@@ -655,7 +662,7 @@ describe('Priority Conflict Resolution', () => {
         // Verify IP addresses are properly handled
         const ipPattern = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g
         const originalIPs = testCase.text.match(ipPattern) || []
-        
+
         for (const ip of originalIPs) {
           if (ip !== '8.8.8.8' || detections.length > 0) {
             // Should be redacted if detected, or remain if invalid/undetected

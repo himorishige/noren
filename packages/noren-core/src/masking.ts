@@ -12,7 +12,7 @@ export function defaultMask(h: Hit, keepLast4?: boolean) {
       return `[REDACTED:${h.type}]${last4}`
     }
   }
-  
+
   if (h.type === 'phone_e164') return h.value.replace(/\d/g, '•')
   return `[REDACTED:${h.type}]`
 }

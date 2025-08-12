@@ -9,7 +9,7 @@ export const normalize = (s: string) => {
     .replace(NORMALIZE_PATTERNS.dashVariants, '-')
     .replace(NORMALIZE_PATTERNS.ideographicSpace, ' ')
     .replace(NORMALIZE_PATTERNS.multipleSpaces, ' ')
-  
+
   // Only trim if the result would not be empty
   // This preserves single spaces and other whitespace-only inputs
   const trimmed = normalized.trim()

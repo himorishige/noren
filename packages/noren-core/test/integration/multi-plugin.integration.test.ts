@@ -526,10 +526,9 @@ describe('Multi-Plugin Integration', () => {
       // At least one should work despite the failing plugin
       const redactionCount = (result.match(/\[REDACTED:/g) || []).length
       console.log(`Got ${redactionCount} redactions despite plugin failure`)
-
     } catch (error) {
       console.log('⚠ Plugin error caused complete failure:', (error as Error).message)
-      
+
       // This might be acceptable behavior - depends on error handling strategy
       // The test documents the current behavior rather than asserting specific behavior
       assert.ok(error instanceof Error, 'Should be proper Error object')

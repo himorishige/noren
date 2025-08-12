@@ -6,7 +6,14 @@ export class HitPool {
   private pool: Hit[] = []
   private maxSize = 100 // Prevent unbounded growth
 
-  acquire(type: PiiType, start: number, end: number, value: string, risk: Hit['risk'], priority?: number): Hit {
+  acquire(
+    type: PiiType,
+    start: number,
+    end: number,
+    value: string,
+    risk: Hit['risk'],
+    priority?: number,
+  ): Hit {
     const hit = this.pool.pop()
     if (hit) {
       // Reuse existing object
