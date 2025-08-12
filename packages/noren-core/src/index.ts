@@ -3,6 +3,7 @@
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
 export { HitPool } from './pool.js'
+export { createRedactionTransform } from './stream-utils.js'
 export type {
   Action,
   Detector,
@@ -12,7 +13,7 @@ export type {
   PiiType,
   Policy,
 } from './types'
-export { hmacToken, importHmacKey, normalize } from './utils.js'
+export { hmacToken, importHmacKey, isBinaryChunk, normalize } from './utils.js'
 
 import { builtinDetect } from './detection.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'

@@ -1,8 +1,8 @@
 import { Registry, redactText } from '../packages/noren-core/dist/index.js'
 import { PolicyDictReloader } from '../packages/noren-dict-reloader/dist/index.js'
-import * as jp from '../packages/noren-plugin-jp/dist/index.js'
-import * as security from '../packages/noren-plugin-security/dist/index.js'
-import * as us from '../packages/noren-plugin-us/dist/index.js'
+import * as jp from '../packages/noren-plugin-jp/dist/noren-plugin-jp/src/index.js'
+import * as security from '../packages/noren-plugin-security/dist/noren-plugin-security/src/index.js'
+import * as us from '../packages/noren-plugin-us/dist/noren-plugin-us/src/index.js'
 
 // Mock server URLs for demonstration
 const POLICY_URL = 'https://example.local/policy.json'

@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import { Readable, Writable } from 'node:stream'
-import { Registry, redactText } from '../packages/noren-core/dist/index.js'
-import * as jp from '../packages/noren-plugin-jp/dist/index.js'
-import * as us from '../packages/noren-plugin-us/dist/index.js'
+import { Registry, createRedactionTransform } from '../packages/noren-core/dist/index.js'
+import * as jp from '../packages/noren-plugin-jp/dist/noren-plugin-jp/src/index.js'
+import * as us from '../packages/noren-plugin-us/dist/noren-plugin-us/src/index.js'
 
 // --- create registry
 const reg = new Registry({
@@ -16,29 +16,13 @@ const reg = new Registry({
 reg.use(jp.detectors, jp.maskers, ['〒', '住所', 'TEL', 'Phone'])
 reg.use(us.detectors, us.maskers, ['Zip', 'Address', 'SSN', 'Phone'])
 
-// --- TransformStream for redaction with tail window
-function createRedactionTransform(window = 96) {
-  const dec = new TextDecoder()
-  const enc = new TextEncoder()
-  let tail = ''
-  return new TransformStream({
-    async transform(chunk, controller) {
-      const text = dec.decode(chunk, { stream: true })
-      const buf = tail + text
-      const cut = Math.max(0, buf.length - window)
-      const head = buf.slice(0, cut)
-      const red = await redactText(reg, head, {
-        hmacKey: 'development-secret-key-for-stream-example-32-chars',
-      })
-      controller.enqueue(enc.encode(red))
-      tail = buf.slice(cut)
-    },
-    async flush(controller) {
-      const red = await redactText(reg, tail, {
-        hmacKey: 'development-secret-key-for-stream-example-32-chars',
-      })
-      controller.enqueue(new TextEncoder().encode(red))
-    },
+// --- Binary-safe redaction transform (now using utility from core)
+function createBinarySafeRedactionTransform(window = 96) {
+  return createRedactionTransform(reg, {
+    window,
+    policy: {
+      hmacKey: 'development-secret-key-for-stream-example-32-chars',
+    }
   })
 }
 
@@ -64,4 +48,10 @@ Card: 4242 4242 4242 4242
 }
 
 const outWeb = Writable.toWeb(process.stdout)
-await inWeb.pipeThrough(createRedactionTransform()).pipeTo(outWeb)
+
+// Process stream - wrapped in async function to avoid top-level await warning
+async function processStream() {
+  await inWeb.pipeThrough(createBinarySafeRedactionTransform()).pipeTo(outWeb)
+}
+
+processStream().catch(console.error)
