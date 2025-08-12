@@ -63,9 +63,9 @@ describe('Hit Processing Complex Scenarios', () => {
     const emptyInputs = [
       '',
       ' ',
-      '\\t\\n\\r',
-      '   \\n\\n   ',
-      '\\u3000', // Ideographic space
+      '\t\n\r',
+      '   \n\n   ',
+      '\u3000', // Ideographic space
     ]
 
     for (const input of emptyInputs) {

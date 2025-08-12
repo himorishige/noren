@@ -1,13 +1,20 @@
 // Utility functions (separate module for tree-shaking)
 import { NORMALIZE_PATTERNS } from './patterns.js'
 
-export const normalize = (s: string) =>
-  s
+export const normalize = (s: string) => {
+  // Don't normalize empty strings or strings with only whitespace
+  // to preserve original content when no PII is present
+  const normalized = s
     .normalize('NFKC')
     .replace(NORMALIZE_PATTERNS.dashVariants, '-')
     .replace(NORMALIZE_PATTERNS.ideographicSpace, ' ')
     .replace(NORMALIZE_PATTERNS.multipleSpaces, ' ')
-    .trim()
+  
+  // Only trim if the result would not be empty
+  // This preserves single spaces and other whitespace-only inputs
+  const trimmed = normalized.trim()
+  return trimmed.length > 0 ? trimmed : normalized
+}
 
 // Luhn algorithm for credit card validation
 export function luhn(d: string) {
