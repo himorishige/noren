@@ -1,0 +1,170 @@
+name: PR Canary Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to release as canary'
+        required: true
+        type: string
+      custom_tag:
+        description: 'Custom canary tag suffix (optional)'
+        required: false
+        type: string
+        default: ''
+
+concurrency: 
+  group: canary-pr-${{ github.event.inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  canary-pr:
+    name: PR Canary Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get PR information
+        id: pr-info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = parseInt('${{ github.event.inputs.pr_number }}');
+            
+            try {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+              
+              // PRが存在し、オープン状態かチェック
+              if (pr.state !== 'open') {
+                core.setFailed(`PR #${prNumber} is not open (state: ${pr.state})`);
+                return;
+              }
+              
+              // PR情報を出力に設定
+              core.setOutput('head_ref', pr.head.ref);
+              core.setOutput('head_sha', pr.head.sha);
+              core.setOutput('base_ref', pr.base.ref);
+              core.setOutput('pr_title', pr.title);
+              
+              console.log(`PR #${prNumber}: ${pr.title}`);
+              console.log(`Head: ${pr.head.ref} (${pr.head.sha})`);
+              console.log(`Base: ${pr.base.ref}`);
+            } catch (error) {
+              core.setFailed(`Failed to get PR information: ${error.message}`);
+            }
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr-info.outputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeCheck
+        run: pnpm typecheck
+
+      - name: Run Tests
+        run: pnpm test
+
+      - name: Run Linting
+        run: pnpm check
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Generate canary version tag
+        id: canary-version
+        run: |
+          # タイムスタンプとPR情報でcanaryバージョン生成
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          PR_NUMBER=${{ github.event.inputs.pr_number }}
+          CUSTOM_TAG="${{ github.event.inputs.custom_tag }}"
+          SHORT_SHA="${{ steps.pr-info.outputs.head_sha }}"
+          SHORT_SHA=${SHORT_SHA:0:7}
+          
+          if [ -n "$CUSTOM_TAG" ]; then
+            CANARY_TAG="canary-pr-${PR_NUMBER}-${CUSTOM_TAG}.${TIMESTAMP}-${SHORT_SHA}"
+          else
+            CANARY_TAG="canary-pr-${PR_NUMBER}.${TIMESTAMP}-${SHORT_SHA}"
+          fi
+          
+          echo "canary_tag=$CANARY_TAG" >> $GITHUB_OUTPUT
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          
+          echo "Generated canary tag: $CANARY_TAG"
+
+      - name: Create and publish PR canary release
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          # snapshotモードでPR canaryリリース実行
+          publish: pnpm changeset:publish --tag canary
+          version: pnpm changeset:version --snapshot ${{ steps.canary-version.outputs.canary_tag }}
+          commit: "chore: PR #${{ github.event.inputs.pr_number }} canary release ${{ steps.canary-version.outputs.canary_tag }}"
+          title: "chore: PR #${{ github.event.inputs.pr_number }} canary release"
+          createGithubReleases: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Comment on PR with canary release info
+        if: steps.changesets.outputs.published == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = parseInt('${{ github.event.inputs.pr_number }}');
+            const canaryTag = '${{ steps.canary-version.outputs.canary_tag }}';
+            const publishedPackages = '${{ steps.changesets.outputs.publishedPackages }}';
+            
+            const comment = `## 🚀 Canary Release Published
+            
+            A canary release has been published for this PR!
+            
+            **Tag**: \`${canaryTag}\`
+            
+            ### Install canary packages:
+            \`\`\`bash
+            npm install @himorishige/noren-core@canary
+            npm install @himorishige/noren-plugin-jp@canary
+            npm install @himorishige/noren-plugin-us@canary
+            npm install @himorishige/noren-plugin-security@canary
+            npm install @himorishige/noren-dict-reloader@canary
+            \`\`\`
+            
+            **Published packages:**
+            ${publishedPackages ? publishedPackages : 'No packages were updated'}
+            
+            > This canary release contains the changes from this PR and can be used for testing before merging.`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: comment
+            });
+
+      - name: Notify canary release result
+        run: |
+          if [ "${{ steps.changesets.outputs.published }}" == "true" ]; then
+            echo "✅ PR #${{ github.event.inputs.pr_number }} canary release published: ${{ steps.canary-version.outputs.canary_tag }}"
+            echo "Install with: npm install @himorishige/noren-core@canary"
+          else
+            echo "ℹ️  No packages were updated for PR #${{ github.event.inputs.pr_number }}"
+            echo "This might be because no changeset files were found or no changes were detected."
+          fi

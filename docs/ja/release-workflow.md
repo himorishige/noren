@@ -9,24 +9,25 @@ Noren プロジェクトでは、[Changesets](https://github.com/changesets/chan
 - **Monorepo 対応**: 5 つのパッケージ（noren-core + 4 つのプラグイン）を統合管理
 - **依存関係自動更新**: noren-core が更新されると、依存するプラグインパッケージも自動的にバージョンアップ
 - **継続的リリース**: canary → stable の 2 段階リリース戦略
-- **GitHub Actions 統合**: develop→main ブランチへの PR マージで自動リリース実行
+- **GitHub Actions 統合**: main ブランチへの PR マージで自動リリース実行
 - **npm 自動公開**: 手動での npm publish は不要
+- **PR Canary**: 個別 PR を指定した canary リリースが可能
 
 ### ブランチ運用戦略
 
-- **develop ブランチ**: 開発用メインブランチ（日常的な開発・機能追加、canary 自動リリース）
-- **main ブランチ**: リリース用ブランチ（安定版のみ）
+- **main ブランチ**: メインブランチ（安定版リリース、直接PR運用）
+- **feature/* ブランチ**: 機能開発ブランチ（main から作成、main へPR）
 
 ## 開発者向け：変更をリリースに含める方法
 
-### 1. 開発ブランチでの作業
+### 1. 機能ブランチでの作業
 
-develop ブランチから機能ブランチを作成し、通常通りコードを変更・実装します：
+main ブランチから機能ブランチを作成し、通常通りコードを変更・実装します：
 
 ```bash
-# developブランチから機能ブランチ作成
-git checkout develop
-git pull origin develop
+# mainブランチから機能ブランチ作成
+git checkout main
+git pull origin main
 git checkout -b feature/new-feature
 ```
 
@@ -62,32 +63,32 @@ Fix IPv6 detection for compressed notation
 
 ### 4. プルリクエスト作成
 
-changeset ファイルを含めて**develop ブランチ**へのプルリクエストを作成します。
+changeset ファイルを含めて**main ブランチ**へのプルリクエストを作成します。
+
+## Canary リリース（PR テスト）
+
+PR レビュー中に canary 版でテストしたい場合、手動で canary リリースを作成できます：
+
+### 手動 Canary リリース手順
+
+1. GitHub リポジトリの「Actions」タブを開く
+2. 「PR Canary Release」ワークフローを選択
+3. 「Run workflow」ボタンをクリック
+4. PR 番号を入力（例：123）
+5. カスタムタグ（オプション）を入力
+6. 「Run workflow」を実行
+
+### Canary リリース後
+
+- 指定した PR に自動でコメントが投稿される
+- canary パッケージのインストール手順が表示される
+- バージョン例：`0.2.0-canary-pr-123.20240812123456-abc1234`
 
 ## メンテナー向け：リリース実行
 
-### 段階的リリースプロセス
+### 自動リリース実行
 
-#### 1. develop ブランチでの開発・統合
-
-日常的な開発と PR レビューは develop ブランチで実行されます。
-
-#### 2. リリース準備（develop → main）
-
-リリース準備が整ったら、develop から main へのプルリクエストを作成します：
-
-```bash
-git checkout main
-git pull origin main
-git checkout -b release/prepare-v0.x.x
-git merge develop
-# コンフリクト解決後
-git push origin release/prepare-v0.x.x
-```
-
-#### 3. 自動リリース実行
-
-develop→main ブランチへの PR がマージされると、GitHub Actions が自動的に：
+main ブランチへの PR がマージされると、GitHub Actions が自動的に：
 
 1. **CI チェック**: テスト・ビルド・lint 実行
 2. **バージョニング**: changeset に基づいて version bump
@@ -106,16 +107,16 @@ pnpm changeset:version
 
 ## リリース戦略
 
-### ブランチ・リリース別運用
+### リリース種類別運用
 
-| ブランチ  | 用途           | バージョン例                          | npm tag  | リリース条件                     |
-| --------- | -------------- | ------------------------------------- | -------- | -------------------------------- |
-| `develop` | 日常的な開発   | `0.2.0-canary.20240812123456-abc1234` | `canary` | 毎 push 時に自動 canary リリース |
-| `main`    | 安定版リリース | `0.2.0`                               | `latest` | develop→main の PR マージ時      |
+| リリース種類 | 用途                 | バージョン例                            | npm tag  | リリース条件              |
+| ------------ | -------------------- | --------------------------------------- | -------- | ------------------------- |
+| Stable       | 安定版リリース       | `0.2.0`                                 | `latest` | main ブランチの PR マージ |
+| PR Canary    | PR テスト用リリース  | `0.2.0-canary-pr-123.20240812-abc1234` | `canary` | 手動実行（PR 番号指定）   |
 
-### Canary リリース
+### PR Canary リリース
 
-develop ブランチへの変更は自動的に canary リリースされます。これにより、最新の開発版を継続的にテストできます。
+個別の PR を指定して canary リリースを作成できます。これにより、PR レビュー中に実際の変更をテストできます。
 
 ### リリース版のインストール
 

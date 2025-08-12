@@ -4,10 +4,9 @@ on:
   pull_request:
     branches: 
       - main
-      - develop
   push:
     branches: 
-      - develop
+      - main
 
 jobs:
   build-test:
@@ -48,3 +47,19 @@ jobs:
 
       - name: Test
         run: pnpm -r --filter ./packages/** run test
+
+      - name: Check for changeset (only on PR)
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ "${{ github.head_ref }}" != "changeset-release/main" ]; then
+            if ! pnpm changeset status --since=origin/main; then
+              echo "❌ No changeset found. Please run 'pnpm changeset' to add a changeset for your changes."
+              echo "If this PR doesn't require a release (e.g., docs, CI changes), add an empty changeset:"
+              echo "pnpm changeset --empty"
+              exit 1
+            else
+              echo "✅ Changeset found!"
+            fi
+          else
+            echo "⏭️ Skipping changeset check for release PR"
+          fi
