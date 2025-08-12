@@ -90,24 +90,24 @@ pnpm changeset:publish
 
 #### Release Workflow
 
-1. **Development**: Make changes to packages in develop branch
+1. **Development**: Make changes to packages in feature branch (from main)
 2. **Changeset Creation**: Run `pnpm changeset` to document changes
-3. **Pull Request**: Create PR to develop branch with changeset files
-4. **Canary Release**: Automatic canary release on every push to develop
-5. **Stable Release**: Create PR from develop to main, merge triggers automatic stable release
+3. **Pull Request**: Create PR to main branch with changeset files
+4. **PR Canary Release**: Manual canary release for specific PR testing (optional)
+5. **Stable Release**: PR merge to main triggers automatic stable release
 
-#### Canary Release Workflow
+#### PR Canary Release Workflow
 
-- **Canary releases**: Automatic on every develop branch push (`@canary` tag)
+- **PR Canary releases**: Manual workflow_dispatch with PR number specification (`@canary` tag)
 
-#### Testing with Canary Releases
+#### Testing with PR Canary Releases
 
 ```sh
-# Install latest development version
+# Install PR canary version for testing
 npm install @himorishige/noren-core@canary
 ```
 
-Canary releases provide immediate access to the latest development features for continuous testing and feedback.
+PR Canary releases allow testing specific PR changes before merging, enabling thorough validation of new features and fixes.
 
 ## Architecture
 
