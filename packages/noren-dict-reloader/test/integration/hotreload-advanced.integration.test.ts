@@ -161,19 +161,19 @@ describe('Hot-reload System Integration', () => {
     if (policy && typeof policy === 'object' && 'error' in policy) {
       throw new Error('Compilation failed: Invalid policy structure')
     }
-    
+
     // Check for malformed JSON that fallback to text
     if (typeof policy === 'string' && policy.includes('json malformed')) {
       throw new Error('Compilation failed: Invalid JSON format in policy')
     }
-    
+
     // Check dictionaries for malformed JSON as well
     for (const dict of dicts) {
       if (typeof dict === 'string' && dict.includes('malformed json')) {
         throw new Error('Compilation failed: Invalid JSON format in dictionary')
       }
     }
-    
+
     return {
       policy,
       dicts,
