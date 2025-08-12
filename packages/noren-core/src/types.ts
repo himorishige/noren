@@ -16,15 +16,22 @@ export type Hit = {
   value: string
   risk: 'low' | 'medium' | 'high'
   priority?: number
+  confidence?: number // 0.0-1.0, added in v0.3.0
+  reasons?: string[] // Detection reasoning, added in v0.3.0
+  features?: Record<string, any> // Additional metadata, added in v0.3.0
 }
 
 export type Action = 'mask' | 'remove' | 'tokenize' | 'ignore'
+
+export type DetectionSensitivity = 'strict' | 'balanced' | 'relaxed'
 
 export type Policy = {
   defaultAction?: Action
   rules?: Partial<Record<PiiType, { action: Action; preserveLast4?: boolean }>>
   contextHints?: string[]
   hmacKey?: string | CryptoKey
+  sensitivity?: DetectionSensitivity // Added in v0.3.0
+  confidenceThreshold?: number // Custom threshold override, added in v0.3.0
 }
 
 export type DetectUtils = {

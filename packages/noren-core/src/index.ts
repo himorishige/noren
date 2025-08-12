@@ -1,6 +1,13 @@
 // Noren Core - Global PII detection and masking (Web Standards only)
 
 export { AllowDenyManager, type AllowDenyConfig, type Environment } from './allowlist.js'
+export { 
+  calculateConfidence, 
+  filterByConfidence, 
+  meetsConfidenceThreshold, 
+  CONFIDENCE_THRESHOLDS,
+  type ConfidenceFeatures 
+} from './confidence.js'
 export { parseIPv6, type IPv6ParseResult } from './ipv6-parser.js'
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
@@ -14,15 +21,17 @@ export type {
   Masker,
   PiiType,
   Policy,
+  DetectionSensitivity,
 } from './types'
 export { hmacToken, importHmacKey, isBinaryChunk, normalize } from './utils.js'
 
 import { AllowDenyManager, type AllowDenyConfig, type Environment } from './allowlist.js'
+import { calculateConfidence, filterByConfidence, CONFIDENCE_THRESHOLDS, type ConfidenceFeatures } from './confidence.js'
 import { builtinDetect } from './detection.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'
 import { defaultMask } from './masking.js'
 import { hitPool } from './pool.js'
-import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy } from './types.js'
+import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy, DetectionSensitivity } from './types.js'
 import { hmacToken, importHmacKey, normalize, SECURITY_LIMITS } from './utils.js'
 
 // Risk level weights for tiebreaker comparison
@@ -62,6 +71,7 @@ function resolveSamePriorityConflict(current: Hit, existing: Hit): boolean {
 export interface RegistryOptions extends Policy {
   environment?: Environment
   allowDenyConfig?: AllowDenyConfig
+  enableConfidenceScoring?: boolean // Enable confidence scoring (default: true in v0.3.0)
 }
 
 export class Registry {
@@ -70,11 +80,13 @@ export class Registry {
   private base: Policy
   private contextHintsSet: Set<string>
   private allowDenyManager: AllowDenyManager
+  private enableConfidenceScoring: boolean
 
   constructor(options: RegistryOptions) {
-    const { environment, allowDenyConfig, ...policy } = options
+    const { environment, allowDenyConfig, enableConfidenceScoring, ...policy } = options
     this.base = policy
     this.contextHintsSet = new Set(policy.contextHints ?? [])
+    this.enableConfidenceScoring = enableConfidenceScoring ?? true
     
     // Initialize allowlist/denylist manager
     this.allowDenyManager = new AllowDenyManager({
@@ -222,11 +234,32 @@ export class Registry {
       }
     }
     
+    // Apply confidence scoring if enabled
+    const scoredHits: Hit[] = []
+    for (const hit of filteredHits) {
+      if (this.enableConfidenceScoring) {
+        const confidenceResult = calculateConfidence(hit, src)
+        const scoredHit: Hit = {
+          ...hit,
+          confidence: confidenceResult.confidence,
+          reasons: confidenceResult.reasons,
+          features: confidenceResult.features
+        }
+        scoredHits.push(scoredHit)
+      } else {
+        scoredHits.push(hit)
+      }
+    }
+    
+    // Apply confidence-based filtering
+    const finalFilteredHits = this.enableConfidenceScoring && this.base.sensitivity
+      ? filterByConfidence(scoredHits, this.base.sensitivity, this.base.confidenceThreshold)
+      : scoredHits
+    
     // Create clean copies of final hits to avoid pool reference issues
-    // Optimize: avoid creating unnecessary intermediate objects
-    const finalHits: Hit[] = new Array(filteredHits.length)
-    for (let i = 0; i < filteredHits.length; i++) {
-      const hit = filteredHits[i]
+    const finalHits: Hit[] = new Array(finalFilteredHits.length)
+    for (let i = 0; i < finalFilteredHits.length; i++) {
+      const hit = finalFilteredHits[i]
       finalHits[i] = {
         type: hit.type,
         start: hit.start,
@@ -234,6 +267,9 @@ export class Registry {
         value: hit.value,
         risk: hit.risk,
         priority: hit.priority,
+        confidence: hit.confidence,
+        reasons: hit.reasons,
+        features: hit.features,
       }
     }
 

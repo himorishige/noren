@@ -131,9 +131,8 @@ export function builtinDetect(u: DetectUtils) {
     const ipv6Candidates = extractIPv6Candidates(text)
     for (const candidate of ipv6Candidates) {
       const parsed = parseIPv6(candidate)
-      if (parsed.valid && !parsed.isPrivate && !parsed.isLoopback && !parsed.isLinkLocal && !parsed.isUniqueLocal) {
-        // Only detect public IPv6 addresses, skip private/special ones
-        // Documentation addresses are also allowed to be detected
+      if (parsed.valid) {
+        // Detect all valid IPv6 addresses - confidence scoring will handle filtering
         // Find the position of this candidate in the text
         const candidateIndex = text.indexOf(candidate)
         if (candidateIndex !== -1) {

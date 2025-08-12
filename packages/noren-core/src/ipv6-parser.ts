@@ -175,16 +175,16 @@ export function extractIPv6Candidates(text: string): string[] {
   // Coarse pattern to find potential IPv6 addresses
   // Matches sequences that look like they could be IPv6
   const patterns = [
-    // Standard IPv6 patterns
-    /\b(?:[0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}\b/g,
+    // Standard IPv6 patterns (use non-word boundaries since : is not word character)
+    /(?:^|[^0-9a-fA-F:])(?:[0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}(?![0-9a-fA-F:])/g,
     // Compressed notation starting with ::
-    /\b::[0-9a-fA-F:]*[0-9a-fA-F]\b/g,
+    /(?:^|[^0-9a-fA-F:])::[0-9a-fA-F:]*[0-9a-fA-F](?![0-9a-fA-F:])/g,
     // Compressed notation ending with ::
-    /\b[0-9a-fA-F][0-9a-fA-F:]*::\b/g,
+    /(?:^|[^0-9a-fA-F:])[0-9a-fA-F][0-9a-fA-F:]*::(?![0-9a-fA-F:])/g,
     // Special case for just ::
-    /\b::\b/g,
+    /(?:^|[^0-9a-fA-F:])::(?![0-9a-fA-F:])/g,
     // Special case for ::1
-    /\b::1\b/g,
+    /(?:^|[^0-9a-fA-F:])::1(?![0-9a-fA-F:])/g,
   ]
   
   const candidates = new Set<string>()
@@ -193,7 +193,11 @@ export function extractIPv6Candidates(text: string): string[] {
     let match: RegExpExecArray | null
     pattern.lastIndex = 0
     while ((match = pattern.exec(text)) !== null) {
-      candidates.add(match[0])
+      // Remove any leading non-IPv6 characters that were matched for boundary detection
+      const candidate = match[0].replace(/^[^0-9a-fA-F:]/, '')
+      if (candidate.length > 0) {
+        candidates.add(candidate)
+      }
     }
   }
   
