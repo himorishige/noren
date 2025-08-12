@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { after, before, describe, it } from 'node:test'
 import { PolicyDictReloader } from '@himorishige/noren-dict-reloader'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // minimal compile: just bundle inputs to verify wiring
 function compile(policy: unknown, dicts: unknown[]) {
@@ -15,7 +14,7 @@ describe('PolicyDictReloader basic', () => {
 
   let originalFetch: typeof fetch
 
-  before(() => {
+  beforeAll(() => {
     originalFetch = globalThis.fetch
     globalThis.fetch = (async (url: string, init?: RequestInit) => {
       // emulate no-cache headers usage
@@ -53,7 +52,7 @@ describe('PolicyDictReloader basic', () => {
     }) as typeof fetch
   })
 
-  after(() => {
+  afterAll(() => {
     globalThis.fetch = originalFetch
   })
 
@@ -73,17 +72,17 @@ describe('PolicyDictReloader basic', () => {
 
     // compiled should be available
     const c = r.getCompiled()
-    assert.ok(c)
-    assert.equal(Array.isArray(c.dicts), true)
-    assert.equal(c.dicts.length, 2)
+    expect(c).toBeTruthy()
+    expect(Array.isArray(c.dicts)).toBe(true)
+    expect(c.dicts.length).toBe(2)
 
     // onSwap should be called with changed list that includes policy/manifest/dicts
-    assert.ok(swaps.length >= 1)
+    expect(swaps.length >= 1).toBeTruthy()
     const first = swaps[0]
-    assert.ok(first.changed.includes('policy'))
-    assert.ok(first.changed.includes('manifest'))
-    assert.ok(first.changed.includes('dict:d1'))
-    assert.ok(first.changed.includes('dict:d2'))
+    expect(first.changed).toContain('policy')
+    expect(first.changed).toContain('manifest')
+    expect(first.changed).toContain('dict:d1')
+    expect(first.changed).toContain('dict:d2')
 
     r.stop()
   })

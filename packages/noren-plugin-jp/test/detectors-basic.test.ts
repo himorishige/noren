@@ -1,7 +1,6 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import type { Detector, DetectUtils, Hit } from '@himorishige/noren-core'
 import { detectors, maskers } from '@himorishige/noren-plugin-jp'
+import { describe, expect, it } from 'vitest'
 
 function runDetect(src: string, ctxHints: string[] = []): Hit[] {
   const hits: Hit[] = []
@@ -18,19 +17,19 @@ describe('noren-plugin-jp detectors', () => {
   it('detects jp.postal when context present', () => {
     const text = '住所: 〒123-4567 東京都…'
     const hits = runDetect(text)
-    assert.ok(hits.find((h) => h.type === 'jp_postal'))
-    assert.equal(maskers.jp_postal({ value: '123-4567' } as unknown as Hit), '〒•••-••••')
+    expect(hits.find((h) => h.type === 'jp_postal')).toBeTruthy()
+    expect(maskers.jp_postal({ value: '123-4567' } as unknown as Hit)).toBe('〒•••-••••')
   })
 
   it('detects jp.phone patterns and masks digits', () => {
     const text = 'TEL 03-1234-5678 または +81-90-1111-2222'
     const hits = runDetect(text)
     const phone = hits.find((h) => h.type === 'phone_jp')
-    assert.ok(phone)
+    expect(phone).toBeTruthy()
     const masked = maskers.phone_jp({ value: '03-1234-5678' } as unknown as Hit)
     // after masking there should be no digits
-    assert.equal(masked.replace(/\D/g, '').length, 0)
-    assert.ok(/^[•-]+$/.test(masked.replace(/\d/g, '•')))
+    expect(masked.replace(/\D/g, '').length).toBe(0)
+    expect(/^[•-]+$/.test(masked.replace(/\d/g, ''))).toBeTruthy()
   })
 
   it('detects jp.mynumber only with context', () => {
@@ -38,12 +37,11 @@ describe('noren-plugin-jp detectors', () => {
     const text = 'これは 123456789012 の記述'
     const hits = runDetect(text)
     // Without context, none
-    assert.ok(!hits.find((h) => h.type === 'jp_my_number'))
+    expect(hits.find((h) => h.type === 'jp_my_number')).toBeFalsy()
 
     const hitsCtx = runDetect(`${text} マイナンバーあり`)
-    assert.ok(hitsCtx.find((h) => h.type === 'jp_my_number'))
-    assert.equal(
-      maskers.jp_my_number({ value: '123456789012' } as unknown as Hit),
+    expect(hitsCtx.find((h) => h.type === 'jp_my_number')).toBeTruthy()
+    expect(maskers.jp_my_number({ value: '123456789012' } as unknown as Hit)).toBe(
       '[REDACTED:MYNUMBER]',
     )
   })

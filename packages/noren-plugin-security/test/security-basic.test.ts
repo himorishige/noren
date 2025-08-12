@@ -1,5 +1,3 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import type { Detector, DetectUtils, Hit } from '@himorishige/noren-core'
 import {
   createSecurityMaskers,
@@ -7,6 +5,7 @@ import {
   maskers,
   type SecurityConfig,
 } from '@himorishige/noren-plugin-security'
+import { describe, expect, it } from 'vitest'
 
 function runDetect(src: string, ctxHints: string[] = []): Hit[] {
   const hits: Hit[] = []
@@ -24,45 +23,45 @@ describe('noren-plugin-security detectors', () => {
     const text = 'Bearer eyJmYWtlIjoiaGVhZGVyIn0.eyJmYWtlIjoicGF5bG9hZCJ9.fake_signature_here'
     const hits = runDetect(text)
     const jwt = hits.find((h) => h.type === 'sec_jwt_token')
-    assert.ok(jwt)
-    assert.equal(jwt.risk, 'high')
+    expect(jwt).toBeTruthy()
+    expect(jwt.risk).toBe('high')
 
     const masked = maskers.sec_jwt_token(jwt)
-    assert.ok(masked.includes('.'))
-    assert.ok(masked.includes('*'))
-    assert.ok(masked.startsWith('eyJ'))
+    expect(masked).toContain('.')
+    expect(masked).toContain('*')
+    expect(masked.startsWith('eyJ')).toBeTruthy()
   })
 
   it('detects API keys with prefixes', () => {
     const text = 'API key: sk_live_1234567890abcdef'
     const hits = runDetect(text)
     const apiKey = hits.find((h) => h.type === 'sec_api_key')
-    assert.ok(apiKey)
-    assert.equal(apiKey.risk, 'high')
+    expect(apiKey).toBeTruthy()
+    expect(apiKey.risk).toBe('high')
 
     const masked = maskers.sec_api_key(apiKey)
-    assert.ok(masked.startsWith('sk_'))
-    assert.ok(masked.includes('*'))
+    expect(masked.startsWith('sk_')).toBeTruthy()
+    expect(masked).toContain('*')
   })
 
   it('detects session IDs', () => {
     const text = 'session=abc123def456789'
     const hits = runDetect(text)
     const sessionId = hits.find((h) => h.type === 'sec_session_id')
-    assert.ok(sessionId)
-    assert.equal(sessionId.risk, 'high')
+    expect(sessionId).toBeTruthy()
+    expect(sessionId.risk).toBe('high')
 
     const masked = maskers.sec_session_id(sessionId)
-    assert.ok(masked.startsWith('session='))
-    assert.ok(masked.includes('*'))
+    expect(masked.startsWith('session=')).toBeTruthy()
+    expect(masked).toContain('*')
   })
 
   it('detects Authorization headers with context', () => {
     const text = 'Authorization: Bearer abc123xyz789'
     const hits = runDetect(text, ['Authorization'])
     const authHeader = hits.find((h) => h.type === 'sec_auth_header')
-    assert.ok(authHeader)
-    assert.equal(authHeader.risk, 'high')
+    expect(authHeader).toBeTruthy()
+    expect(authHeader.risk).toBe('high')
   })
 
   it('detects URL tokens', () => {
@@ -70,27 +69,27 @@ describe('noren-plugin-security detectors', () => {
     const hits = runDetect(text)
 
     const urlToken = hits.find((h) => h.type === 'sec_url_token')
-    assert.ok(urlToken)
+    expect(urlToken).toBeTruthy()
 
     const clientSecret = hits.find((h) => h.type === 'sec_client_secret')
-    assert.ok(clientSecret)
-    assert.equal(clientSecret.risk, 'high')
+    expect(clientSecret).toBeTruthy()
+    expect(clientSecret.risk).toBe('high')
   })
 
   it('detects UUIDs with security context', () => {
     const text = 'Token: 550e8400-e29b-41d4-a716-446655440000'
     const hits = runDetect(text, ['Token'])
     const uuid = hits.find((h) => h.type === 'sec_uuid_token')
-    assert.ok(uuid)
-    assert.equal(uuid.risk, 'medium')
+    expect(uuid).toBeTruthy()
+    expect(uuid.risk).toBe('medium')
   })
 
   it('detects hex tokens with context', () => {
     const text = 'session token: 1a2b3c4d5e6f7890abcdef1234567890'
     const hits = runDetect(text, ['session'])
     const hexToken = hits.find((h) => h.type === 'sec_hex_token')
-    assert.ok(hexToken)
-    assert.equal(hexToken.risk, 'medium')
+    expect(hexToken).toBeTruthy()
+    expect(hexToken.risk).toBe('medium')
   })
 })
 
@@ -107,13 +106,13 @@ describe('Cookie allowlist functionality', () => {
     const masked = customMaskers.sec_cookie(hit)
 
     // Allowed cookies should remain unmasked
-    assert.ok(masked.includes('theme=dark'))
-    assert.ok(masked.includes('lang=en'))
-    assert.ok(masked.includes('consent_analytics=true'))
+    expect(masked).toContain('theme=dark')
+    expect(masked).toContain('lang=en')
+    expect(masked).toContain('consent_analytics=true')
 
     // Non-allowed cookies should be masked
-    assert.ok(!masked.includes('secret123'))
-    assert.ok(masked.includes('session_id=se*****23'))
+    expect(masked).not.toContain('secret123')
+    expect(masked).toContain('session_id=se*****23')
   })
 
   it('supports wildcard patterns in allowlist', () => {
@@ -128,10 +127,10 @@ describe('Cookie allowlist functionality', () => {
     const masked = customMaskers.sec_cookie(hit)
 
     // Wildcard matches should remain unmasked
-    assert.ok(masked.includes('preference_theme=dark'))
-    assert.ok(masked.includes('ui_sidebar=collapsed'))
+    expect(masked).toContain('preference_theme=dark')
+    expect(masked).toContain('ui_sidebar=collapsed')
 
     // Non-matches should be masked
-    assert.ok(!masked.includes('session=secret'))
+    expect(masked).not.toContain('session=secret')
   })
 })

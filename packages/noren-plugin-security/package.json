@@ -41,12 +41,12 @@
     "access": "public"
   },
   "scripts": {
-    "prebuild": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('dist-test',{recursive:true,force:true})\"",
+    "prebuild": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepublishOnly": "pnpm run build",
-    "pretest": "pnpm run build && tsc -p tsconfig.test.json",
-    "test": "node --test dist-test/test/**/*.test.js"
+    "test": "vitest run",
+    "test:watch": "vitest watch"
   },
   "dependencies": {
     "@himorishige/noren-core": "workspace:*"

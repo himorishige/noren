@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { after, describe, it } from 'node:test'
 import { type Hit, HitPool, Registry, redactText } from '@himorishige/noren-core'
+import { afterAll, describe, expect, it } from 'vitest'
 
 /**
  * Hit Pool Management and Resource Tests
@@ -13,7 +12,7 @@ describe('Hit Pool Management', () => {
   let testPool: HitPool
 
   // Clean up after tests
-  after(() => {
+  afterAll(() => {
     testPool?.clear()
   })
 
@@ -25,17 +24,17 @@ describe('Hit Pool Management', () => {
     for (let i = 0; i < 200; i++) {
       const hit = testPool.acquire('email', 0, 10, `test${i}@example.com`, 'medium')
       hits.push(hit)
-      assert.ok(hit, `Should create hit ${i}`)
-      assert.equal(hit.value, `test${i}@example.com`, `Hit ${i} should have correct value`)
+      expect(hit, `Should create hit ${i}`)
+      expect(hit.value, `test${i}@example.com`, `Hit ${i} should have correct value`)
     }
 
     // Verify all hits were created
-    assert.equal(hits.length, 200, 'Should create 200 hits')
+    expect(hits.length).toBe(200)
 
     // Test that each hit has unique data
     const values = hits.map((h) => h.value)
     const uniqueValues = new Set(values)
-    assert.equal(uniqueValues.size, 200, 'All hits should have unique values')
+    expect(uniqueValues.size).toBe(200)
 
     // Release all hits back to pool
     testPool.release(hits)
@@ -46,10 +45,10 @@ describe('Hit Pool Management', () => {
     for (let i = 0; i < 101; i++) {
       const hit = testPool.acquire('phone', 0, 12, `555-${i.toString().padStart(4, '0')}`, 'low')
       newHits.push(hit)
-      assert.ok(hit, `Should reuse/create hit ${i}`)
+      expect(hit, `Should reuse/create hit ${i}`)
     }
 
-    assert.equal(newHits.length, 101, 'Should handle pool exhaustion by creating new hits')
+    expect(newHits.length).toBe(101)
   })
 
   it('should securely wipe sensitive data when releasing hits', () => {
@@ -62,7 +61,7 @@ describe('Hit Pool Management', () => {
 
     // Verify hits contain sensitive data
     for (let i = 0; i < hits.length; i++) {
-      assert.equal(hits[i].value, sensitiveData[i], `Hit ${i} should contain sensitive data`)
+      expect(hits[i].value, sensitiveData[i], `Hit ${i} should contain sensitive data`)
     }
 
     // Release hits (should trigger secure wiping)
@@ -78,8 +77,8 @@ describe('Hit Pool Management', () => {
     // Verify that reused hits don't contain old sensitive data
     for (const hit of reusedHits) {
       for (const sensitive of sensitiveData) {
-        assert.ok(
-          !hit.value.includes(sensitive),
+        expect(hit.value).not.toContain(
+          sensitive,
           'Reused hit should not contain previous sensitive data',
         )
       }
@@ -110,7 +109,7 @@ describe('Hit Pool Management', () => {
         const memoryGrowth = currentMemory.heapUsed - initialMemory.heapUsed
 
         // Memory growth should be reasonable (< 50MB for this test)
-        assert.ok(
+        expect(
           memoryGrowth < 50 * 1024 * 1024,
           `Memory growth should be reasonable at iteration ${iteration}: ${memoryGrowth} bytes`,
         )
@@ -127,7 +126,7 @@ describe('Hit Pool Management', () => {
     )
 
     // Total growth should be reasonable
-    assert.ok(totalGrowth < 100 * 1024 * 1024, 'Total memory growth should be under 100MB')
+    expect(totalGrowth < 100 * 1024 * 1024).toBeTruthy()
   })
 
   it('should handle concurrent pool operations safely', async () => {
@@ -162,13 +161,13 @@ describe('Hit Pool Management', () => {
 
     // Verify all operations completed successfully
     for (const result of results) {
-      assert.equal(result, 20, 'Each concurrent operation should process 20 hits')
+      expect(result).toBe(20)
     }
 
     // Pool should still be functional after concurrent operations
     const testHit = testPool.acquire('test', 0, 4, 'test', 'low')
-    assert.ok(testHit, 'Pool should still be functional after concurrent operations')
-    assert.equal(testHit.value, 'test', 'Hit should have correct value')
+    expect(testHit).toBeTruthy()
+    expect(testHit.value).toBe('test')
   })
 
   it('should handle pool size limits correctly', () => {
@@ -194,15 +193,14 @@ describe('Hit Pool Management', () => {
 
     // First 100 should be reused from pool, 101st should be newly created
     // We can't easily test this directly, but the pool should handle it gracefully
-    assert.equal(reusedHits.length, 101, 'Should handle pool size limits gracefully')
+    expect(reusedHits.length).toBe(101)
 
     // All hits should be valid
     for (let i = 0; i < reusedHits.length; i++) {
       const hit: Hit = reusedHits[i]
-      assert.ok(hit, `Hit ${i} should exist`)
-      assert.equal(hit.type, 'phone', `Hit ${i} should have correct type`)
-      assert.equal(
-        hit.value,
+      expect(hit, `Hit ${i} should exist`)
+      expect(hit.type, 'phone', `Hit ${i} should have correct type`)
+      expect(hit.value).toBe(
         `555-${i.toString().padStart(4, '0')}`,
         `Hit ${i} should have correct value`,
       )
@@ -231,7 +229,7 @@ describe('Hit Pool Management', () => {
         edgeCase.risk as never,
       )
       hits.push(hit)
-      assert.equal(hit.value, edgeCase.value, `Should handle edge case value: "${edgeCase.value}"`)
+      expect(hit.value, edgeCase.value, `Should handle edge case value: "${edgeCase.value}"`)
     }
 
     // Release hits (should handle secure wiping of edge cases)
@@ -240,13 +238,13 @@ describe('Hit Pool Management', () => {
     // Acquire new hits to verify edge cases were properly cleaned
     for (let i = 0; i < edgeCases.length; i++) {
       const cleanHit = testPool.acquire('clean', 0, 5, 'clean', 'low')
-      assert.equal(cleanHit.value, 'clean', `Cleaned hit ${i} should not contain edge case data`)
+      expect(cleanHit.value, 'clean', `Cleaned hit ${i} should not contain edge case data`)
 
       // Verify old edge case data is not present
       for (const edgeCase of edgeCases) {
         if (edgeCase.value.length > 0) {
-          assert.ok(
-            !cleanHit.value.includes(edgeCase.value),
+          expect(cleanHit.value).not.toContain(
+            edgeCase.value,
             `Should not contain previous edge case data: "${edgeCase.value}"`,
           )
         }

@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Backpressure Handling Integration Tests
@@ -143,25 +142,25 @@ describe('Backpressure Handling Integration', () => {
     console.log(`  Throughput: ${Math.round(throughput / 1024)}KB/s`)
 
     // Verify processing completed
-    assert.ok(results.length > 0, 'Should process some chunks')
-    assert.ok(processedChunks > 0, 'Should have processed chunks through transform')
+    expect(results.length > 0).toBeTruthy()
+    expect(processedChunks > 0).toBeTruthy()
 
     // Memory growth should be reasonable (< 100MB for this test)
-    assert.ok(memoryGrowth < 100 * 1024 * 1024, 'Memory growth should be reasonable')
+    expect(memoryGrowth < 100 * 1024 * 1024).toBeTruthy()
 
     // Should handle high frequency without major issues
-    assert.ok(processingTime < 30000, 'Should complete processing in reasonable time')
+    expect(processingTime < 30000).toBeTruthy()
 
     // Verify content integrity
     let totalRedactions = 0
     for (const result of results) {
       const redactionCount = (result.match(/\[REDACTED:/g) || []).length
       totalRedactions += redactionCount
-      assert.ok(redactionCount > 0, 'Each chunk should have some redactions')
+      expect(redactionCount > 0).toBeTruthy()
     }
 
     console.log(`  Total redactions: ${totalRedactions}`)
-    assert.ok(totalRedactions > results.length, 'Should have multiple redactions across chunks')
+    expect(totalRedactions > results.length).toBeTruthy()
   })
 
   it('should handle large chunk processing with controlled memory usage', async () => {
@@ -291,29 +290,29 @@ describe('Backpressure Handling Integration', () => {
     )
 
     // Verify all large chunks were processed
-    assert.equal(results.length, numLargeChunks, 'Should process all large chunks')
+    expect(results.length).toBe(numLargeChunks)
 
     // Memory usage should be controlled (adjusted for realistic Node.js memory behavior)
-    assert.ok(
+    expect(
       totalMemoryGrowth < 200 * 1024 * 1024,
       'Total memory growth should be reasonable (<200MB)',
     )
-    assert.ok(
+    expect(
       maxProcessingMemory < 100 * 1024 * 1024,
       'Per-chunk memory usage should be controlled (<100MB)',
     )
 
     // Performance should be acceptable
-    assert.ok(processingTime < 60000, 'Should process large chunks in reasonable time (<60s)')
+    expect(processingTime < 60000).toBeTruthy()
 
     // Verify content integrity
     for (let i = 0; i < results.length; i++) {
       const result = results[i]
-      assert.ok(result.includes(`Large chunk ${i} start`), `Chunk ${i} should have start marker`)
-      assert.ok(result.includes(`Large chunk ${i} end`), `Chunk ${i} should have end marker`)
+      expect(result).toContain(`Large chunk ${i} start`, `Chunk ${i} should have start marker`)
+      expect(result).toContain(`Large chunk ${i} end`, `Chunk ${i} should have end marker`)
 
       const redactionCount = (result.match(/\[REDACTED:/g) || []).length
-      assert.ok(
+      expect(
         redactionCount > 100,
         `Large chunk ${i} should have many redactions (got ${redactionCount})`,
       )
@@ -444,14 +443,14 @@ describe('Backpressure Handling Integration', () => {
       totalBackpressure += stats.backpressureCount
 
       // Verify stream results
-      assert.ok(results.length > 0, `Stream ${streamId} should produce results`)
+      expect(results.length > 0, `Stream ${streamId} should produce results`)
 
       for (const result of results) {
-        assert.ok(
-          result.includes(`Stream${streamId}:`),
+        expect(result).toContain(
+          `Stream${streamId}:`,
           `Result should be tagged with stream ${streamId}`,
         )
-        assert.ok(result.includes('[REDACTED:'), 'Result should contain redactions')
+        expect(result).toContain('[REDACTED:')
       }
     }
 
@@ -462,21 +461,17 @@ describe('Backpressure Handling Integration', () => {
     )
 
     // Verify concurrent processing completed successfully
-    assert.ok(totalResults > 0, 'Should produce results from concurrent streams')
-    assert.equal(
-      streamResults.length,
-      numConcurrentStreams,
-      'All concurrent streams should complete',
-    )
+    expect(totalResults > 0).toBeTruthy()
+    expect(streamResults.length, numConcurrentStreams, 'All concurrent streams should complete')
 
     // Memory usage should be reasonable for concurrent processing
-    assert.ok(
+    expect(
       memoryGrowth < 500 * 1024 * 1024,
       'Concurrent processing memory growth should be reasonable (<500MB)',
     )
 
     // Should complete in reasonable time despite backpressure
-    assert.ok(
+    expect(
       totalProcessingTime < 30000,
       'Concurrent processing should complete in reasonable time (<30s)',
     )
@@ -612,11 +607,11 @@ describe('Backpressure Handling Integration', () => {
       console.log(`  Recovered results: ${recoveredResults.length}`)
 
       // Verify recovery behavior
-      assert.ok(results.length > 0, 'Should produce some results despite errors')
+      expect(results.length > 0).toBeTruthy()
 
       if (recoveredResults.length > 0) {
         console.log('✓ Error recovery mechanism working')
-        assert.equal(
+        expect(
           recoveredResults.length,
           recoveryCount,
           'Recovery results should match recovery count',
@@ -627,18 +622,18 @@ describe('Backpressure Handling Integration', () => {
         // Verify successful results contain proper redactions
         for (const result of successfulResults.slice(0, 5)) {
           // Check first 5
-          assert.ok(result.includes('[REDACTED:'), 'Successful results should contain redactions')
+          expect(result).toContain('[REDACTED:')
         }
       }
 
       // Should have attempted to process most chunks
       const totalAttempts = processedCount + errorCount
-      assert.ok(totalAttempts >= results.length, 'Should have attempted to process most chunks')
+      expect(totalAttempts >= results.length).toBeTruthy()
     }
 
     // Document the error handling behavior
     if (streamError) {
-      assert.ok(streamError instanceof Error, 'Stream error should be proper Error object')
+      expect(streamError instanceof Error).toBeTruthy()
       console.log('Stream failed with unrecoverable error - documented behavior')
     } else {
       console.log('✓ Stream completed despite processing errors')

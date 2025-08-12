@@ -1,7 +1,6 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import type { DetectUtils, Hit } from '@himorishige/noren-core'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Plugin Integration Edge Case Tests
@@ -48,7 +47,7 @@ describe('Plugin Integration Edge Cases', () => {
     // Should handle custom PII type
     if (result.includes('[REDACTED:ssn]')) {
       console.log('✓ Custom PII type handled correctly')
-      assert.ok(!result.includes('123-45-6789'), 'Custom PII should be masked')
+      expect(result).not.toContain('123-45-6789')
     } else {
       console.log('⚠ Custom detector may not have been invoked')
     }
@@ -252,7 +251,7 @@ describe('Plugin Integration Edge Cases', () => {
 
     // Should handle multiple PII types correctly
     const totalRedactions = (result.match(/(?:\[REDACTED:|TKN_)/g) || []).length
-    assert.ok(totalRedactions >= 2, 'Should handle multiple PII types from plugins and core')
+    expect(totalRedactions >= 2).toBeTruthy()
   })
 
   it('should handle plugin detectors with context hints', async () => {
@@ -352,7 +351,7 @@ describe('Plugin Integration Edge Cases', () => {
 
     if (result.includes('[CUSTOM_MASKED:11_chars]')) {
       console.log('✓ Custom masker working correctly')
-      assert.ok(!result.includes('CUSTOM-1234'), 'Original value should be masked')
+      expect(result).not.toContain('CUSTOM-1234')
     } else {
       console.log('⚠ Custom masker may not be working as expected')
     }

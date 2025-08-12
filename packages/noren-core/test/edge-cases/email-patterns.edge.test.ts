@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Email Pattern Detection Edge Case Tests
@@ -21,9 +20,9 @@ describe('Email Pattern Detection Edge Cases', () => {
 
     for (const { input, expected } of standardEmails) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `Email should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:email]'),
+      expect(result).not.toContain(expected, `Email should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:email]',
         `Should contain email redaction marker for: ${input}`,
       )
     }
@@ -42,9 +41,9 @@ describe('Email Pattern Detection Edge Cases', () => {
 
     for (const { input, expected } of specialCharEmails) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `Special char email should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:email]'),
+      expect(result).not.toContain(expected, `Special char email should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:email]',
         `Should contain email redaction marker for: ${input}`,
       )
     }
@@ -85,13 +84,13 @@ describe('Email Pattern Detection Edge Cases', () => {
       const hasRedaction = result.includes('[REDACTED:email]')
 
       if (test.shouldDetect) {
-        assert.ok(hasRedaction, `Should detect email in: ${test.text} (${test.reason})`)
-        assert.ok(
-          !result.includes(test.expectedPattern),
+        expect(hasRedaction, `Should detect email in: ${test.text} (${test.reason})`)
+        expect(result).not.toContain(
+          test.expectedPattern,
           `Email should be masked: ${test.expectedPattern}`,
         )
       } else {
-        assert.ok(!hasRedaction, `Should NOT detect email in: ${test.text} (${test.reason})`)
+        expect(!hasRedaction, `Should NOT detect email in: ${test.text} (${test.reason})`)
         // Note: the full text might still contain the pattern if it wasn't detected
       }
     }
@@ -126,8 +125,8 @@ describe('Email Pattern Detection Edge Cases', () => {
         console.log(`Note: Current pattern detected invalid email: ${pattern}`)
         // This is acceptable for current implementation - document the behavior
       } else {
-        assert.ok(
-          !result.includes('[REDACTED:email]'),
+        expect(result).not.toContain(
+          '[REDACTED:email]',
           `Correctly rejected invalid email: ${pattern}`,
         )
       }
@@ -162,8 +161,8 @@ describe('Email Pattern Detection Edge Cases', () => {
     for (const { input, expected } of internationalCases) {
       const result = await redactText(reg, input)
       if (result.includes('[REDACTED:email]')) {
-        assert.ok(
-          !result.includes(expected),
+        expect(result).not.toContain(
+          expected,
           `International domain email should be masked in: ${input}`,
         )
       } else {
@@ -185,7 +184,7 @@ describe('Email Pattern Detection Edge Cases', () => {
 
     // Current implementation has 64 character limit on local part
     if (result.includes('[REDACTED:email]')) {
-      assert.ok(!result.includes(longEmail), 'Long email should be masked')
+      expect(result).not.toContain(longEmail)
     } else {
       console.log(
         `Note: Long email not detected (may exceed pattern limits): ${longEmail.length} chars`,
@@ -208,19 +207,16 @@ describe('Email Pattern Detection Edge Cases', () => {
 
     // Count redactions (should be 4 valid emails)
     const redactionCount = (result.match(/\[REDACTED:email\]/g) || []).length
-    assert.ok(
-      redactionCount >= 4,
-      `Should detect at least 4 valid emails, found: ${redactionCount}`,
-    )
+    expect(redactionCount >= 4, `Should detect at least 4 valid emails, found: ${redactionCount}`)
 
     // Valid emails should be redacted
-    assert.ok(!result.includes('admin@company.com'), 'Admin email should be redacted')
-    assert.ok(!result.includes('help@company.com'), 'Help email should be redacted')
-    assert.ok(!result.includes('sales@company.co.uk'), 'Sales email should be redacted')
-    assert.ok(!result.includes('developer+team@company.org'), 'Dev email should be redacted')
+    expect(result).not.toContain('admin@company.com')
+    expect(result).not.toContain('help@company.com')
+    expect(result).not.toContain('sales@company.co.uk')
+    expect(result).not.toContain('developer+team@company.org')
 
     // Invalid email should remain
-    assert.ok(result.includes('@invalid.com'), 'Invalid email should remain unchanged')
+    expect(result).toContain('@invalid.com')
   })
 
   it('should handle tokenization of email addresses', async () => {
@@ -232,8 +228,8 @@ describe('Email Pattern Detection Edge Cases', () => {
     const email = 'user@example.com'
     const result = await redactText(reg, `Contact: ${email}`)
 
-    assert.match(result, /TKN_EMAIL_[0-9a-f]{16}/, 'Email should be tokenized')
-    assert.ok(!result.includes(email), 'Original email should not appear in result')
+    expect(result).toMatch(/TKN_EMAIL_[0-9a-f]{16}/)
+    expect(result).not.toContain(email)
   })
 
   it('should handle email masking with standard masking characters', async () => {
@@ -246,8 +242,8 @@ describe('Email Pattern Detection Edge Cases', () => {
     const result = await redactText(reg, 'Email: user@example.com')
 
     // Should replace with redaction marker
-    assert.ok(!result.includes('user@example.com'), 'Full email should not appear')
-    assert.ok(result.includes('[REDACTED:email]'), 'Should contain redaction marker')
+    expect(result).not.toContain('user@example.com')
+    expect(result).toContain('[REDACTED:email]')
   })
 
   it('should generate consistent tokens for same email', async () => {
@@ -261,7 +257,7 @@ describe('Email Pattern Detection Edge Cases', () => {
     const result2 = await redactText(reg, input)
 
     // Tokens should be identical (HMAC is deterministic)
-    assert.equal(result1, result2, 'Same email input should generate identical tokens')
+    expect(result1).toBe(result2)
   })
 
   it('should generate different tokens for different emails', async () => {
@@ -277,7 +273,7 @@ describe('Email Pattern Detection Edge Cases', () => {
     const token1 = result1.match(/TKN_EMAIL_([0-9a-f]{16})/)?.[1]
     const token2 = result2.match(/TKN_EMAIL_([0-9a-f]{16})/)?.[1]
 
-    assert.ok(token1 && token2, 'Both email inputs should generate tokens')
-    assert.notEqual(token1, token2, 'Different emails should generate different tokens')
+    expect(token1 && token2).toBeTruthy()
+    expect(token1).not.toBe(token2)
   })
 })

@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { after, before, beforeEach, describe, it } from 'node:test'
 import { PolicyDictReloader } from '@himorishige/noren-dict-reloader'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 /**
  * Hot-reload System Integration Tests
@@ -40,7 +39,7 @@ describe('Hot-reload System Integration', () => {
     serverError: false,
   }
 
-  before(() => {
+  beforeAll(() => {
     originalFetch = globalThis.fetch
     globalThis.fetch = (async (url: string, init?: RequestInit) => {
       fetchCallCount++
@@ -128,7 +127,7 @@ describe('Hot-reload System Integration', () => {
     }) as typeof fetch
   })
 
-  after(() => {
+  afterAll(() => {
     globalThis.fetch = originalFetch
   })
 
@@ -198,8 +197,8 @@ describe('Hot-reload System Integration', () => {
 
     // First load should succeed
     await reloader.start()
-    assert.ok(reloader.getCompiled(), 'Should have initial compilation')
-    assert.equal(swaps.length, 1, 'Should have initial swap')
+    expect(reloader.getCompiled()).toBeTruthy()
+    expect(swaps.length).toBe(1)
 
     // Simulate network errors
     serverState.networkErrors = true
@@ -214,13 +213,13 @@ describe('Hot-reload System Integration', () => {
     )
 
     // Should have caught network error
-    assert.ok(errors.length > 0, 'Should have caught network errors')
+    expect(errors.length > 0).toBeTruthy()
 
     const networkError = errors.find((e) => (e as Error).message.includes('Network error'))
-    assert.ok(networkError, 'Should have specific network error')
+    expect(networkError).toBeTruthy()
 
     // Compiled data should still be available (previous version)
-    assert.ok(reloader.getCompiled(), 'Should retain previous compilation')
+    expect(reloader.getCompiled()).toBeTruthy()
 
     reloader.stop()
   })
@@ -250,7 +249,7 @@ describe('Hot-reload System Integration', () => {
     console.log(`JSON parsing test: ${errors.length} errors, ${swaps.length} swaps`)
 
     // Should have caught JSON parsing errors
-    assert.ok(errors.length > 0, 'Should have caught JSON parsing errors')
+    expect(errors.length > 0).toBeTruthy()
 
     // Should not have new successful swaps due to JSON errors
     // (Behavior depends on implementation - might fallback to previous version)
@@ -289,7 +288,7 @@ describe('Hot-reload System Integration', () => {
     console.log(`  Conditional requests: ${conditionalRequests.length}`)
 
     // Should use ETags for conditional requests
-    assert.ok(conditionalRequests.length > 0, 'Should make conditional requests')
+    expect(conditionalRequests.length > 0).toBeTruthy()
 
     // Should have received 304 responses for unchanged resources
     // (This is documented by the fetch count not increasing dramatically)
@@ -318,7 +317,7 @@ describe('Hot-reload System Integration', () => {
 
     // First load should succeed
     await reloader.start()
-    assert.ok(reloader.getCompiled(), 'Should have initial compilation')
+    expect(reloader.getCompiled()).toBeTruthy()
     const initialSwapCount = swaps.length
 
     // Update policy to cause compilation error
@@ -335,12 +334,12 @@ describe('Hot-reload System Integration', () => {
 
     // Should have caught compilation error
     const compilationError = errors.find((e) => (e as Error).message.includes('Compilation failed'))
-    assert.ok(compilationError, 'Should catch compilation error')
+    expect(compilationError).toBeTruthy()
 
     // Should retain previous working compilation
     const currentCompilation = reloader.getCompiled()
-    assert.ok(currentCompilation, 'Should retain previous compilation')
-    assert.equal(currentCompilation.compiled, true, 'Should have working compilation')
+    expect(currentCompilation).toBeTruthy()
+    expect(currentCompilation.compiled).toBe(true)
 
     // Fix the policy
     serverState.policyData = { rules: { email: { action: 'tokenize' } }, version: 3 }
@@ -352,7 +351,7 @@ describe('Hot-reload System Integration', () => {
     console.log(`After recovery: ${swaps.length} swaps, ${errors.length} errors`)
 
     // Should have new successful compilation
-    assert.ok(swaps.length > initialSwapCount, 'Should have recovery swap')
+    expect(swaps.length > initialSwapCount).toBeTruthy()
 
     reloader.stop()
   })
@@ -410,11 +409,11 @@ describe('Hot-reload System Integration', () => {
 
     // Should handle concurrent reloads without major issues
     // Exact behavior depends on implementation (some reloads might be skipped)
-    assert.ok(swaps.length >= initialSwaps, 'Should have processed some reloads')
+    expect(swaps.length >= initialSwaps).toBeTruthy()
 
     // All compilations should be valid
     for (const swap of swaps) {
-      assert.ok(swap.compiled.compiled, 'All swaps should have valid compilations')
+      expect(swap.compiled.compiled).toBeTruthy()
     }
 
     console.log('✓ Concurrent reload handling verified')
@@ -435,7 +434,7 @@ describe('Hot-reload System Integration', () => {
 
     await reloader.start()
     const initialCompilation = reloader.getCompiled()
-    assert.equal(initialCompilation.dicts.length, 2, 'Should start with 2 dictionaries')
+    expect(initialCompilation.dicts.length).toBe(2)
 
     // Add a new dictionary to manifest
     serverState.manifestData = {
@@ -467,13 +466,13 @@ describe('Hot-reload System Integration', () => {
     console.log(`  Initial dicts: ${initialCompilation.dicts.length}`)
     console.log(`  Updated dicts: ${updatedCompilation.dicts.length}`)
 
-    assert.equal(updatedCompilation.dicts.length, 3, 'Should have 3 dictionaries after update')
+    expect(updatedCompilation.dicts.length).toBe(3)
 
     // Check change tracking
     const manifestChangeSwap = swaps.find(
       (swap) => swap.changed.includes('manifest') && swap.changed.includes('dict:dict3'),
     )
-    assert.ok(manifestChangeSwap, 'Should track manifest and new dictionary changes')
+    expect(manifestChangeSwap).toBeTruthy()
 
     // Remove a dictionary
     serverState.manifestData = {
@@ -490,11 +489,11 @@ describe('Hot-reload System Integration', () => {
     const finalCompilation = reloader.getCompiled()
     console.log(`  Final dicts: ${finalCompilation.dicts.length}`)
 
-    assert.equal(finalCompilation.dicts.length, 2, 'Should have 2 dictionaries after removal')
+    expect(finalCompilation.dicts.length).toBe(2)
 
     // Check removal tracking
     const removalSwap = swaps.find((swap) => swap.changed.includes('dict-removed:dict2'))
-    assert.ok(removalSwap, 'Should track dictionary removal')
+    expect(removalSwap).toBeTruthy()
 
     reloader.stop()
   })
@@ -536,7 +535,7 @@ describe('Hot-reload System Integration', () => {
     )
 
     // Should have multiple errors due to retries
-    assert.ok(errors.length >= 2, 'Should have multiple retry attempts')
+    expect(errors.length >= 2).toBeTruthy()
 
     // Check for increasing intervals (exponential backoff)
     if (errorTimestamps.length >= 3) {
@@ -562,7 +561,7 @@ describe('Hot-reload System Integration', () => {
 
     // Should eventually recover
     const recoveredCompilation = reloader.getCompiled()
-    assert.ok(recoveredCompilation, 'Should recover compilation')
+    expect(recoveredCompilation).toBeTruthy()
 
     reloader.stop()
   })

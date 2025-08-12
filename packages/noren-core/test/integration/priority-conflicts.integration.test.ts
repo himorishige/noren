@@ -1,7 +1,6 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import type { DetectUtils } from '@himorishige/noren-core'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Priority Conflict Integration Tests
@@ -86,16 +85,16 @@ describe('Priority Conflict Resolution', () => {
     console.log(`Negative priority test: "${testText}" -> "${result}"`)
 
     // Should detect with highest priority (most negative = -5)
-    assert.ok(
-      result.includes('[REDACTED:security_token]'),
+    expect(result).toContain(
+      '[REDACTED:security_token]',
       'Should use highest priority detector (-5)',
     )
-    assert.ok(
-      !result.includes('[REDACTED:generic_secret]'),
+    expect(result).not.toContain(
+      '[REDACTED:generic_secret]',
       'Should not use lower negative priority',
     )
-    assert.ok(!result.includes('[REDACTED:standard_token]'), 'Should not use positive priority')
-    assert.ok(!result.includes('SECRET-ABCD1234'), 'Original token should be masked')
+    expect(result).not.toContain('[REDACTED:standard_token]')
+    expect(result).not.toContain('SECRET-ABCD1234')
   })
 
   it('should resolve overlapping detections by priority', async () => {
@@ -190,23 +189,16 @@ describe('Priority Conflict Resolution', () => {
       console.log(`  Description: ${testCase.description}`)
 
       // Should contain the expected type
-      assert.ok(
-        result.includes(`[REDACTED:${testCase.expectedType}]`),
+      expect(result).toContain(
+        `[REDACTED:${testCase.expectedType}]`,
         `Should detect ${testCase.expectedType} for: ${testCase.text}`,
       )
 
       // Should not contain lower priority types for overlapping matches
       if (testCase.expectedType === 'admin_email') {
-        assert.ok(
-          !result.includes('[REDACTED:generic_email]') &&
-            !result.includes('[REDACTED:corporate_email]'),
-          'Should not have lower priority detections for admin email',
-        )
+        expect(result).not.toContain('[REDACTED:generic_email]')
       } else if (testCase.expectedType === 'corporate_email') {
-        assert.ok(
-          !result.includes('[REDACTED:generic_email]'),
-          'Should not have generic email detection for corporate email',
-        )
+        expect(result).not.toContain('[REDACTED:generic_email]')
       }
     }
   })
@@ -270,18 +262,14 @@ describe('Priority Conflict Resolution', () => {
 
       // Should detect exactly one pattern (no duplicates)
       const redactionCount = (result.match(/\[REDACTED:/g) || []).length
-      assert.equal(
-        redactionCount,
-        1,
-        'Should have exactly one detection for same-priority conflict',
-      )
+      expect(redactionCount, 1, 'Should have exactly one detection for same-priority conflict')
 
       // Document which one wins (implementation-dependent)
       const hasA = result.includes('[REDACTED:pattern_type_a]')
       const hasB = result.includes('[REDACTED:pattern_type_b]')
 
-      assert.ok(hasA || hasB, 'Should have one of the same-priority detections')
-      assert.ok(!(hasA && hasB), 'Should not have both same-priority detections')
+      expect(hasA || hasB).toBeTruthy()
+      expect(hasA && hasB).toBeFalsy()
 
       console.log(`  Winner: ${hasA ? 'A' : 'B'} (registration order: ${orderTest.order})`)
     }
@@ -392,22 +380,22 @@ describe('Priority Conflict Resolution', () => {
       // Check priority resolution
       if (result.includes('[REDACTED:plugin_b_email]')) {
         console.log('✓ Plugin B (priority 150) detected')
-        assert.ok(!result.includes('admin@pluginb.com'), 'Plugin B email should be masked')
+        expect(result).not.toContain('admin@pluginb.com')
       }
 
       if (result.includes('[REDACTED:plugin_a_email]')) {
         console.log('✓ Plugin A (priority 120) detected')
-        assert.ok(!result.includes('user@plugina.com'), 'Plugin A email should be masked')
+        expect(result).not.toContain('user@plugina.com')
       }
 
       if (result.includes('[REDACTED:core_email]')) {
         console.log('✓ Core (priority 80) detected')
-        assert.ok(!result.includes('test@example.com'), 'Core email should be masked')
+        expect(result).not.toContain('test@example.com')
       }
 
       // All should be detected regardless of loading order (no conflicts)
       const totalRedactions = (result.match(/\[REDACTED:/g) || []).length
-      assert.ok(totalRedactions >= 3, 'Should detect all non-overlapping patterns')
+      expect(totalRedactions >= 3).toBeTruthy()
     }
   })
 
@@ -509,7 +497,7 @@ describe('Priority Conflict Resolution', () => {
 
       if (hasExpectedType) {
         console.log('✓ Expected detection type found')
-        assert.ok(!result.includes('555-123-4567'), 'Phone number should be redacted')
+        expect(result).not.toContain('555-123-4567')
       } else {
         console.log('⚠ Expected type not found, checking alternatives...')
 
@@ -518,8 +506,8 @@ describe('Priority Conflict Resolution', () => {
         console.log(`Actual detections: ${detectedTypes.join(', ')}`)
 
         // At minimum, should have some detection
-        assert.ok(detectedTypes.length > 0, 'Should have some phone detection')
-        assert.ok(!result.includes('555-123-4567'), 'Phone should be redacted regardless of type')
+        expect(detectedTypes.length > 0).toBeTruthy()
+        expect(result).not.toContain('555-123-4567')
       }
     }
   })
@@ -614,10 +602,7 @@ describe('Priority Conflict Resolution', () => {
       for (const number of originalNumbers) {
         if (number !== '****') {
           // Skip masked parts
-          assert.ok(
-            !result.includes(number) || result.includes('****'),
-            `Number ${number} should be redacted or in masked format`,
-          )
+          expect(result).not.toContain(number)
         }
       }
     }

@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * MAC Address Pattern Detection Edge Case Tests
@@ -21,9 +20,9 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
 
     for (const { input, expected } of standardMACs) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `MAC should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:mac]'),
+      expect(result).not.toContain(expected, `MAC should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:mac]',
         `Should contain MAC redaction marker for: ${input}`,
       )
     }
@@ -40,9 +39,9 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
 
     for (const { input, expected } of dashMACs) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `Dash-separated MAC should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:mac]'),
+      expect(result).not.toContain(expected, `Dash-separated MAC should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:mac]',
         `Should contain MAC redaction marker for: ${input}`,
       )
     }
@@ -59,9 +58,9 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
 
     for (const { input, expected } of mixedCaseMACs) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `Mixed case MAC should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:mac]'),
+      expect(result).not.toContain(expected, `Mixed case MAC should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:mac]',
         `Should contain MAC redaction marker for: ${input}`,
       )
     }
@@ -108,13 +107,13 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
       const hasRedaction = result.includes('[REDACTED:mac]')
 
       if (test.shouldDetect) {
-        assert.ok(hasRedaction, `Should detect MAC in: ${test.text} (${test.reason})`)
-        assert.ok(
-          !result.includes(test.expectedPattern),
+        expect(hasRedaction, `Should detect MAC in: ${test.text} (${test.reason})`)
+        expect(result).not.toContain(
+          test.expectedPattern,
           `MAC should be masked: ${test.expectedPattern}`,
         )
       } else {
-        assert.ok(!hasRedaction, `Should NOT detect MAC in: ${test.text} (${test.reason})`)
+        expect(!hasRedaction, `Should NOT detect MAC in: ${test.text} (${test.reason})`)
       }
     }
   })
@@ -137,8 +136,8 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
 
       // Special case: 7 octets will detect first 6 as valid MAC
       if (pattern.includes('00:11:22:33:44:55:66')) {
-        assert.ok(result.includes('[REDACTED:mac]'), `7-octet pattern detects first 6: ${pattern}`)
-        assert.ok(result.includes(':66'), `Last octet should remain: ${pattern}`)
+        expect(result).toContain('[REDACTED:mac]', `7-octet pattern detects first 6: ${pattern}`)
+        expect(result).toContain(':66', `Last octet should remain: ${pattern}`)
       } else {
         // Some invalid patterns may contain valid MAC subsets
         const hasDetection = result.includes('[REDACTED:mac]')
@@ -147,7 +146,7 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
         } else if (hasDetection) {
           console.log(`Note: Invalid MAC pattern partially detected: ${pattern}`)
         } else {
-          assert.ok(!hasDetection, `Should not detect invalid MAC: ${pattern}`)
+          expect(!hasDetection, `Should not detect invalid MAC: ${pattern}`)
         }
       }
     }
@@ -164,9 +163,9 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
 
     for (const { input, expected, name } of specialMACs) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `${name} MAC should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:mac]'),
+      expect(result).not.toContain(expected, `${name} MAC should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:mac]',
         `Should contain MAC redaction marker for ${name}: ${input}`,
       )
     }
@@ -187,16 +186,16 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
 
     // Count redactions (should be 4 valid MACs)
     const redactionCount = (result.match(/\[REDACTED:mac\]/g) || []).length
-    assert.ok(redactionCount >= 4, `Should detect at least 4 valid MACs, found: ${redactionCount}`)
+    expect(redactionCount >= 4, `Should detect at least 4 valid MACs, found: ${redactionCount}`)
 
     // Valid MACs should be redacted
-    assert.ok(!result.includes('00:11:22:33:44:55'), 'First MAC should be redacted')
-    assert.ok(!result.includes('aa:bb:cc:dd:ee:ff'), 'Second MAC should be redacted')
-    assert.ok(!result.includes('12-34-56-78-9a-bc'), 'Third MAC should be redacted')
-    assert.ok(!result.includes('FF:FF:FF:FF:FF:FF'), 'Broadcast MAC should be redacted')
+    expect(result).not.toContain('00:11:22:33:44:55')
+    expect(result).not.toContain('aa:bb:cc:dd:ee:ff')
+    expect(result).not.toContain('12-34-56-78-9a-bc')
+    expect(result).not.toContain('FF:FF:FF:FF:FF:FF')
 
     // Invalid MAC should remain
-    assert.ok(result.includes('00:11:22:gg:44:55'), 'Invalid MAC should remain unchanged')
+    expect(result).toContain('00:11:22:gg:44:55')
   })
 
   it('should handle tokenization of MAC addresses', async () => {
@@ -208,8 +207,8 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
     const macAddress = '00:11:22:33:44:55'
     const result = await redactText(reg, `Device MAC: ${macAddress}`)
 
-    assert.match(result, /TKN_MAC_[0-9a-f]{16}/, 'MAC should be tokenized')
-    assert.ok(!result.includes(macAddress), 'Original MAC should not appear in result')
+    expect(result).toMatch(/TKN_MAC_[0-9a-f]{16}/)
+    expect(result).not.toContain(macAddress)
   })
 
   it('should handle MAC addresses with OUI vendor info context', async () => {
@@ -223,9 +222,9 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
 
     for (const { input, expected } of ouiTests) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `OUI MAC should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:mac]'),
+      expect(result).not.toContain(expected, `OUI MAC should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:mac]',
         `Should contain MAC redaction marker for: ${input}`,
       )
     }
@@ -242,7 +241,7 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
     const result2 = await redactText(reg, input)
 
     // Tokens should be identical (HMAC is deterministic)
-    assert.equal(result1, result2, 'Same MAC input should generate identical tokens')
+    expect(result1).toBe(result2)
   })
 
   it('should generate different tokens for different MAC addresses', async () => {
@@ -258,7 +257,7 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
     const token1 = result1.match(/TKN_MAC_([0-9a-f]{16})/)?.[1]
     const token2 = result2.match(/TKN_MAC_([0-9a-f]{16})/)?.[1]
 
-    assert.ok(token1 && token2, 'Both MAC inputs should generate tokens')
-    assert.notEqual(token1, token2, 'Different MAC addresses should generate different tokens')
+    expect(token1 && token2).toBeTruthy()
+    expect(token1).not.toBe(token2)
   })
 })
