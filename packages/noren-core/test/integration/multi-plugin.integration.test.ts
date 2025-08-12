@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import type { DetectUtils, Hit } from '@himorishige/noren-core'
+import type { DetectUtils } from '@himorishige/noren-core'
 import { Registry, redactText } from '@himorishige/noren-core'
 
 /**
@@ -375,7 +375,7 @@ describe('Multi-Plugin Integration', () => {
   })
 
   it('should handle plugin loading order dependencies', async () => {
-    const reg = new Registry({ defaultAction: 'mask' })
+    const _reg = new Registry({ defaultAction: 'mask' })
 
     // Plugin A depends on Plugin B's context hints
     const pluginADetector = {

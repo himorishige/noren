@@ -226,7 +226,7 @@ describe('Hot-reload System Integration', () => {
 
     // First load should succeed
     await reloader.start()
-    const initialSwapCount = swaps.length
+    const _initialSwapCount = swaps.length
 
     // Enable malformed JSON
     serverState.malformedJson = true
@@ -310,7 +310,8 @@ describe('Hot-reload System Integration', () => {
     const initialSwapCount = swaps.length
 
     // Update policy to cause compilation error
-    serverState.policyData = { causeError: true, version: 2 } as any
+    // biome-ignore lint/suspicious/noExplicitAny: Required for test to simulate invalid policy data
+    serverState.policyData = { causeError: true, version: 2 } as unknown as any
     serverState.policyETag = 'W/"policy-error"'
 
     // Force reload with error-causing policy
@@ -435,7 +436,8 @@ describe('Hot-reload System Integration', () => {
     serverState.manifestETag = 'W/"manifest-v2"'
 
     // Mock dict3 response
-    const originalFetchImpl = globalThis.fetch as any
+    // biome-ignore lint/suspicious/noExplicitAny: Required for test to mock globalThis.fetch
+    const originalFetchImpl = globalThis.fetch as unknown as any
     globalThis.fetch = (async (url: string, init?: RequestInit) => {
       if (url.includes('dict3.json')) {
         return new Response(JSON.stringify({ patterns: ['test3@'], version: 1 }), {

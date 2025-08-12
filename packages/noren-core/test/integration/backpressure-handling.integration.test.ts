@@ -88,7 +88,7 @@ describe('Backpressure Handling Integration', () => {
             const chunk = generateChunk(enqueueCount)
             controller.enqueue(chunk)
             enqueueCount++
-          } catch (error) {
+          } catch (_error) {
             backpressureEvents++
             console.log(`Backpressure at chunk ${enqueueCount}`)
           }
@@ -179,7 +179,7 @@ describe('Backpressure Handling Integration', () => {
 
         // Add some filler to reach size target
         if (content.length % 1000 === 0) {
-          content += 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(10) + '\n'
+          content += `${'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(10)}\n`
         }
       }
 
@@ -374,7 +374,7 @@ describe('Backpressure Handling Integration', () => {
               try {
                 controller.enqueue(content)
                 chunkIndex++
-              } catch (error) {
+              } catch (_error) {
                 console.log(`Stream ${streamId} enqueue failed at chunk ${chunkIndex}`)
               }
             },
@@ -514,7 +514,7 @@ describe('Backpressure Handling Integration', () => {
                 `[ERROR_RECOVERED: Chunk processed with errors - ${text.length} bytes]`,
               )
               recoveryCount++
-            } catch (recoveryError) {
+            } catch (_recoveryError) {
               controller.error(error)
             }
           }

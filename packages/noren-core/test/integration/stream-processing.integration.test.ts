@@ -141,7 +141,7 @@ describe('WHATWG Streams Integration', () => {
               enqueueCount++
               // Try to enqueue quickly to test backpressure
               setTimeout(enqueueNext, 5)
-            } catch (error) {
+            } catch (_error) {
               console.log('Backpressure detected during enqueue')
               backpressureEvents++
               // Retry after delay
@@ -215,7 +215,7 @@ describe('WHATWG Streams Integration', () => {
         content += 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
       }
 
-      return content + `Chunk ${chunkId} end.`
+      return `${content}Chunk ${chunkId} end.`
     }
 
     const largeTransform = new TransformStream(
@@ -330,7 +330,7 @@ describe('WHATWG Streams Integration', () => {
         try {
           const result = await redactText(reg, text)
           controller.enqueue(result)
-        } catch (error) {
+        } catch (_error) {
           errorCount++
           // Try recovery by enqueueing error marker
           controller.enqueue(`[ERROR_RECOVERED: ${text.substring(0, 20)}...]`)

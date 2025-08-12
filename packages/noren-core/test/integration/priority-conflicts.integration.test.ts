@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import type { DetectUtils, Hit } from '@himorishige/noren-core'
+import type { DetectUtils } from '@himorishige/noren-core'
 import { Registry, redactText } from '@himorishige/noren-core'
 
 /**
@@ -131,7 +131,7 @@ describe('Priority Conflict Resolution', () => {
   })
 
   it('should handle same-priority detectors consistently', async () => {
-    const reg = new Registry({ defaultAction: 'mask' })
+    const _reg = new Registry({ defaultAction: 'mask' })
 
     // Create two detectors with identical priority
     const detectorA = {
@@ -207,7 +207,7 @@ describe('Priority Conflict Resolution', () => {
   })
 
   it('should handle priority inheritance from plugin loading order', async () => {
-    const reg = new Registry({ defaultAction: 'mask' })
+    const _reg = new Registry({ defaultAction: 'mask' })
 
     // Simulate plugins with detectors of various priorities
     const pluginCoreDetectors = [
@@ -543,7 +543,7 @@ describe('Priority Conflict Resolution', () => {
   })
 
   it('should handle priority conflicts in plugin combinations', async () => {
-    const reg = new Registry({ defaultAction: 'mask' })
+    const _reg = new Registry({ defaultAction: 'mask' })
 
     // Simulate different plugin priority ranges
     const corePluginDetectors = [
