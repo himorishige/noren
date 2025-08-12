@@ -349,18 +349,15 @@ describe('Hot-reload System Integration', () => {
     const swaps: Array<{ compiled: ReturnType<typeof compile>; changed: string[] }> = []
     const errors: unknown[] = []
 
-    let compilationDelay = 0
-    function slowCompile(policy: unknown, dicts: unknown[]): Promise<ReturnType<typeof compile>> {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            policy,
-            dicts,
-            timestamp: Date.now(),
-            compiled: true,
-          })
-        }, compilationDelay)
-      })
+    function slowCompile(policy: unknown, dicts: unknown[]) {
+      // For concurrent testing, we simulate delay using timing in the test itself
+      // rather than making compile async, since the actual interface is sync
+      return {
+        policy,
+        dicts,
+        timestamp: Date.now(),
+        compiled: true,
+      }
     }
 
     const reloader = new PolicyDictReloader({
@@ -368,23 +365,26 @@ describe('Hot-reload System Integration', () => {
       dictManifestUrl: 'https://example.com/manifest.json',
       compile: slowCompile,
       intervalMs: 100,
-      onSwap: (compiled, changed) =>
-        swaps.push({ compiled: compiled as ReturnType<typeof compile>, changed }),
+      onSwap: (compiled, changed) => swaps.push({ compiled, changed }),
       onError: (error) => errors.push(error),
     })
 
     await reloader.start()
     const initialSwaps = swaps.length
 
-    // Set compilation delay to make concurrent scenarios more likely
-    compilationDelay = 100
-
-    // Trigger multiple concurrent reloads
+    // Trigger multiple concurrent reloads with small delays
     const reloadPromises = []
     for (let i = 0; i < 5; i++) {
       serverState.policyETag = `W/"policy-concurrent-${i}"`
       serverState.policyData = { rules: { email: { action: 'mask' } }, version: i + 10 }
+
+      // Start reload immediately, then add small delay before next one
       reloadPromises.push(reloader.forceReload())
+
+      // Small delay to create potential for concurrent operations
+      if (i < 4) {
+        await new Promise((resolve) => setTimeout(resolve, 5))
+      }
     }
 
     // Wait for all reloads to complete
