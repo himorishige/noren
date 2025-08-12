@@ -109,7 +109,8 @@ function maskCookieHeader(cookieHeader: string, config?: SecurityConfig): string
 
     return `Cookie: ${maskedPairs.join('; ')}`
   } catch (error) {
-    logSecurityError('Cookie masking', error as Error, cookieHeader)
+    const errorObj = error instanceof Error ? error : new Error(String(error))
+    logSecurityError('Cookie masking', errorObj, cookieHeader)
     return '[REDACTED:COOKIE]'
   }
 }
@@ -136,7 +137,8 @@ function maskSetCookieHeader(setCookieHeader: string, config?: SecurityConfig): 
     // Preserve original format while masking only the value
     return setCookieHeader.replace(/^(Set-Cookie\s*:\s*[^=]+=)([^;]+)(.*)$/i, `$1${maskedValue}$3`)
   } catch (error) {
-    logSecurityError('Set-Cookie masking', error as Error, setCookieHeader)
+    const errorObj = error instanceof Error ? error : new Error(String(error))
+    logSecurityError('Set-Cookie masking', errorObj, setCookieHeader)
     return '[REDACTED:SET-COOKIE]'
   }
 }

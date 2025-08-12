@@ -233,7 +233,8 @@ export const detectors: Detector[] = [
             }
           } catch (error) {
             // Skip on parse failure, but log for debugging
-            logSecurityError('Cookie header parsing', error as Error, m[0])
+            const errorObj = error instanceof Error ? error : new Error(String(error))
+            logSecurityError('Cookie header parsing', errorObj, m[0])
           }
         }
       }
@@ -264,7 +265,8 @@ export const detectors: Detector[] = [
             }
           } catch (error) {
             // Skip on parse failure, but log for debugging
-            logSecurityError('Set-Cookie header parsing', error as Error, m[0])
+            const errorObj = error instanceof Error ? error : new Error(String(error))
+            logSecurityError('Set-Cookie header parsing', errorObj, m[0])
           }
         }
       }
