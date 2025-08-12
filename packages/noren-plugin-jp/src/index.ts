@@ -84,7 +84,7 @@ export const detectors: Detector[] = [
 ]
 
 export const maskers: Record<string, Masker> = {
-  jp_postal: () => '〒•••-••••',
+  jp_postal: () => '•••-••••',
   phone_jp: (h) => h.value.replace(/\d/g, '•'),
   jp_my_number: () => '[REDACTED:MYNUMBER]',
 }

@@ -75,3 +75,35 @@ export async function hmacToken(value: string, key: CryptoKey) {
   }
   return hex
 }
+
+/**
+ * Detect if a Uint8Array chunk contains binary data
+ * Uses heuristics to determine if data is likely binary vs text
+ */
+export function isBinaryChunk(chunk: Uint8Array): boolean {
+  if (chunk.length === 0) return false
+
+  let nullBytes = 0
+  let controlBytes = 0
+  const sampleSize = Math.min(chunk.length, 1024) // Check first 1KB
+
+  for (let i = 0; i < sampleSize; i++) {
+    const byte = chunk[i]
+
+    // Null bytes are strong indicator of binary data
+    if (byte === 0) {
+      nullBytes++
+      if (nullBytes > 0) return true // Even one null byte suggests binary
+    }
+
+    // Control characters (except common text ones)
+    if (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13) {
+      controlBytes++
+    }
+
+    // High ratio of control characters suggests binary
+    if (controlBytes > sampleSize * 0.3) return true
+  }
+
+  return false
+}

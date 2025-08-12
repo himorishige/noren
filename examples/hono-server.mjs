@@ -1,8 +1,8 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
-import { Registry, redactText } from '../packages/noren-core/dist/index.js'
-import * as jp from '../packages/noren-plugin-jp/dist/index.js'
-import * as us from '../packages/noren-plugin-us/dist/index.js'
+import { Registry, createRedactionTransform } from '../packages/noren-core/dist/index.js'
+import * as jp from '../packages/noren-plugin-jp/dist/noren-plugin-jp/src/index.js'
+import * as us from '../packages/noren-plugin-us/dist/noren-plugin-us/src/index.js'
 
 // Registry
 const reg = new Registry({
@@ -16,29 +16,13 @@ const reg = new Registry({
 reg.use(jp.detectors, jp.maskers, ['〒', '住所', 'TEL', 'Phone'])
 reg.use(us.detectors, us.maskers, ['Zip', 'Address', 'SSN', 'Phone'])
 
-// TransformStream (same as stream example)
-function createRedactionTransform(window = 96) {
-  const dec = new TextDecoder()
-  const enc = new TextEncoder()
-  let tail = ''
-  return new TransformStream({
-    async transform(chunk, controller) {
-      const text = dec.decode(chunk, { stream: true })
-      const buf = tail + text
-      const cut = Math.max(0, buf.length - window)
-      const head = buf.slice(0, cut)
-      const red = await redactText(reg, head, {
-        hmacKey: 'development-secret-key-for-server-example-32-chars',
-      })
-      controller.enqueue(enc.encode(red))
-      tail = buf.slice(cut)
-    },
-    async flush(controller) {
-      const red = await redactText(reg, tail, {
-        hmacKey: 'development-secret-key-for-server-example-32-chars',
-      })
-      controller.enqueue(new TextEncoder().encode(red))
-    },
+// Binary-safe TransformStream using core utility
+function createBinarySafeRedactionTransform(window = 96) {
+  return createRedactionTransform(reg, {
+    window,
+    policy: {
+      hmacKey: 'development-secret-key-for-server-example-32-chars',
+    }
   })
 }
 
@@ -49,7 +33,7 @@ app.get('/', (c) => c.text('Noren Hono server: POST /redact with text body'))
 app.post('/redact', async (c) => {
   const body = c.req.raw.body // ReadableStream<Uint8Array>
   if (!body) return c.text('no body', 400)
-  const redacted = body.pipeThrough(createRedactionTransform())
+  const redacted = body.pipeThrough(createBinarySafeRedactionTransform())
   return new Response(redacted, { headers: { 'content-type': 'text/plain; charset=utf-8' } })
 })
 
