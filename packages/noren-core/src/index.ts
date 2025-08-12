@@ -167,7 +167,7 @@ export class Registry {
     }
 
     // Create clean copies of final hits to avoid pool reference issues
-    const finalHits = hits.slice(0, writeIndex).map(hit => ({
+    const finalHits = hits.slice(0, writeIndex).map((hit) => ({
       type: hit.type,
       start: hit.start,
       end: hit.end,
@@ -175,7 +175,7 @@ export class Registry {
       risk: hit.risk,
       priority: hit.priority,
     }))
-    
+
     const releasedHits = hits.slice(writeIndex)
     if (releasedHits.length > 0) {
       hitPool.release(releasedHits)
