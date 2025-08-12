@@ -1,4 +1,4 @@
-import type { Detector, Masker } from '@himorishige/noren-core'
+import type { Detector, DetectUtils, Hit, Masker } from '@himorishige/noren-core'
 
 // Pre-compiled regex patterns for US detectors
 const US_PATTERNS = {
@@ -16,7 +16,7 @@ const US_CONTEXTS = {
 export const detectors: Detector[] = [
   {
     id: 'us.phone',
-    match: ({ src, push }) => {
+    match: ({ src, push }: DetectUtils) => {
       for (const m of src.matchAll(US_PATTERNS.phone))
         push({
           type: 'us_phone',
@@ -29,7 +29,7 @@ export const detectors: Detector[] = [
   },
   {
     id: 'us.zip',
-    match: ({ src, push, hasCtx }) => {
+    match: ({ src, push, hasCtx }: DetectUtils) => {
       if (!hasCtx(US_CONTEXTS.zip)) return
       for (const m of src.matchAll(US_PATTERNS.zip))
         push({
@@ -44,7 +44,7 @@ export const detectors: Detector[] = [
   {
     id: 'us.ssn',
     priority: -10,
-    match: ({ src, push, hasCtx }) => {
+    match: ({ src, push, hasCtx }: DetectUtils) => {
       if (!hasCtx(US_CONTEXTS.ssn)) return
       for (const m of src.matchAll(US_PATTERNS.ssn))
         push({
@@ -59,7 +59,7 @@ export const detectors: Detector[] = [
 ]
 
 export const maskers: Record<string, Masker> = {
-  us_phone: (h) => h.value.replace(/\d/g, '•'),
-  us_zip: (h) => (h.value.length > 5 ? '•••••-••••' : '•••••'),
-  us_ssn: (h) => `***-**-${h.value.replace(/\D/g, '').slice(-4)}`,
+  us_phone: (h: Hit) => h.value.replace(/\d/g, '•'),
+  us_zip: (h: Hit) => (h.value.length > 5 ? '•••••-••••' : '•••••'),
+  us_ssn: (h: Hit) => `***-**-${h.value.replace(/\D/g, '').slice(-4)}`,
 }
