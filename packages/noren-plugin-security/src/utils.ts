@@ -130,12 +130,16 @@ export function validateSecurityConfig(config: SecurityConfig): void {
       }
       // Check for potentially dangerous characters (prevent injection)
       if (pattern.includes('\0') || pattern.includes('\n') || pattern.includes('\r')) {
-        throw new Error(`Invalid cookie allowlist pattern: contains dangerous characters: ${pattern}`)
+        throw new Error(
+          `Invalid cookie allowlist pattern: contains dangerous characters: ${pattern}`,
+        )
       }
       // Validate wildcard usage (only * at end is allowed)
       const asteriskCount = (pattern.match(/\*/g) || []).length
       if (asteriskCount > 1 || (asteriskCount === 1 && !pattern.endsWith('*'))) {
-        throw new Error(`Invalid cookie allowlist pattern: wildcard (*) only allowed at end: ${pattern}`)
+        throw new Error(
+          `Invalid cookie allowlist pattern: wildcard (*) only allowed at end: ${pattern}`,
+        )
       }
     }
   }
@@ -148,12 +152,16 @@ export function validateSecurityConfig(config: SecurityConfig): void {
       }
       // Check for potentially dangerous characters
       if (pattern.includes('\0') || pattern.includes('\n') || pattern.includes('\r')) {
-        throw new Error(`Invalid header allowlist pattern: contains dangerous characters: ${pattern}`)
+        throw new Error(
+          `Invalid header allowlist pattern: contains dangerous characters: ${pattern}`,
+        )
       }
       // Validate wildcard usage
       const asteriskCount = (pattern.match(/\*/g) || []).length
       if (asteriskCount > 1 || (asteriskCount === 1 && !pattern.endsWith('*'))) {
-        throw new Error(`Invalid header allowlist pattern: wildcard (*) only allowed at end: ${pattern}`)
+        throw new Error(
+          `Invalid header allowlist pattern: wildcard (*) only allowed at end: ${pattern}`,
+        )
       }
     }
   }
