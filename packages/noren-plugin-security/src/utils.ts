@@ -1,5 +1,21 @@
 import type { CookieInfo, HeaderInfo, SecurityConfig } from './types.js'
 
+// Optional debug logging function
+let debugLogger: ((message: string, error?: Error) => void) | undefined
+
+export function setSecurityDebugLogger(logger: (message: string, error?: Error) => void) {
+  debugLogger = logger
+}
+
+export function logSecurityError(context: string, error: Error, input?: string) {
+  if (debugLogger) {
+    const sanitizedInput = input
+      ? `Input: "${input.slice(0, 50)}${input.length > 50 ? '...' : ''}"`
+      : ''
+    debugLogger(`Security parsing error in ${context}. ${sanitizedInput}`, error)
+  }
+}
+
 /** Parse Cookie header string */
 export function parseCookieHeader(cookieHeader: string): CookieInfo[] {
   const cookies: CookieInfo[] = []

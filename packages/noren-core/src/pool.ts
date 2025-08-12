@@ -4,7 +4,9 @@ import type { Hit, PiiType } from './types.js'
 // Hit object pool for reducing GC pressure
 export class HitPool {
   private pool: Hit[] = []
-  private maxSize = 100 // Prevent unbounded growth
+  private maxSize = 50 // Reduced pool size for security
+  private clearCounter = 0
+  private clearThreshold = 20 // Clear pool every N releases for security
 
   acquire(
     type: PiiType,
@@ -38,22 +40,55 @@ export class HitPool {
         this.pool.push(hit)
       }
     }
+
+    // Periodically clear the entire pool for security
+    this.clearCounter++
+    if (this.clearCounter >= this.clearThreshold) {
+      this.forcePoolClear()
+      this.clearCounter = 0
+    }
   }
 
   private securelyWipeHit(hit: Hit): void {
-    // Overwrite sensitive data with random values before pooling
-    if (hit.value.length > 0) {
-      const randomBytes = new Uint8Array(hit.value.length)
+    // Multiple overwrite passes with different patterns for better security
+    const originalLength = hit.value.length
+
+    if (originalLength > 0) {
+      // Pass 1: Random data
+      const randomBytes = new Uint8Array(originalLength)
       crypto.getRandomValues(randomBytes)
-      // Convert to string and overwrite original
-      const randomString = Array.from(randomBytes, (b) => String.fromCharCode(b)).join('')
-      hit.value = randomString
+      hit.value = Array.from(randomBytes, (b) => String.fromCharCode(b & 0x7f)).join('')
+
+      // Pass 2: Zeros
+      hit.value = '\0'.repeat(originalLength)
+
+      // Pass 3: Ones
+      hit.value = '\xFF'.repeat(originalLength)
+
+      // Pass 4: Final random overwrite
+      crypto.getRandomValues(randomBytes)
+      hit.value = Array.from(randomBytes, (b) => String.fromCharCode(b & 0x7f)).join('')
     }
-    // Note: Don't clear to empty values - acquire() will overwrite all properties
+
+    // Clear other potentially sensitive fields
+    hit.type = 'unknown' as PiiType
+    hit.start = 0
+    hit.end = 0
+    hit.risk = 'low'
+    hit.priority = undefined
+  }
+
+  private forcePoolClear(): void {
+    // Completely clear the pool for security reasons
+    for (const hit of this.pool) {
+      this.securelyWipeHit(hit)
+    }
+    this.pool.length = 0
   }
 
   clear(): void {
-    this.pool.length = 0
+    this.forcePoolClear()
+    this.clearCounter = 0
   }
 }
 

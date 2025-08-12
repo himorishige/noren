@@ -2,8 +2,7 @@ import type { Detector } from '@himorishige/noren-core'
 import { SECURITY_CONTEXTS, SECURITY_PATTERNS } from './patterns.js'
 // biome-ignore lint/correctness/noUnusedImports: type imported for future configuration features
 import type { SecurityConfig } from './types.js'
-// biome-ignore lint/correctness/noUnusedImports: functions used in cookie/header detection below
-import { isCookieAllowed, parseCookieHeader, parseSetCookieHeader } from './utils.js'
+import { logSecurityError, parseCookieHeader, parseSetCookieHeader } from './utils.js'
 
 /** Security plugin detectors */
 export const detectors: Detector[] = [
@@ -232,8 +231,9 @@ export const detectors: Detector[] = [
                 break // Only push once as we mask the entire Cookie header
               }
             }
-          } catch {
-            // Skip on parse failure
+          } catch (error) {
+            // Skip on parse failure, but log for debugging
+            logSecurityError('Cookie header parsing', error as Error, m[0])
           }
         }
       }
@@ -262,8 +262,9 @@ export const detectors: Detector[] = [
                 risk: 'medium',
               })
             }
-          } catch {
-            // Skip on parse failure
+          } catch (error) {
+            // Skip on parse failure, but log for debugging
+            logSecurityError('Set-Cookie header parsing', error as Error, m[0])
           }
         }
       }
