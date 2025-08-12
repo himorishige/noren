@@ -126,7 +126,7 @@ export function builtinDetect(u: DetectUtils) {
       )
       if (hit) u.push(hit)
     }
-    
+
     // Process IPv6 addresses using parser (two-phase approach)
     const ipv6Candidates = extractIPv6Candidates(text)
     for (const candidate of ipv6Candidates) {
@@ -142,7 +142,7 @@ export function builtinDetect(u: DetectUtils) {
             offsetStart + candidateIndex + candidate.length,
             candidate,
             'low',
-            10
+            10,
           )
           if (hit) u.push(hit)
         }

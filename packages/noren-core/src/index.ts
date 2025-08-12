@@ -1,37 +1,50 @@
 // Noren Core - Global PII detection and masking (Web Standards only)
 
-export { AllowDenyManager, type AllowDenyConfig, type Environment } from './allowlist.js'
-export { 
-  calculateConfidence, 
-  filterByConfidence, 
-  meetsConfidenceThreshold, 
+export { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'
+export {
   CONFIDENCE_THRESHOLDS,
-  type ConfidenceFeatures 
+  type ConfidenceFeatures,
+  calculateConfidence,
+  filterByConfidence,
+  meetsConfidenceThreshold,
 } from './confidence.js'
-export { parseIPv6, type IPv6ParseResult } from './ipv6-parser.js'
+export { type IPv6ParseResult, parseIPv6 } from './ipv6-parser.js'
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
 export { HitPool } from './pool.js'
 export { createRedactionTransform } from './stream-utils.js'
 export type {
   Action,
+  DetectionSensitivity,
   Detector,
   DetectUtils,
   Hit,
   Masker,
   PiiType,
   Policy,
-  DetectionSensitivity,
 } from './types'
 export { hmacToken, importHmacKey, isBinaryChunk, normalize } from './utils.js'
 
-import { AllowDenyManager, type AllowDenyConfig, type Environment } from './allowlist.js'
-import { calculateConfidence, filterByConfidence, CONFIDENCE_THRESHOLDS, type ConfidenceFeatures } from './confidence.js'
+import { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'
+import {
+  CONFIDENCE_THRESHOLDS,
+  type ConfidenceFeatures,
+  calculateConfidence,
+  filterByConfidence,
+} from './confidence.js'
 import { builtinDetect } from './detection.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'
 import { defaultMask } from './masking.js'
 import { hitPool } from './pool.js'
-import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy, DetectionSensitivity } from './types.js'
+import type {
+  DetectionSensitivity,
+  Detector,
+  DetectUtils,
+  Hit,
+  Masker,
+  PiiType,
+  Policy,
+} from './types.js'
 import { hmacToken, importHmacKey, normalize, SECURITY_LIMITS } from './utils.js'
 
 // Risk level weights for tiebreaker comparison
@@ -87,11 +100,11 @@ export class Registry {
     this.base = policy
     this.contextHintsSet = new Set(policy.contextHints ?? [])
     this.enableConfidenceScoring = enableConfidenceScoring ?? true
-    
+
     // Initialize allowlist/denylist manager
     this.allowDenyManager = new AllowDenyManager({
       environment: environment ?? 'production',
-      ...allowDenyConfig
+      ...allowDenyConfig,
     })
   }
 
@@ -233,7 +246,7 @@ export class Registry {
         filteredHits.push(hit)
       }
     }
-    
+
     // Apply confidence scoring if enabled
     const scoredHits: Hit[] = []
     for (const hit of filteredHits) {
@@ -243,19 +256,20 @@ export class Registry {
           ...hit,
           confidence: confidenceResult.confidence,
           reasons: confidenceResult.reasons,
-          features: confidenceResult.features
+          features: confidenceResult.features,
         }
         scoredHits.push(scoredHit)
       } else {
         scoredHits.push(hit)
       }
     }
-    
+
     // Apply confidence-based filtering
-    const finalFilteredHits = this.enableConfidenceScoring && this.base.sensitivity
-      ? filterByConfidence(scoredHits, this.base.sensitivity, this.base.confidenceThreshold)
-      : scoredHits
-    
+    const finalFilteredHits =
+      this.enableConfidenceScoring && this.base.sensitivity
+        ? filterByConfidence(scoredHits, this.base.sensitivity, this.base.confidenceThreshold)
+        : scoredHits
+
     // Create clean copies of final hits to avoid pool reference issues
     const finalHits: Hit[] = new Array(finalFilteredHits.length)
     for (let i = 0; i < finalFilteredHits.length; i++) {
