@@ -21,6 +21,34 @@ import { hitPool } from './pool.js'
 import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy } from './types.js'
 import { hmacToken, importHmacKey, normalize } from './utils.js'
 
+// Risk level weights for tiebreaker comparison
+const RISK_WEIGHTS = { high: 3, medium: 2, low: 1 } as const
+
+/**
+ * Resolve conflicts between hits with same priority
+ * Returns true if current hit should replace the existing hit
+ */
+function resolveSamePriorityConflict(current: Hit, existing: Hit): boolean {
+  // 1. Prefer higher risk levels
+  const currentRiskWeight = RISK_WEIGHTS[current.risk]
+  const existingRiskWeight = RISK_WEIGHTS[existing.risk]
+
+  if (currentRiskWeight !== existingRiskWeight) {
+    return currentRiskWeight > existingRiskWeight
+  }
+
+  // 2. Prefer longer hits (more specific matches)
+  const currentLength = current.end - current.start
+  const existingLength = existing.end - existing.start
+
+  if (currentLength !== existingLength) {
+    return currentLength > existingLength
+  }
+
+  // 3. As final tiebreaker, prefer hits that appear earlier in text
+  return current.start < existing.start
+}
+
 export class Registry {
   private detectors: Detector[] = []
   private maskers = new Map<PiiType, Masker>()
@@ -61,6 +89,7 @@ export class Registry {
     const hits: Hit[] = []
 
     const ctxHintsForCheck = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
+    const srcLower = src.toLowerCase()
     let contextCheckCache: boolean | null = null
 
     const u: DetectUtils = {
@@ -68,11 +97,11 @@ export class Registry {
       hasCtx: (ws) => {
         if (!ws) {
           if (contextCheckCache === null) {
-            contextCheckCache = ctxHintsForCheck.some((w) => src.includes(w))
+            contextCheckCache = ctxHintsForCheck.some((w) => srcLower.includes(w.toLowerCase()))
           }
           return contextCheckCache
         }
-        return ws.some((w) => src.includes(w))
+        return ws.some((w) => srcLower.includes(w.toLowerCase()))
       },
       push: (h) => hits.push(h),
     }
@@ -118,6 +147,16 @@ export class Registry {
           hitPool.release([lastAcceptedHit])
           hits[writeIndex - 1] = currentHit
           currentEnd = currentHit.end
+        } else if (currentPriority === lastPriority) {
+          // Same priority - use tiebreaker rules
+          const shouldReplace = resolveSamePriorityConflict(currentHit, lastAcceptedHit)
+          if (shouldReplace) {
+            hitPool.release([lastAcceptedHit])
+            hits[writeIndex - 1] = currentHit
+            currentEnd = currentHit.end
+          } else {
+            hitPool.release([currentHit])
+          }
         } else {
           // Keep the existing hit, discard current one
           hitPool.release([currentHit])
