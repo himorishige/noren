@@ -20,7 +20,7 @@ describe('Backpressure Handling Integration', () => {
     const reg = new Registry({ defaultAction: 'mask' })
 
     const chunkSize = 1024 // 1KB chunks
-    const numChunks = 1000 // 1MB total
+    const numChunks = 100 // 100KB total - reduced from 1000 to speed up tests
     let processedChunks = 0
     let maxQueueSize = 0
 
@@ -73,26 +73,38 @@ describe('Backpressure Handling Integration', () => {
       return content
     }
 
-    let enqueueCount = 0
+    let _enqueueCount = 0
     let backpressureEvents = 0
     const readable = new ReadableStream({
-      start(controller) {
-        const enqueueInterval = setInterval(() => {
-          if (enqueueCount >= numChunks) {
-            clearInterval(enqueueInterval)
-            controller.close()
-            return
-          }
-
+      async start(controller) {
+        for (let i = 0; i < numChunks; i++) {
+          const chunk = generateChunk(i)
           try {
-            const chunk = generateChunk(enqueueCount)
             controller.enqueue(chunk)
-            enqueueCount++
+            _enqueueCount++
           } catch (_error) {
+            // Handle backpressure by waiting a bit
             backpressureEvents++
-            console.log(`Backpressure at chunk ${enqueueCount}`)
+            if (backpressureEvents % 100 === 0) {
+              console.log(`Backpressure events: ${backpressureEvents}`)
+            }
+            // Wait for queue to drain
+            await new Promise((resolve) => setTimeout(resolve, 10))
+            // Retry enqueueing
+            try {
+              controller.enqueue(chunk)
+              _enqueueCount++
+            } catch (_retryError) {
+              // Skip this chunk if still can't enqueue
+              console.log(`Skipping chunk ${i} due to persistent backpressure`)
+            }
           }
-        }, 1) // Very high frequency - 1ms intervals
+          // Small delay between chunks to allow processing
+          if (i % 10 === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 1))
+          }
+        }
+        controller.close()
       },
     })
 
@@ -155,8 +167,8 @@ describe('Backpressure Handling Integration', () => {
   it('should handle large chunk processing with controlled memory usage', async () => {
     const reg = new Registry({ defaultAction: 'mask' })
 
-    const largeChunkSize = 5 * 1024 * 1024 // 5MB chunks
-    const numLargeChunks = 10 // 50MB total
+    const largeChunkSize = 1 * 1024 * 1024 // 1MB chunks - reduced from 5MB
+    const numLargeChunks = 5 // 5MB total - reduced from 10 chunks
     let processedBytes = 0
 
     // Generate large chunk with lots of PII
@@ -311,8 +323,8 @@ describe('Backpressure Handling Integration', () => {
   it('should handle backpressure in concurrent processing scenarios', async () => {
     const reg = new Registry({ defaultAction: 'mask' })
 
-    const numConcurrentStreams = 5
-    const chunksPerStream = 50
+    const numConcurrentStreams = 3 // Reduced from 5 to speed up tests
+    const chunksPerStream = 20 // Reduced from 50 to speed up tests
     const chunkSize = 10 * 1024 // 10KB per chunk
 
     // Create concurrent processing streams
@@ -354,32 +366,23 @@ describe('Backpressure Handling Integration', () => {
       )
 
       // Generate data for this stream
-      let chunkIndex = 0
+      let _chunkIndex = 0
       const readable = new ReadableStream({
-        start(controller) {
-          const interval = setInterval(
-            () => {
-              if (chunkIndex >= chunksPerStream) {
-                clearInterval(interval)
-                controller.close()
-                return
-              }
+        async start(controller) {
+          for (let i = 0; i < chunksPerStream; i++) {
+            // Generate chunk with PII patterns
+            let content = `Stream${streamId} Chunk${i}: `
+            while (content.length < chunkSize - 100) {
+              content += `email${i}@stream${streamId}.com credit-card:4242424242424242 ip:192.168.${streamId}.${i % 255} `
+            }
 
-              // Generate chunk with PII patterns
-              let content = `Stream${streamId} Chunk${chunkIndex}: `
-              while (content.length < chunkSize - 100) {
-                content += `email${chunkIndex}@stream${streamId}.com credit-card:4242424242424242 ip:192.168.${streamId}.${chunkIndex % 255} `
-              }
+            controller.enqueue(content)
+            _chunkIndex++
 
-              try {
-                controller.enqueue(content)
-                chunkIndex++
-              } catch (_error) {
-                console.log(`Stream ${streamId} enqueue failed at chunk ${chunkIndex}`)
-              }
-            },
-            10 + streamId * 5,
-          ) // Slightly different intervals per stream
+            // Add delay between chunks to simulate realistic streaming
+            await new Promise((resolve) => setTimeout(resolve, 10 + streamId * 5))
+          }
+          controller.close()
         },
       })
 

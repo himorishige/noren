@@ -28,6 +28,7 @@ export function builtinDetect(u: DetectUtils) {
     for (let i = 1; i < m.length; i++) {
       if (m[i]) {
         const patternInfo = PATTERN_TYPES[i - 1]
+        if (!patternInfo) continue // Skip if pattern info is undefined
         if (patternInfo.type === 'credit_card') {
           const digits = m[i].replace(/[ -]/g, '')
           if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {

@@ -25,8 +25,8 @@ export const UNIFIED_PATTERN = new RegExp(
     '(?<![A-Z0-9._%+-/])([A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,253}\\.[A-Z]{2,63})(?![\\w])',
     // Group 2: IPv4
     '|\\b((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3})\\b',
-    // Group 3: IPv6
-    '|((?:^|[\\s(])([0-9A-F]*:+[0-9A-F:]*[0-9A-F])(?=[\\s)]|$))',
+    // Group 3: IPv6 (non-capturing outer group)
+    '|(?:^|[\\s(])([0-9A-F]*:+[0-9A-F:]*[0-9A-F])(?=[\\s)]|$)',
     // Group 4: MAC Address
     '|\\b([0-9A-F]{2}(?:[:-][0-9A-F]{2}){5})\\b',
     // Group 5: Credit Card (simplified for unified pattern)
