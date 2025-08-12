@@ -7,10 +7,15 @@ export default defineConfig({
     environment: 'node',
     include: ['test/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/dist-test/**'],
+    timeout: 10000,
     poolOptions: {
       threads: {
         singleThread: true,
       },
+    },
+    coverage: {
+      enabled: true,
+      provider: 'v8',
     },
   },
   resolve: {

@@ -1,4 +1,4 @@
-import type { Detector, DetectUtils, Hit } from '@himorishige/noren-core'
+import type { DetectUtils, Hit } from '@himorishige/noren-core'
 import { detectors, maskers } from '@himorishige/noren-plugin-jp'
 import { describe, expect, it } from 'vitest'
 
@@ -9,7 +9,7 @@ function runDetect(src: string, ctxHints: string[] = []): Hit[] {
     hasCtx: (ws?: string[]) => (ws ?? ctxHints).some((w) => src.includes(w)),
     push: (h: Hit) => hits.push(h),
   }
-  for (const d of detectors as unknown as Detector[]) void d.match(u)
+  for (const d of detectors) void d.match(u)
   return hits
 }
 
