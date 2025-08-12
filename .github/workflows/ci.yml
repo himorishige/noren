@@ -53,19 +53,35 @@ jobs:
         if: github.event_name == 'pull_request'
         run: git fetch origin main:refs/remotes/origin/main --depth=1
 
-      - name: Check for changeset (only on PR)
+      - name: Detect release-relevant changes (PR)
+        id: diff
         if: github.event_name == 'pull_request'
         run: |
-          # Skip changeset check on release branches
-          if [[ "${{ github.head_ref }}" == "changeset-release/main" || "${{ github.head_ref }}" == release/* ]]; then
-            echo "⏭️ Skipping changeset check for release PR/branch (${{ github.head_ref }})"
-            exit 0
+          set -e
+          FILES="$(git diff --name-only origin/main...HEAD || true)"
+          echo "Changed files:"
+          echo "$FILES"
+          if echo "$FILES" | grep -E '^packages/[^/]+/(src/|package.json)'; then
+            echo "need_changeset=true" >> $GITHUB_OUTPUT
+            echo "Detected changes in package source or package.json"
+          else
+            echo "need_changeset=false" >> $GITHUB_OUTPUT
+            echo "No release-relevant package changes detected"
           fi
 
+      - name: Check for changeset (only on PR)
+        if: >
+          github.event_name == 'pull_request' &&
+          steps.diff.outputs.need_changeset == 'true' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-changeset') &&
+          github.head_ref != 'changeset-release/main' &&
+          !startsWith(github.head_ref, 'release/')
+        run: |
           if ! pnpm changeset status --since=origin/main; then
             echo "❌ No changeset found. Please run 'pnpm changeset' to add a changeset for your changes."
-            echo "If this PR doesn't require a release (e.g., docs, CI changes), add an empty changeset:"
-            echo "pnpm changeset --empty"
+            echo "If this PR doesn't require a release (e.g., docs/CI/tests only), you can either:"
+            echo "  - add label 'skip-changeset' to this PR to bypass the check, or"
+            echo "  - add an empty changeset: pnpm changeset --empty"
             exit 1
           else
             echo "✅ Changeset found!"
