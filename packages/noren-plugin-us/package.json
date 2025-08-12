@@ -1,6 +1,6 @@
 {
   "name": "@himorishige/noren-plugin-us",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "US-specific PII detection plugin for Noren (phone numbers, ZIP codes, SSN)",
   "keywords": [
     "pii",

@@ -1,5 +1,16 @@
 # @himorishige/noren-plugin-security
 
+## 0.3.0
+
+### Minor Changes
+
+- [#22](https://github.com/himorishige/noren/pull/22) [`9ff46de`](https://github.com/himorishige/noren/commit/9ff46de14b3385d0c25d05530777806a913ad741) Thanks [@himorishige](https://github.com/himorishige)! - Minor bug fix
+
+### Patch Changes
+
+- Updated dependencies [[`9ff46de`](https://github.com/himorishige/noren/commit/9ff46de14b3385d0c25d05530777806a913ad741)]:
+  - @himorishige/noren-core@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
