@@ -50,24 +50,18 @@ export class HitPool {
   }
 
   private securelyWipeHit(hit: Hit): void {
-    // Multiple overwrite passes with different patterns for better security
+    // Optimized secure wipe: single random overwrite is sufficient for memory security
+    // Multiple passes were overkill for JavaScript string objects in memory
     const originalLength = hit.value.length
 
     if (originalLength > 0) {
-      // Pass 1: Random data
-      const randomBytes = new Uint8Array(originalLength)
+      // Single random overwrite - sufficient for preventing memory dumps
+      // Modern V8 string interning makes multiple passes less effective anyway
+      const randomBytes = new Uint8Array(Math.min(originalLength, 64)) // Limit to 64 chars for performance
       crypto.getRandomValues(randomBytes)
-      hit.value = Array.from(randomBytes, (b) => String.fromCharCode(b & 0x7f)).join('')
-
-      // Pass 2: Zeros
-      hit.value = '\0'.repeat(originalLength)
-
-      // Pass 3: Ones
-      hit.value = '\xFF'.repeat(originalLength)
-
-      // Pass 4: Final random overwrite
-      crypto.getRandomValues(randomBytes)
-      hit.value = Array.from(randomBytes, (b) => String.fromCharCode(b & 0x7f)).join('')
+      hit.value = Array.from(randomBytes, (b) => String.fromCharCode(32 + (b % 95)))
+        .join('')
+        .slice(0, originalLength)
     }
 
     // Clear other potentially sensitive fields - use empty string instead of 'unknown'

@@ -41,65 +41,70 @@ export function builtinDetect(u: DetectUtils) {
     for (const m of unifiedMatches) {
       if (m.index === undefined) continue
 
+      // Optimized: find first non-empty capture group instead of iterating all
+      let matchedGroupIndex = -1
       for (let i = 1; i < m.length; i++) {
         if (m[i]) {
-          const patternInfo = PATTERN_TYPES[i - 1]
-          if (!patternInfo) continue // Skip if pattern info is undefined
+          matchedGroupIndex = i
+          break
+        }
+      }
 
-          // Skip false positive patterns to reduce incorrect detections
-          if (isFalsePositive(m[i], patternInfo.type) && patternInfo.type !== 'credit_card') {
-            continue
-          }
+      if (matchedGroupIndex > 0) {
+        const patternInfo = PATTERN_TYPES[matchedGroupIndex - 1]
+        if (!patternInfo) continue // Skip if pattern info is undefined
 
-          if (patternInfo.type === 'credit_card') {
-            const digits = m[i].replace(/[ -]/g, '')
-            if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
-              const hit = createHit(
-                patternInfo.type as PiiType,
-                m,
-                patternInfo.risk,
-                m[i],
-                offsetStart + m.index,
-                offsetStart + m.index + m[i].length,
-              )
-              if (hit) u.push(hit)
-            }
-          } else {
-            let actualStart = offsetStart + m.index
-            let actualEnd = offsetStart + m.index + m[i].length
+        const matchedText = m[matchedGroupIndex]
+        // Skip false positive patterns to reduce incorrect detections
+        if (isFalsePositive(matchedText, patternInfo.type) && patternInfo.type !== 'credit_card') {
+          continue
+        }
 
-            // For email and IPv6, calculate actual position within the match
-            if (patternInfo.type === 'email') {
-              const fullMatch = m[0]
-              const emailMatch = m[i]
-              const emailIndex = fullMatch.indexOf(emailMatch)
-              if (emailIndex !== -1) {
-                actualStart = offsetStart + m.index + emailIndex
-                actualEnd = actualStart + emailMatch.length
-              }
-            } else if (patternInfo.type === 'ipv6') {
-              // IPv6 pattern uses non-capturing boundary, so group is the IPv6 address itself
-              const fullMatch = m[0]
-              const ipv6Match = m[i]
-              // Find the IPv6 address within the full match (skip boundary character)
-              const ipv6Index = fullMatch.indexOf(ipv6Match)
-              if (ipv6Index !== -1) {
-                actualStart = offsetStart + m.index + ipv6Index
-                actualEnd = actualStart + ipv6Match.length
-              }
-            }
-
+        if (patternInfo.type === 'credit_card') {
+          const digits = matchedText.replace(/[ -]/g, '')
+          if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
             const hit = createHit(
               patternInfo.type as PiiType,
               m,
               patternInfo.risk,
-              m[i],
-              actualStart,
-              actualEnd,
+              matchedText,
+              offsetStart + m.index,
+              offsetStart + m.index + matchedText.length,
             )
             if (hit) u.push(hit)
           }
-          break
+        } else {
+          let actualStart = offsetStart + m.index
+          let actualEnd = offsetStart + m.index + matchedText.length
+
+          // For email and IPv6, calculate actual position within the match
+          if (patternInfo.type === 'email') {
+            const fullMatch = m[0]
+            const emailIndex = fullMatch.indexOf(matchedText)
+            if (emailIndex !== -1) {
+              actualStart = offsetStart + m.index + emailIndex
+              actualEnd = actualStart + matchedText.length
+            }
+          } else if (patternInfo.type === 'ipv6') {
+            // IPv6 pattern uses non-capturing boundary, so group is the IPv6 address itself
+            const fullMatch = m[0]
+            // Find the IPv6 address within the full match (skip boundary character)
+            const ipv6Index = fullMatch.indexOf(matchedText)
+            if (ipv6Index !== -1) {
+              actualStart = offsetStart + m.index + ipv6Index
+              actualEnd = actualStart + matchedText.length
+            }
+          }
+
+          const hit = createHit(
+            patternInfo.type as PiiType,
+            m,
+            patternInfo.risk,
+            matchedText,
+            actualStart,
+            actualEnd,
+          )
+          if (hit) u.push(hit)
         }
       }
     }

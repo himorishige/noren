@@ -168,14 +168,19 @@ export class Registry {
     }
 
     // Create clean copies of final hits to avoid pool reference issues
-    const finalHits = hits.slice(0, writeIndex).map((hit) => ({
-      type: hit.type,
-      start: hit.start,
-      end: hit.end,
-      value: hit.value,
-      risk: hit.risk,
-      priority: hit.priority,
-    }))
+    // Optimize: avoid creating unnecessary intermediate objects
+    const finalHits: Hit[] = new Array(writeIndex)
+    for (let i = 0; i < writeIndex; i++) {
+      const hit = hits[i]
+      finalHits[i] = {
+        type: hit.type,
+        start: hit.start,
+        end: hit.end,
+        value: hit.value,
+        risk: hit.risk,
+        priority: hit.priority,
+      }
+    }
 
     const releasedHits = hits.slice(writeIndex)
     if (releasedHits.length > 0) {
