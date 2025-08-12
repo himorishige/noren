@@ -1,5 +1,7 @@
 // Noren Core - Global PII detection and masking (Web Standards only)
 
+export { AllowDenyManager, type AllowDenyConfig, type Environment } from './allowlist.js'
+export { parseIPv6, type IPv6ParseResult } from './ipv6-parser.js'
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
 export { HitPool } from './pool.js'
@@ -15,6 +17,7 @@ export type {
 } from './types'
 export { hmacToken, importHmacKey, isBinaryChunk, normalize } from './utils.js'
 
+import { AllowDenyManager, type AllowDenyConfig, type Environment } from './allowlist.js'
 import { builtinDetect } from './detection.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'
 import { defaultMask } from './masking.js'
@@ -56,15 +59,28 @@ function resolveSamePriorityConflict(current: Hit, existing: Hit): boolean {
   return current.start < existing.start
 }
 
+export interface RegistryOptions extends Policy {
+  environment?: Environment
+  allowDenyConfig?: AllowDenyConfig
+}
+
 export class Registry {
   private detectors: Detector[] = []
   private maskers = new Map<PiiType, Masker>()
   private base: Policy
   private contextHintsSet: Set<string>
+  private allowDenyManager: AllowDenyManager
 
-  constructor(base: Policy) {
-    this.base = base
-    this.contextHintsSet = new Set(base.contextHints ?? [])
+  constructor(options: RegistryOptions) {
+    const { environment, allowDenyConfig, ...policy } = options
+    this.base = policy
+    this.contextHintsSet = new Set(policy.contextHints ?? [])
+    
+    // Initialize allowlist/denylist manager
+    this.allowDenyManager = new AllowDenyManager({
+      environment: environment ?? 'production',
+      ...allowDenyConfig
+    })
   }
 
   use(detectors: Detector[] = [], maskers: Record<string, Masker> = {}, ctx: string[] = []) {
@@ -196,11 +212,21 @@ export class Registry {
       }
     }
 
-    // Create clean copies of final hits to avoid pool reference issues
-    // Optimize: avoid creating unnecessary intermediate objects
-    const finalHits: Hit[] = new Array(writeIndex)
+    // Filter hits through allowlist/denylist
+    const filteredHits: Hit[] = []
     for (let i = 0; i < writeIndex; i++) {
       const hit = hits[i]
+      // Check if this value should be allowed (not treated as PII)
+      if (!this.allowDenyManager.isAllowed(hit.value, hit.type)) {
+        filteredHits.push(hit)
+      }
+    }
+    
+    // Create clean copies of final hits to avoid pool reference issues
+    // Optimize: avoid creating unnecessary intermediate objects
+    const finalHits: Hit[] = new Array(filteredHits.length)
+    for (let i = 0; i < filteredHits.length; i++) {
+      const hit = filteredHits[i]
       finalHits[i] = {
         type: hit.type,
         start: hit.start,

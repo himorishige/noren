@@ -180,8 +180,33 @@ Updated to support all current Japanese mobile numbers:
 - 080-xxxx-xxxx (mobile)
 - 090-xxxx-xxxx (mobile)
 
-### IPv6 Detection
-Enhanced IPv6 pattern to support compressed notation (`::`) and mixed formats.
+### IPv6 Detection (Updated v0.3.0)
+Enhanced IPv6 detection using two-phase parser approach:
+- **Phase 1**: Coarse pattern extraction for candidate identification
+- **Phase 2**: Strict parsing with `parseIPv6()` function for validation
+- **Compressed Notation**: Proper handling of `::` compression and edge cases
+- **Address Classification**: Automatic detection of private, loopback, link-local addresses
+- **Performance**: ~0.1ms per candidate with reduced regex complexity
+
+## New Features (v0.3.0)
+
+### Advanced False Positive Reduction
+- **Environment-aware Configuration**: Automatic exclusion of test patterns in development/test environments
+- **AllowDenyManager Class**: Fine-grained control over detection patterns
+- **Default Test Pattern Exclusion**: Automatic handling of example.com, localhost, private IPs
+- **Runtime Pattern Management**: Add/remove patterns dynamically via API
+- **Custom Lists**: Support for project-specific allowlist/denylist patterns
+
+### Enhanced IPv6 Detection
+- **Two-phase Parser Approach**: Coarse extraction followed by strict parsing
+- **Boundary Detection**: Improved accuracy with proper IPv6 boundary checking
+- **Memory Optimization**: Reduced memory growth in repeated IPv6 operations
+- **Classification Support**: Detect private, documentation, link-local, and unique local addresses
+
+### API Improvements
+- **RegistryOptions Interface**: Extended constructor with environment and allowDenyConfig
+- **Backward Compatibility**: Gradual migration path with deprecation warnings
+- **Type Safety**: Enhanced TypeScript definitions for new features
 
 ## Examples and Use Cases
 

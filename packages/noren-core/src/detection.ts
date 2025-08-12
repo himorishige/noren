@@ -1,5 +1,6 @@
 // Built-in detection logic
 
+import { extractIPv6Candidates, parseIPv6 } from './ipv6-parser.js'
 import { DETECTION_PATTERNS, PATTERN_TYPES, UNIFIED_PATTERN } from './patterns.js'
 import { hitPool } from './pool.js'
 import type { DetectUtils, Hit, PiiType } from './types.js'
@@ -87,14 +88,8 @@ export function builtinDetect(u: DetectUtils) {
               actualEnd = actualStart + matchedText.length
             }
           } else if (patternInfo.type === 'ipv6') {
-            // IPv6 pattern uses non-capturing boundary, so group is the IPv6 address itself
-            const fullMatch = m[0]
-            // Find the IPv6 address within the full match (skip boundary character)
-            const ipv6Index = fullMatch.indexOf(matchedText)
-            if (ipv6Index !== -1) {
-              actualStart = offsetStart + m.index + ipv6Index
-              actualEnd = actualStart + matchedText.length
-            }
+            // Skip IPv6 from unified pattern - will be handled by parser
+            continue
           }
 
           const hit = createHit(
@@ -130,6 +125,29 @@ export function builtinDetect(u: DetectUtils) {
         undefined,
       )
       if (hit) u.push(hit)
+    }
+    
+    // Process IPv6 addresses using parser (two-phase approach)
+    const ipv6Candidates = extractIPv6Candidates(text)
+    for (const candidate of ipv6Candidates) {
+      const parsed = parseIPv6(candidate)
+      if (parsed.valid && !parsed.isPrivate && !parsed.isLoopback && !parsed.isLinkLocal && !parsed.isUniqueLocal) {
+        // Only detect public IPv6 addresses, skip private/special ones
+        // Documentation addresses are also allowed to be detected
+        // Find the position of this candidate in the text
+        const candidateIndex = text.indexOf(candidate)
+        if (candidateIndex !== -1) {
+          const hit = hitPool.acquire(
+            'ipv6',
+            offsetStart + candidateIndex,
+            offsetStart + candidateIndex + candidate.length,
+            candidate,
+            'low',
+            10
+          )
+          if (hit) u.push(hit)
+        }
+      }
     }
   }
 

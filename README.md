@@ -17,6 +17,12 @@ It is designed to run in various JavaScript environments that support web standa
 
 *   **⚡ High Performance**
     *   Achieves high-speed processing even for large text data by using pre-compiled regular expression patterns and optimized detection algorithms.
+    *   IPv6 detection using two-phase parsing approach for improved accuracy and performance.
+
+*   **🎯 Advanced False Positive Reduction** (New in v0.3.0)
+    *   Environment-aware allowlist/denylist functionality to prevent false positives in development/test environments.
+    *   Automatic exclusion of test domains (example.com, localhost) and private IPs based on environment.
+    *   Customizable allowlist and denylist for fine-grained control over detection.
 
 *   **🧩 Flexible Plugin Architecture**
     *   In addition to a lightweight core (for common PII detection, masking, and tokenization), it flexibly supports region-specific formats (like My Number in Japan or SSN in the US) through country-specific plugins.
@@ -66,6 +72,7 @@ It is designed to run in various JavaScript environments that support web standa
     // Create a Registry to define detection and masking rules
     const reg = new Registry({
       defaultAction: 'mask', // Default action is 'mask'
+      environment: 'production', // Set environment (production/test/development)
       // Set individual rules for specific PII types
       rules: {
         credit_card: { action: 'mask', preserveLast4: true }, // Keep the last 4 digits for credit cards
@@ -90,7 +97,49 @@ It is designed to run in various JavaScript environments that support web standa
     // Output: 〒•••-•••• TEL •••-••••-•••• / SSN •••-••-•••• / Card: **** **** **** 4242 / [REDACTED:AUTH]
     ```
 
-4.  **Production Usage with Environment Variables**
+4.  **Environment-Aware Configuration** (New in v0.3.0)
+
+    Noren now supports environment-specific configuration to reduce false positives in development and testing:
+
+    ```ts
+    // Development/Test Environment
+    const devRegistry = new Registry({
+      defaultAction: 'mask',
+      environment: 'test', // Automatically excludes test patterns
+      allowDenyConfig: {
+        allowPrivateIPs: true, // Allow private IPs (192.168.*, 10.*, etc.)
+        allowTestPatterns: true, // Allow test@example.com, localhost, etc.
+        customAllowlist: new Map([
+          ['email', new Set(['support@mycompany.com'])] // Custom exceptions
+        ])
+      }
+    });
+
+    // Production Environment
+    const prodRegistry = new Registry({
+      defaultAction: 'tokenize',
+      environment: 'production', // Strict detection
+      hmacKey: process.env.NOREN_HMAC_KEY,
+      allowDenyConfig: {
+        allowPrivateIPs: false, // Detect private IPs
+        customDenylist: new Map([
+          ['email', new Set(['noreply@'])] // Force detection of no-reply emails
+        ])
+      }
+    });
+
+    // Test environment automatically excludes common test patterns
+    const testInput = 'Contact: test@example.com, IP: 192.168.1.1, Real: user@gmail.com';
+    const devResult = await redactText(devRegistry, testInput);
+    console.log(devResult);
+    // Output: Contact: test@example.com, IP: 192.168.1.1, Real: [REDACTED:email]
+
+    const prodResult = await redactText(prodRegistry, testInput);
+    console.log(prodResult);
+    // Output: Contact: TKN_EMAIL_abc123, IP: TKN_IPV4_def456, Real: TKN_EMAIL_ghi789
+    ```
+
+5.  **Production Usage with Environment Variables**
 
     For production environments, store the HMAC key securely in environment variables:
 
@@ -100,13 +149,9 @@ It is designed to run in various JavaScript environments that support web standa
 
     const reg = new Registry({
       defaultAction: 'tokenize',
+      environment: 'production',
       hmacKey: process.env.NOREN_HMAC_KEY, // Load from environment variable
     });
-
-    const input = 'Email: user@example.com, Card: 4242 4242 4242 4242';
-    const out = await redactText(reg, input);
-    console.log(out);
-    // Output: Email: TKN_EMAIL_abc123def456789, Card: TKN_CREDIT_CARD_789def456123abc
     ```
 
     **Security Best Practices:**
@@ -114,7 +159,6 @@ It is designed to run in various JavaScript environments that support web standa
     - Never hardcode secrets in source code
     - Use different keys for development, staging, and production
     - Rotate keys regularly in production environments
-    ```
 
 ## Use Cases & Examples
 
