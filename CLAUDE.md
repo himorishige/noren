@@ -72,6 +72,43 @@ node examples/dictionary-demo.mjs
 node examples/hono-server.mjs
 ```
 
+### Release Management (Changesets)
+
+```sh
+# Create a changeset for your changes
+pnpm changeset
+
+# Check current changeset status
+pnpm changeset:status
+
+# Version packages (for maintainers)
+pnpm changeset:version
+
+# Publish packages (automated via GitHub Actions)
+pnpm changeset:publish
+```
+
+#### Release Workflow
+
+1. **Development**: Make changes to packages in develop branch
+2. **Changeset Creation**: Run `pnpm changeset` to document changes
+3. **Pull Request**: Create PR to develop branch with changeset files
+4. **Canary Release**: Automatic canary release on every push to develop
+5. **Stable Release**: Create PR from develop to main, merge triggers automatic stable release
+
+#### Canary Release Workflow
+
+- **Canary releases**: Automatic on every develop branch push (`@canary` tag)
+
+#### Testing with Canary Releases
+
+```sh
+# Install latest development version
+npm install @himorishige/noren-core@canary
+```
+
+Canary releases provide immediate access to the latest development features for continuous testing and feedback.
+
 ## Architecture
 
 ### Monorepo Structure (pnpm workspaces)
