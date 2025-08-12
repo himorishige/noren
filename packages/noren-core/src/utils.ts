@@ -48,6 +48,11 @@ export async function importHmacKey(secret: string | CryptoKey) {
     throw new Error('HMAC key must be at least 32 bytes long')
   }
 
+  // Check for null, undefined, or empty values
+  if (!secret || secret.length === 0) {
+    throw new Error('HMAC key must be at least 32 bytes long')
+  }
+
   // Ensure minimum key length for security (check byte length, not character length)
   const keyBytes = enc.encode(secret)
   if (keyBytes.length < 32) {
