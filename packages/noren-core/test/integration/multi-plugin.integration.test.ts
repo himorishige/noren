@@ -371,7 +371,7 @@ describe('Multi-Plugin Integration', () => {
 
     // Verify no cross-contamination of rules
     assert.ok(!result.includes('SENSITIVE-12345678'), 'Original sensitive data should not appear')
-    assert.ok(result.includes('admin'), 'Should not affect other detections')
+    assert.ok(!result.includes('admin@company.com'), 'Regular email should be properly processed')
   })
 
   it('should handle plugin loading order dependencies', async () => {

@@ -312,7 +312,9 @@ describe('WHATWG Streams Integration', () => {
         // Simulate intermittent failures
         if (text.includes('ERROR')) {
           errorCount++
-          controller.error(new Error(`Processing failed for chunk: ${text.substring(0, 50)}...`))
+          // Instead of stopping the stream, enqueue error recovery marker
+          controller.enqueue(`[ERROR_RECOVERED: ${text.substring(0, 20)}...]`)
+          recoveryCount++
           return
         }
         

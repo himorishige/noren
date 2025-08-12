@@ -78,7 +78,19 @@ export class Registry {
     }
 
     builtinDetect(u)
-    for (const d of this.detectors) await d.match(u)
+    for (const d of this.detectors) {
+      const originalPush = u.push
+      // Override push to set detector priority if not already set
+      u.push = (hit: Hit) => {
+        if (hit.priority === undefined) {
+          hit.priority = d.priority ?? 0
+        }
+        originalPush(hit)
+      }
+      await d.match(u)
+      // Restore original push
+      u.push = originalPush
+    }
 
     if (hits.length === 0) return { src, hits: [] }
 
@@ -88,13 +100,28 @@ export class Registry {
     let currentEnd = -1
 
     for (let readIndex = 0; readIndex < hits.length; readIndex++) {
-      const hit = hits[readIndex]
-      if (hit.start >= currentEnd) {
-        hits[writeIndex] = hit
-        currentEnd = hit.end
+      const currentHit = hits[readIndex]
+      
+      if (currentHit.start >= currentEnd) {
+        // No overlap, keep this hit
+        hits[writeIndex] = currentHit
+        currentEnd = currentHit.end
         writeIndex++
       } else {
-        hitPool.release([hit])
+        // Overlap detected - check if current hit has higher priority
+        const lastAcceptedHit = hits[writeIndex - 1]
+        const currentPriority = currentHit.priority ?? 0
+        const lastPriority = lastAcceptedHit.priority ?? 0
+        
+        if (currentPriority > lastPriority) {
+          // Current hit has higher priority, replace the last one
+          hitPool.release([lastAcceptedHit])
+          hits[writeIndex - 1] = currentHit
+          currentEnd = currentHit.end
+        } else {
+          // Keep the existing hit, discard current one
+          hitPool.release([currentHit])
+        }
       }
     }
 

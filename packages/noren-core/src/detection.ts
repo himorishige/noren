@@ -18,7 +18,8 @@ export function builtinDetect(u: DetectUtils) {
     const actualStart = start ?? match.index ?? 0
     const actualEnd = end ?? (match.index ?? 0) + match[0].length
     const actualValue = value ?? match[0]
-    return hitPool.acquire(type, actualStart, actualEnd, actualValue, risk)
+    // Built-in detectors have low default priority
+    return hitPool.acquire(type, actualStart, actualEnd, actualValue, risk, 10)
   }
 
   for (const m of u.src.matchAll(UNIFIED_PATTERN)) {
