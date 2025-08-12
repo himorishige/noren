@@ -27,7 +27,7 @@ export const UNIFIED_PATTERN = new RegExp(
     '|\\b((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3})\\b',
     // Group 3: MAC Address (moved before IPv6 to avoid conflicts)
     '|\\b([0-9A-F]{2}(?:[:-][0-9A-F]{2}){5})\\b',
-    // Group 4: IPv6 (simplified pattern for reliable detection)
+    // Group 4: IPv6 (simplified pattern for reliable detection - uses lookaround for compatibility with test runner)
     '|(?:^|[^0-9A-Fa-f:]|\\s)((?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(?:[0-9A-Fa-f]{1,4}:){1,7}:|(?:[0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}|(?:[0-9A-Fa-f]{1,4}:){1,5}(?::[0-9A-Fa-f]{1,4}){1,2}|(?:[0-9A-Fa-f]{1,4}:){1,4}(?::[0-9A-Fa-f]{1,4}){1,3}|(?:[0-9A-Fa-f]{1,4}:){1,3}(?::[0-9A-Fa-f]{1,4}){1,4}|(?:[0-9A-Fa-f]{1,4}:){1,2}(?::[0-9A-Fa-f]{1,4}){1,5}|[0-9A-Fa-f]{1,4}:(?::[0-9A-Fa-f]{1,4}){1,6}|:(?::[0-9A-Fa-f]{1,4}){1,7}|::|::ffff:(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})(?![0-9A-Fa-f:])',
     // Group 5: Credit Card (simplified for unified pattern)
     '|\\b((?:\\d[ -]?){12,18}\\d)\\b',
