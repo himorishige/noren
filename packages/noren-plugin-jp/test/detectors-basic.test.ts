@@ -18,7 +18,7 @@ describe('noren-plugin-jp detectors', () => {
     const text = '住所: 〒123-4567 東京都…'
     const hits = runDetect(text)
     expect(hits.find((h) => h.type === 'jp_postal')).toBeTruthy()
-    expect(maskers.jp_postal({ value: '123-4567' } as unknown as Hit)).toBe('〒•••-••••')
+    expect(maskers.jp_postal({ value: '123-4567' } as unknown as Hit)).toBe('•••-••••')
   })
 
   it('detects jp.phone patterns and masks digits', () => {
