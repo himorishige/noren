@@ -19,7 +19,7 @@
   },
   "snapshot": {
     "useCalculatedVersion": true,
-    "prereleaseTemplate": "{tag}-{commit}"
+    "prereleaseTemplate": "{tag}.{datetime}-{commit}"
   },
   "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
     "onlyUpdatePeerDependentsWhenOutOfRange": true,

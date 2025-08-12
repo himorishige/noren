@@ -8,15 +8,14 @@ Norenプロジェクトでは、[Changesets](https://github.com/changesets/chang
 
 - **Monorepo対応**: 5つのパッケージ（noren-core + 4つのプラグイン）を統合管理
 - **依存関係自動更新**: noren-coreが更新されると、依存するプラグインパッケージも自動的にバージョンアップ
-- **段階的リリース**: alpha → beta → rc → stable の段階的リリース戦略
+- **継続的リリース**: canary → stable の2段階リリース戦略
 - **GitHub Actions統合**: develop→mainブランチへのPRマージで自動リリース実行
 - **npm自動公開**: 手動でのnpm publishは不要
 
 ### ブランチ運用戦略
 
-- **developブランチ**: 開発用メインブランチ（日常的な開発・機能追加）
+- **developブランチ**: 開発用メインブランチ（日常的な開発・機能追加、canary自動リリース）
 - **mainブランチ**: リリース用ブランチ（安定版のみ）
-- **alpha/beta/rcブランチ**: プレリリース用（実験的機能・ベータテスト）
 
 ## 開発者向け：変更をリリースに含める方法
 
@@ -105,29 +104,29 @@ pnpm changeset:status
 pnpm changeset:version
 ```
 
-## プレリリース戦略
+## リリース戦略
 
-### ブランチ別リリース
+### ブランチ・リリース別運用
 
-| ブランチ | 用途 | バージョン例 | npm tag | 備考 |
-|----------|------|--------------|---------|-------|
-| `develop` | 日常的な開発 | - | - | リリースは行わない |
+| ブランチ | 用途 | バージョン例 | npm tag | リリース条件 |
+|----------|------|--------------|---------|-------------|
+| `develop` | 日常的な開発 | `0.2.0-canary.20240812123456-abc1234` | `canary` | 毎push時に自動canaryリリース |
 | `main` | 安定版リリース | `0.2.0` | `latest` | develop→mainのPRマージ時 |
-| `alpha` | 開発版・実験的機能 | `0.2.0-alpha.1` | `alpha` | 直接pushで自動プレリリース |
-| `beta` | ベータ版・機能凍結後 | `0.2.0-beta.1` | `beta` | 直接pushで自動プレリリース |
-| `rc` | リリース候補 | `0.2.0-rc.1` | `rc` | 直接pushで自動プレリリース |
 
-### プレリリース版のインストール
+### Canaryリリース
+
+developブランチへの変更は自動的にcanaryリリースされます。これにより、最新の開発版を継続的にテストできます。
+
+### リリース版のインストール
 
 ```bash
-# Alpha版
-npm install @himorishige/noren-core@alpha
+# Canary版（最新の開発版）
+npm install @himorishige/noren-core@canary
 
-# Beta版  
-npm install @himorishige/noren-core@beta
-
-# Release Candidate
-npm install @himorishige/noren-core@rc
+# 安定版（デフォルト）
+npm install @himorishige/noren-core
+# または
+npm install @himorishige/noren-core@latest
 ```
 
 ## パッケージ構成

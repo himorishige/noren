@@ -90,18 +90,24 @@ pnpm changeset:publish
 
 #### Release Workflow
 
-1. **Development**: Make changes to packages
+1. **Development**: Make changes to packages in develop branch
 2. **Changeset Creation**: Run `pnpm changeset` to document changes
-3. **Pull Request**: Create PR with changeset files
-4. **Release**: GitHub Actions automatically handles versioning and publishing when merged to main
+3. **Pull Request**: Create PR to develop branch with changeset files
+4. **Canary Release**: Automatic canary release on every push to develop
+5. **Stable Release**: Create PR from develop to main, merge triggers automatic stable release
 
-#### Prerelease Workflow
+#### Canary Release Workflow
 
-- **Alpha releases**: Push to `alpha` branch
-- **Beta releases**: Push to `beta` branch  
-- **Release candidates**: Push to `rc` branch
+- **Canary releases**: Automatic on every develop branch push (`@canary` tag)
 
-Each prerelease branch triggers automatic prerelease publishing with appropriate tags.
+#### Testing with Canary Releases
+
+```sh
+# Install latest development version
+npm install @himorishige/noren-core@canary
+```
+
+Canary releases provide immediate access to the latest development features for continuous testing and feedback.
 
 ## Architecture
 
