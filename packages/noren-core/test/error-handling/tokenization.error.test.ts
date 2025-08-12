@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Tokenization Error Handling Tests
@@ -15,13 +14,8 @@ describe('Tokenization Error Handling', () => {
       // hmacKey intentionally missing
     })
 
-    await assert.rejects(
-      redactText(reg, 'Card: 4242 4242 4242 4242'),
-      {
-        name: 'Error',
-        message: /hmacKey is required for tokenize action on type credit_card/,
-      },
-      'Should reject tokenization without hmacKey',
+    await expect(redactText(reg, 'Card: 4242 4242 4242 4242')).rejects.toThrow(
+      /hmacKey is required for tokenize action on type credit_card/,
     )
   })
 
@@ -34,13 +28,8 @@ describe('Tokenization Error Handling', () => {
       },
     })
 
-    await assert.rejects(
-      redactText(reg, 'Email: test@example.com'),
-      {
-        name: 'Error',
-        message: /hmacKey is required for tokenize action on type email/,
-      },
-      'Should reject rule-specific tokenization without hmacKey',
+    await expect(redactText(reg, 'Email: test@example.com')).rejects.toThrow(
+      /hmacKey is required for tokenize action on type email/,
     )
   })
 
@@ -58,10 +47,8 @@ describe('Tokenization Error Handling', () => {
     const testText = 'Email: test@example.com, Card: 4242 4242 4242 4242, IP: 192.168.1.1'
 
     // Should fail on the first tokenize attempt (email is likely detected first)
-    await assert.rejects(
-      redactText(reg, testText),
+    await expect(redactText(reg, testText)).rejects.toThrow(
       /hmacKey is required for tokenize action/,
-      'Should reject when any rule requires tokenization without hmacKey',
     )
   })
 
@@ -74,8 +61,8 @@ describe('Tokenization Error Handling', () => {
     const result = await redactText(reg, 'Card: 4242 4242 4242 4242')
 
     // Should create a token
-    assert.match(result, /TKN_CREDIT_CARD_[0-9a-f]{16}/, 'Should generate tokenized output')
-    assert.ok(!result.includes('4242'), 'Original card number should be replaced')
+    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(result).not.toContain('4242')
   })
 
   it('should handle mixed actions (some tokenize, some mask)', async () => {
@@ -94,15 +81,15 @@ describe('Tokenization Error Handling', () => {
 
     // Email should be masked (default action) - email detection might need context
     if (result.includes('[REDACTED:email]')) {
-      assert.ok(true, 'Email was detected and masked')
+      expect(true).toBeTruthy()
     } else {
       // If email wasn't detected, just verify credit card tokenization
       console.log('Email not detected, result:', result)
     }
 
     // Credit card should be tokenized
-    assert.match(result, /TKN_CREDIT_CARD_[0-9a-f]{16}/, 'Credit card should be tokenized')
-    assert.ok(!result.includes('4242'), 'Original card number should not appear')
+    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(result).not.toContain('4242')
   })
 
   it('should handle empty hmacKey gracefully', async () => {
@@ -111,10 +98,8 @@ describe('Tokenization Error Handling', () => {
       hmacKey: '', // Empty key
     })
 
-    await assert.rejects(
-      redactText(reg, 'Card: 4242 4242 4242 4242'),
+    await expect(redactText(reg, 'Card: 4242 4242 4242 4242')).rejects.toThrow(
       /hmacKey is required for tokenize action on type credit_card/,
-      'Should reject empty hmacKey during tokenization',
     )
   })
 
@@ -124,10 +109,8 @@ describe('Tokenization Error Handling', () => {
       hmacKey: 'too-short', // Less than 32 chars
     })
 
-    await assert.rejects(
-      redactText(reg, 'Card: 4242 4242 4242 4242'),
+    await expect(redactText(reg, 'Card: 4242 4242 4242 4242')).rejects.toThrow(
       /HMAC key must be at least 32 characters long/,
-      'Should reject short hmacKey during tokenization',
     )
   })
 
@@ -148,7 +131,7 @@ describe('Tokenization Error Handling', () => {
     })
 
     const result = await redactText(reg, 'Card: 4242 4242 4242 4242')
-    assert.match(result, /TKN_CREDIT_CARD_[0-9a-f]{16}/, 'Should work with CryptoKey input')
+    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
   })
 
   it('should handle tokenization with preserveLast4 (should ignore for tokens)', async () => {
@@ -165,12 +148,8 @@ describe('Tokenization Error Handling', () => {
     const result = await redactText(reg, 'Card: 4242 4242 4242 4242')
 
     // Should generate token, not preserve last 4
-    assert.match(
-      result,
-      /TKN_CREDIT_CARD_[0-9a-f]{16}/,
-      'Should tokenize instead of preserving digits',
-    )
-    assert.ok(!result.includes('4242'), 'Should not preserve last 4 digits in tokenization')
+    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(result).not.toContain('4242')
   })
 
   it('should generate consistent tokens for same input', async () => {
@@ -184,7 +163,7 @@ describe('Tokenization Error Handling', () => {
     const result2 = await redactText(reg, input)
 
     // Tokens should be identical (HMAC is deterministic)
-    assert.equal(result1, result2, 'Same input should generate identical tokens')
+    expect(result1).toBe(result2)
   })
 
   it('should generate different tokens for different inputs', async () => {
@@ -200,7 +179,7 @@ describe('Tokenization Error Handling', () => {
     const token1 = result1.match(/TKN_CREDIT_CARD_([0-9a-f]{16})/)?.[1]
     const token2 = result2.match(/TKN_CREDIT_CARD_([0-9a-f]{16})/)?.[1]
 
-    assert.ok(token1 && token2, 'Both inputs should generate tokens')
-    assert.notEqual(token1, token2, 'Different inputs should generate different tokens')
+    expect(token1 && token2).toBeTruthy()
+    expect(token1).not.toBe(token2)
   })
 })

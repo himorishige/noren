@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Stream Processing Integration Tests
@@ -76,21 +75,18 @@ describe('WHATWG Streams Integration', () => {
     console.log('Results:', results)
 
     // Verify all chunks were processed
-    assert.equal(results.length, 3, 'Should process all chunks')
-    assert.equal(processedChunks, 3, 'Should have processed 3 chunks')
+    expect(results.length).toBe(3)
+    expect(processedChunks).toBe(3)
 
     // Verify redaction occurred
-    assert.ok(results[0].includes('[REDACTED:email]'), 'First chunk should have email redacted')
-    assert.ok(
-      results[1].includes('[REDACTED:credit_card]'),
-      'Second chunk should have card redacted',
-    )
-    assert.ok(results[2].includes('[REDACTED:ipv4]'), 'Third chunk should have IP redacted')
+    expect(results[0]).toContain('[REDACTED:email]')
+    expect(results[1]).toContain('[REDACTED:credit_card]', 'Second chunk should have card redacted')
+    expect(results[2]).toContain('[REDACTED:ipv4]')
 
     // Verify original sensitive data is not present
-    assert.ok(!results.join('').includes('test@example.com'), 'Email should be redacted')
-    assert.ok(!results.join('').includes('4242 4242 4242 4242'), 'Card should be redacted')
-    assert.ok(!results.join('').includes('192.168.1.1'), 'IP should be redacted')
+    expect(results.join('')).not.toContain('test@example.com')
+    expect(results.join('')).not.toContain('4242 4242 4242 4242')
+    expect(results.join('')).not.toContain('192.168.1.1')
   })
 
   it('should handle backpressure correctly', async () => {
@@ -177,17 +173,17 @@ describe('WHATWG Streams Integration', () => {
     console.log(`Transform count: ${transformCount}, Backpressure events: ${backpressureEvents}`)
 
     // Verify all data was eventually processed
-    assert.equal(results.length, 10, 'Should process all chunks despite backpressure')
-    assert.equal(transformCount, 10, 'Should have transformed all chunks')
+    expect(results.length).toBe(10)
+    expect(transformCount).toBe(10)
 
     // Processing should take reasonable time (with delays)
-    assert.ok(processingTime > 400, 'Should take time due to processing delays')
+    expect(processingTime > 400).toBeTruthy()
 
     // Verify content integrity
     for (let i = 0; i < results.length; i++) {
-      assert.ok(results[i].includes(`Chunk ${i}`), `Chunk ${i} should be preserved`)
-      assert.ok(results[i].includes('[REDACTED:email]'), `Chunk ${i} should have email redacted`)
-      assert.ok(results[i].includes('[REDACTED:ipv4]'), `Chunk ${i} should have IP redacted`)
+      expect(results[i]).toContain(`Chunk ${i}`, `Chunk ${i} should be preserved`)
+      expect(results[i]).toContain('[REDACTED:email]', `Chunk ${i} should have email redacted`)
+      expect(results[i]).toContain('[REDACTED:ipv4]', `Chunk ${i} should have IP redacted`)
     }
   })
 
@@ -286,23 +282,23 @@ describe('WHATWG Streams Integration', () => {
     console.log(`  Throughput: ~${Math.round(totalSize / (processingTime / 1000) / 1024)}KB/s`)
 
     // Verify all chunks processed
-    assert.equal(results.length, numChunks, 'Should process all large chunks')
+    expect(results.length).toBe(numChunks)
 
     // Verify reasonable performance
-    assert.ok(processingTime < 5000, 'Should process large data in reasonable time')
+    expect(processingTime < 5000).toBeTruthy()
 
     // Memory growth should be reasonable (< 50MB for this test)
-    assert.ok(memoryGrowth < 50 * 1024 * 1024, 'Memory growth should be reasonable')
+    expect(memoryGrowth < 50 * 1024 * 1024).toBeTruthy()
 
     // Verify content integrity and redaction
     for (let i = 0; i < results.length; i++) {
       const result = results[i]
-      assert.ok(result.includes(`Chunk ${i} start`), `Chunk ${i} should have start marker`)
-      assert.ok(result.includes(`Chunk ${i} end`), `Chunk ${i} should have end marker`)
+      expect(result).toContain(`Chunk ${i} start`, `Chunk ${i} should have start marker`)
+      expect(result).toContain(`Chunk ${i} end`, `Chunk ${i} should have end marker`)
 
       // Should have redacted various PII types
       const redactionCount = (result.match(/\[REDACTED:/g) || []).length
-      assert.ok(redactionCount > 0, `Chunk ${i} should have some redactions`)
+      expect(redactionCount > 0, `Chunk ${i} should have some redactions`)
     }
   })
 
@@ -397,20 +393,20 @@ describe('WHATWG Streams Integration', () => {
       console.log(`  Good results: ${goodResults.length}`)
 
       // Should have processed some chunks before failing
-      assert.ok(goodResults.length > 0, 'Should have processed some chunks before error')
+      expect(goodResults.length > 0).toBeTruthy()
     }
 
     // Document error behavior - actual behavior depends on implementation
     if (streamError) {
-      assert.ok(streamError instanceof Error, 'Should be proper Error object')
+      expect(streamError instanceof Error).toBeTruthy()
       console.log('✓ Error handling behavior documented')
     } else {
       console.log('✓ Stream completed despite errors (recovery successful)')
     }
 
     // Should have attempted to process all chunks
-    assert.equal(processedCount, testChunks.length, 'Should have attempted to process all chunks')
-    assert.ok(errorCount > 0, 'Should have encountered errors')
+    expect(processedCount).toBe(testChunks.length)
+    expect(errorCount > 0).toBeTruthy()
   })
 
   it('should support readable stream from string iterator', async () => {
@@ -476,18 +472,18 @@ describe('WHATWG Streams Integration', () => {
     console.log(fullResult)
 
     // Verify stream processing
-    assert.ok(fullResult.includes('Start of stream'), 'Should include start marker')
-    assert.ok(fullResult.includes('End of stream'), 'Should include end marker')
+    expect(fullResult).toContain('Start of stream')
+    expect(fullResult).toContain('End of stream')
 
     // Verify redactions occurred
-    assert.ok(fullResult.includes('[REDACTED:email]'), 'Should redact email')
-    assert.ok(fullResult.includes('[REDACTED:credit_card]'), 'Should redact credit card')
-    assert.ok(fullResult.includes('[REDACTED:ipv4]'), 'Should redact IP address')
+    expect(fullResult).toContain('[REDACTED:email]')
+    expect(fullResult).toContain('[REDACTED:credit_card]')
+    expect(fullResult).toContain('[REDACTED:ipv4]')
 
     // Verify original data not present
-    assert.ok(!fullResult.includes('admin@company.com'), 'Email should be redacted')
-    assert.ok(!fullResult.includes('4111 1111 1111 1111'), 'Card should be redacted')
-    assert.ok(!fullResult.includes('10.0.0.1'), 'IP should be redacted')
+    expect(fullResult).not.toContain('admin@company.com')
+    expect(fullResult).not.toContain('4111 1111 1111 1111')
+    expect(fullResult).not.toContain('10.0.0.1')
   })
 
   it('should handle concurrent stream processing', async () => {
@@ -566,29 +562,29 @@ describe('WHATWG Streams Integration', () => {
     console.log(`Concurrent streams test completed in ${processingTime}ms`)
 
     // Verify all streams completed
-    assert.equal(streamResults.length, numStreams, 'All streams should complete')
+    expect(streamResults.length).toBe(numStreams)
 
     // Verify each stream's results
     for (const { streamId, results } of streamResults) {
       console.log(`Stream ${streamId}: ${results.length} results`)
 
-      assert.equal(results.length, chunksPerStream, `Stream ${streamId} should have all chunks`)
+      expect(results.length, chunksPerStream, `Stream ${streamId} should have all chunks`)
 
       // Verify content integrity and redaction
       for (let i = 0; i < results.length; i++) {
         const result = results[i]
-        assert.ok(
-          result.includes(`T${streamId}(`),
+        expect(result).toContain(
+          `T${streamId}(`,
           `Should have transform marker for stream ${streamId}`,
         )
-        assert.ok(result.includes(`Stream${streamId}`), `Should have stream identifier`)
-        assert.ok(result.includes(`Chunk${i}`), `Should have chunk ${i} identifier`)
-        assert.ok(result.includes('[REDACTED:email]'), `Chunk ${i} should have email redacted`)
-        assert.ok(!result.includes(`@stream${streamId}.com`), `Original email should be redacted`)
+        expect(result).toContain(`Stream${streamId}`, `Should have stream identifier`)
+        expect(result).toContain(`Chunk${i}`, `Should have chunk ${i} identifier`)
+        expect(result).toContain('[REDACTED:email]', `Chunk ${i} should have email redacted`)
+        expect(result).not.toContain(`@stream${streamId}.com`, `Original email should be redacted`)
       }
     }
 
     // Concurrent processing should be reasonably fast
-    assert.ok(processingTime < 2000, 'Concurrent processing should be efficient')
+    expect(processingTime < 2000).toBeTruthy()
   })
 })

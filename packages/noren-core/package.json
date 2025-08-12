@@ -51,13 +51,13 @@
     "access": "public"
   },
   "scripts": {
-    "prebuild": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('dist-test',{recursive:true,force:true})\"",
+    "prebuild": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "tsc -p tsconfig.json",
     "build:min": "pnpm build && rollup -c",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepublishOnly": "pnpm run build:min",
-    "pretest": "pnpm run build && tsc -p tsconfig.test.json",
-    "test": "node --test dist-test/test/**/*.test.js"
+    "test": "vitest run",
+    "test:watch": "vitest watch"
   },
   "devDependencies": {
     "typescript": "^5.6.2",

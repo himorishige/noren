@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Luhn Algorithm Security and Edge Case Tests
@@ -24,11 +23,11 @@ describe('Credit Card Luhn Validation Edge Cases', () => {
       const result = await redactText(reg, `Card: ${invalidCard}`)
 
       // Should not detect as credit card due to failed Luhn check
-      assert.ok(
-        !result.includes('[REDACTED:credit_card]'),
+      expect(result).not.toContain(
+        '[REDACTED:credit_card]',
         `Invalid Luhn card should not be detected: ${invalidCard}`,
       )
-      assert.ok(result.includes(invalidCard), `Original invalid card should remain: ${invalidCard}`)
+      expect(result).toContain(invalidCard, `Original invalid card should remain: ${invalidCard}`)
     }
   })
 
@@ -69,8 +68,8 @@ describe('Credit Card Luhn Validation Edge Cases', () => {
         console.log(`Card not detected (possible pattern issue): ${card}`)
         // Don't fail test, just log for investigation
       } else {
-        assert.ok(
-          !result.includes(card.replace(/[\s.-]/g, '')),
+        expect(result).not.toContain(
+          card.replace(/[\s.-]/g, ''),
           `Valid card should be masked: ${card}`,
         )
       }
@@ -116,14 +115,11 @@ describe('Credit Card Luhn Validation Edge Cases', () => {
       const result = await redactText(reg, `Card: ${edgeCase}`)
 
       // These should NOT be detected as credit cards
-      assert.ok(
-        !result.includes('[REDACTED:credit_card]'),
+      expect(result).not.toContain(
+        '[REDACTED:credit_card]',
         `Edge case should not be detected as credit card: ${edgeCase}`,
       )
-      assert.ok(
-        result.includes(edgeCase),
-        `Original edge case should remain unchanged: ${edgeCase}`,
-      )
+      expect(result).toContain(edgeCase, `Original edge case should remain unchanged: ${edgeCase}`)
     }
 
     // Test cases that should fail Luhn validation
@@ -131,12 +127,12 @@ describe('Credit Card Luhn Validation Edge Cases', () => {
       const result = await redactText(reg, `Card: ${failLuhnCase}`)
 
       // These should NOT be detected due to Luhn validation failure
-      assert.ok(
-        !result.includes('[REDACTED:credit_card]'),
+      expect(result).not.toContain(
+        '[REDACTED:credit_card]',
         `Invalid Luhn case should not be detected: ${failLuhnCase}`,
       )
-      assert.ok(
-        result.includes(failLuhnCase),
+      expect(result).toContain(
+        failLuhnCase,
         `Invalid Luhn case should remain unchanged: ${failLuhnCase}`,
       )
     }
@@ -192,8 +188,8 @@ describe('Credit Card Luhn Validation Edge Cases', () => {
 
     for (const card of standardCards) {
       const result = await redactText(reg, `Card: ${card}`)
-      assert.ok(
-        result.includes('[REDACTED:credit_card]'),
+      expect(result).toContain(
+        '[REDACTED:credit_card]',
         `Standard valid card should be detected: ${card}`,
       )
     }
@@ -236,9 +232,9 @@ describe('Credit Card Luhn Validation Edge Cases', () => {
       const hasRedaction = result.includes('[REDACTED:credit_card]')
 
       if (test.shouldDetect) {
-        assert.ok(hasRedaction, `Should detect card in: ${test.text} (${test.reason})`)
+        expect(hasRedaction, `Should detect card in: ${test.text} (${test.reason})`)
       } else {
-        assert.ok(!hasRedaction, `Should NOT detect card in: ${test.text} (${test.reason})`)
+        expect(!hasRedaction, `Should NOT detect card in: ${test.text} (${test.reason})`)
       }
     }
   })
@@ -260,11 +256,11 @@ describe('Credit Card Luhn Validation Edge Cases', () => {
 
     // Should detect 3 valid cards (Visa, Mastercard, AmEx)
     // Should NOT detect the invalid Luhn card
-    assert.ok(redactionCount >= 3, 'Should detect multiple valid cards')
-    assert.ok(!result.includes('4242'), 'Visa should be redacted')
-    assert.ok(!result.includes('5555'), 'Mastercard should be redacted')
-    assert.ok(!result.includes('3782'), 'AmEx should be redacted')
-    assert.ok(result.includes('1234 5678 9012 3456'), 'Invalid card should remain')
+    expect(redactionCount >= 3).toBeTruthy()
+    expect(result).not.toContain('4242')
+    expect(result).not.toContain('5555')
+    expect(result).not.toContain('3782')
+    expect(result).toContain('1234 5678 9012 3456')
   })
 
   it('should handle tokenization with Luhn validation', async () => {
@@ -278,13 +274,13 @@ describe('Credit Card Luhn Validation Edge Cases', () => {
 
     // Valid card should be tokenized
     const validResult = await redactText(reg, `Valid: ${validCard}`)
-    assert.match(validResult, /TKN_CREDIT_CARD_[0-9a-f]{16}/, 'Valid Luhn card should be tokenized')
+    expect(validResult).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
 
     // Invalid card should not be processed
     const invalidResult = await redactText(reg, `Invalid: ${invalidCard}`)
-    assert.ok(invalidResult.includes(invalidCard), 'Invalid Luhn card should not be tokenized')
-    assert.ok(
-      !invalidResult.includes('TKN_CREDIT_CARD_'),
+    expect(invalidResult).toContain(invalidCard)
+    expect(invalidResult).not.toContain(
+      'TKN_CREDIT_CARD_',
       'Invalid Luhn card should not generate token',
     )
   })

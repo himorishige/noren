@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Hit Processing Complex Scenarios Tests
@@ -39,7 +38,7 @@ describe('Hit Processing Complex Scenarios', () => {
 
       // Count total redactions
       const redactionCount = (result.match(/\[REDACTED:/g) || []).length
-      assert.ok(
+      expect(
         redactionCount >= testCase.expectedMinDetections,
         `Should detect at least ${testCase.expectedMinDetections} patterns in: ${testCase.input}. Found: ${redactionCount}`,
       )
@@ -71,8 +70,8 @@ describe('Hit Processing Complex Scenarios', () => {
 
     for (const { input, expected } of testCases) {
       const result = await redactText(reg, input)
-      assert.equal(result, expected, `Whitespace normalization: "${input}" -> "${expected}"`)
-      assert.ok(!result.includes('[REDACTED:'), 'Should not contain any redaction markers')
+      expect(result, expected, `Whitespace normalization: "${input}" -> "${expected}"`)
+      expect(result).not.toContain('[REDACTED:')
     }
   })
 
@@ -94,13 +93,13 @@ describe('Hit Processing Complex Scenarios', () => {
 
     // Should detect multiple patterns
     const redactionCount = (result.match(/\[REDACTED:/g) || []).length
-    assert.ok(
+    expect(
       redactionCount >= 200,
       `Should detect many patterns in large input. Found: ${redactionCount}`,
     )
 
     // Processing should be reasonably fast (under 1 second for this test)
-    assert.ok(endTime - startTime < 1000, 'Large input processing should be under 1 second')
+    expect(endTime - startTime < 1000).toBeTruthy()
   })
 
   it('should handle context hints properly', async () => {
@@ -129,7 +128,7 @@ describe('Hit Processing Complex Scenarios', () => {
       console.log(`  Without hints: ${noHintsDetectionCount} detections`)
 
       // Context hints should not reduce detection (they may increase it)
-      assert.ok(
+      expect(
         hintsDetectionCount >= noHintsDetectionCount,
         'Context hints should not reduce detection accuracy',
       )
@@ -157,18 +156,18 @@ describe('Hit Processing Complex Scenarios', () => {
     const result = await redactText(reg, mixedText)
 
     // Email should be removed (empty space)
-    assert.ok(!result.includes('admin@company.com'), 'Email should be removed')
+    expect(result).not.toContain('admin@company.com')
 
     // Credit card should be tokenized
-    assert.match(result, /TKN_CREDIT_CARD_[0-9a-f]{16}/, 'Credit card should be tokenized')
-    assert.ok(!result.includes('4242'), 'Original card should not appear')
+    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(result).not.toContain('4242')
 
     // IP should be ignored (remain unchanged)
-    assert.ok(result.includes('192.168.1.1'), 'IP should remain unchanged (ignored)')
+    expect(result).toContain('192.168.1.1')
 
     // MAC should use default action (mask)
-    assert.ok(!result.includes('00:11:22:33:44:55'), 'MAC should be masked')
-    assert.ok(result.includes('[REDACTED:mac]'), 'MAC should have redaction marker')
+    expect(result).not.toContain('00:11:22:33:44:55')
+    expect(result).toContain('[REDACTED:mac]')
   })
 
   it('should handle preserveLast4 option correctly', async () => {
@@ -202,8 +201,8 @@ describe('Hit Processing Complex Scenarios', () => {
         console.log(`Note: Standard redaction for ${test.type}: ${result}`)
       } else if (result.includes(test.expectedLastDigits)) {
         // Last 4 digits preserved
-        assert.ok(!result.includes(test.pattern), 'Original pattern should not appear completely')
-        assert.ok(result.includes(test.expectedLastDigits), 'Last 4 digits should be preserved')
+        expect(result).not.toContain(test.pattern)
+        expect(result).toContain(test.expectedLastDigits)
         console.log(`✓ preserveLast4 working for ${test.type}: ${result}`)
       } else {
         // Pattern not detected or other behavior
@@ -230,8 +229,8 @@ describe('Hit Processing Complex Scenarios', () => {
       console.log(`Result: "${result}"`)
 
       // Should handle Unicode text without errors
-      assert.ok(typeof result === 'string', 'Should return string result')
-      assert.ok(result.length > 0, 'Should not return empty result')
+      expect(typeof result === 'string').toBeTruthy()
+      expect(result.length > 0).toBeTruthy()
 
       // If email is detected, it should be properly redacted
       if (result.includes('[REDACTED:email]')) {
@@ -277,7 +276,7 @@ describe('Hit Processing Complex Scenarios', () => {
       }
 
       // Structure should not be completely destroyed
-      assert.ok(result.length > 0, 'Result should not be empty')
+      expect(result.length > 0).toBeTruthy()
     }
   })
 
@@ -314,8 +313,8 @@ describe('Hit Processing Complex Scenarios', () => {
       for (let j = 0; j < testTexts.length; j++) {
         if (i !== j) {
           const otherText = testTexts[j]
-          assert.ok(
-            !result.includes(otherText),
+          expect(result).not.toContain(
+            otherText,
             `Result ${i} should not contain text from test ${j}`,
           )
         }

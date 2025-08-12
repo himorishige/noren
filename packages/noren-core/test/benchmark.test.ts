@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, it } from 'vitest'
 
 /**
  * Performance benchmark test for optimizations
@@ -29,12 +29,8 @@ describe('Performance Benchmarks', () => {
     console.timeEnd('Large text processing')
 
     // Verify detection worked
-    if (!result.includes('[REDACTED:email]')) {
-      throw new Error('Email detection failed')
-    }
-    if (!result.includes('[REDACTED:credit_card]')) {
-      throw new Error('Credit card detection failed')
-    }
+    expect(result).toContain('[REDACTED:email]')
+    expect(result).toContain('[REDACTED:credit_card]')
   })
 
   it('handles repeated detection calls efficiently', async () => {

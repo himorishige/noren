@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Basic redaction/tokenization behavior tests against built outputs.
@@ -12,7 +11,7 @@ describe('redactText - credit card masking/tokenization', () => {
     const reg = new Registry({ defaultAction: 'mask' })
     const input = 'Card: 4242 4242 4242 4242'
     const out = await redactText(reg, input)
-    assert.ok(out.includes('[REDACTED:credit_card]'))
+    expect(out).toContain('[REDACTED:credit_card]')
   })
 
   it('masks credit card preserving last 4 when configured', async () => {
@@ -21,7 +20,7 @@ describe('redactText - credit card masking/tokenization', () => {
     })
     const input = 'Card: 4242-4242-4242-4242'
     const out = await redactText(reg, input)
-    assert.ok(out.includes('**** **** **** 4242'))
+    expect(out).toContain('**** **** **** 4242')
   })
 
   it('tokenizes credit card when defaultAction is tokenize and hmacKey is provided', async () => {
@@ -31,7 +30,7 @@ describe('redactText - credit card masking/tokenization', () => {
     })
     const input = 'Card: 4242 4242 4242 4242'
     const out = await redactText(reg, input)
-    assert.match(out, /TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(out).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
   })
 })
 
@@ -40,6 +39,6 @@ describe('redactText - email masking', () => {
     const reg = new Registry({ defaultAction: 'mask' })
     const input = 'email: foo.bar+baz@example.com'
     const out = await redactText(reg, input)
-    assert.ok(out.includes('[REDACTED:email]'))
+    expect(out).toContain('[REDACTED:email]')
   })
 })

@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { Registry, redactText } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 
 /**
  * IPv6 Pattern Detection Edge Case Tests
@@ -23,9 +22,9 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
 
     for (const { input, expected } of compressedCases) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `IPv6 should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:ipv6]'),
+      expect(result).not.toContain(expected, `IPv6 should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:ipv6]',
         `Should contain IPv6 redaction marker for: ${input}`,
       )
     }
@@ -51,9 +50,9 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
 
     for (const { input, expected } of fullNotationCases) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `Full IPv6 should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:ipv6]'),
+      expect(result).not.toContain(expected, `Full IPv6 should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:ipv6]',
         `Should contain IPv6 redaction marker for: ${input}`,
       )
     }
@@ -71,12 +70,9 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
     for (const { input, expected } of mixedCaseCases) {
       const result = await redactText(reg, input)
       // IPv6 regex should be case-insensitive
-      assert.ok(
-        !result.toLowerCase().includes(expected.toLowerCase()),
-        `Mixed case IPv6 should be masked in: ${input}`,
-      )
-      assert.ok(
-        result.includes('[REDACTED:ipv6]'),
+      expect(result.toLowerCase()).not.toContain(expected.toLowerCase())
+      expect(result).toContain(
+        '[REDACTED:ipv6]',
         `Should contain IPv6 redaction marker for: ${input}`,
       )
     }
@@ -105,8 +101,8 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
         console.log(`Result: ${result}`)
         // This is acceptable for current implementation - partial matches can occur
       } else {
-        assert.ok(
-          !result.includes('[REDACTED:ipv6]'),
+        expect(result).not.toContain(
+          '[REDACTED:ipv6]',
           `Correctly rejected invalid IPv6: ${pattern}`,
         )
       }
@@ -162,15 +158,15 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
       const hasRedaction = result.includes('[REDACTED:ipv6]')
 
       if (test.shouldDetect) {
-        assert.ok(hasRedaction, `Should detect IPv6 in: ${test.text} (${test.reason})`)
-        assert.ok(
-          !result.includes(test.expectedPattern),
+        expect(hasRedaction, `Should detect IPv6 in: ${test.text} (${test.reason})`)
+        expect(result).not.toContain(
+          test.expectedPattern,
           `IPv6 should be masked: ${test.expectedPattern}`,
         )
       } else {
-        assert.ok(!hasRedaction, `Should NOT detect IPv6 in: ${test.text} (${test.reason})`)
-        assert.ok(
-          result.includes(test.expectedPattern),
+        expect(!hasRedaction, `Should NOT detect IPv6 in: ${test.text} (${test.reason})`)
+        expect(result).toContain(
+          test.expectedPattern,
           `Pattern should remain: ${test.expectedPattern}`,
         )
       }
@@ -188,9 +184,9 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
 
     for (const { input, expected } of mappedCases) {
       const result = await redactText(reg, input)
-      assert.ok(!result.includes(expected), `IPv6-mapped IPv4 should be masked in: ${input}`)
-      assert.ok(
-        result.includes('[REDACTED:ipv6]'),
+      expect(result).not.toContain(expected, `IPv6-mapped IPv4 should be masked in: ${input}`)
+      expect(result).toContain(
+        '[REDACTED:ipv6]',
         `Should contain IPv6 redaction marker for: ${input}`,
       )
     }
@@ -211,19 +207,19 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
 
     // Count redactions (should detect most valid IPv6 addresses)
     const redactionCount = (result.match(/\[REDACTED:ipv6\]/g) || []).length
-    assert.ok(
+    expect(
       redactionCount >= 3,
       `Should detect at least 3 valid IPv6 addresses, found: ${redactionCount}`,
     )
 
     // Most addresses should be redacted (some edge cases may not be detected)
-    assert.ok(!result.includes('2001:db8::1'), 'First IPv6 should be redacted')
-    assert.ok(!result.includes('fe80::1'), 'Second IPv6 should be redacted')
+    expect(result).not.toContain('2001:db8::1')
+    expect(result).not.toContain('fe80::1')
     // Note: ::1 in this multiline context might not be detected due to boundary processing
     if (result.includes('::1')) {
       console.log('Note: ::1 not detected in this multiline context - acceptable limitation')
     }
-    assert.ok(!result.includes('2001:db8:85a3::8a2e:370:7334'), 'Fourth IPv6 should be redacted')
+    expect(result).not.toContain('2001:db8:85a3::8a2e:370:7334')
 
     // Invalid address - but partial valid pattern may be detected
     // Implementation limitation: 2001::db8 is detected as valid
@@ -241,8 +237,8 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
     const ipv6Address = '2001:db8::1'
     const result = await redactText(reg, `Server: ${ipv6Address}`)
 
-    assert.match(result, /TKN_IPV6_[0-9a-f]{16}/, 'IPv6 should be tokenized')
-    assert.ok(!result.includes(ipv6Address), 'Original IPv6 should not appear in result')
+    expect(result).toMatch(/TKN_IPV6_[0-9a-f]{16}/)
+    expect(result).not.toContain(ipv6Address)
   })
 
   it('should generate consistent tokens for same IPv6 address', async () => {
@@ -256,7 +252,7 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
     const result2 = await redactText(reg, input)
 
     // Tokens should be identical (HMAC is deterministic)
-    assert.equal(result1, result2, 'Same IPv6 input should generate identical tokens')
+    expect(result1).toBe(result2)
   })
 
   it('should generate different tokens for different IPv6 addresses', async () => {
@@ -272,7 +268,7 @@ describe('IPv6 Pattern Detection Edge Cases', () => {
     const token1 = result1.match(/TKN_IPV6_([0-9a-f]{16})/)?.[1]
     const token2 = result2.match(/TKN_IPV6_([0-9a-f]{16})/)?.[1]
 
-    assert.ok(token1 && token2, 'Both IPv6 inputs should generate tokens')
-    assert.notEqual(token1, token2, 'Different IPv6 addresses should generate different tokens')
+    expect(token1 && token2).toBeTruthy()
+    expect(token1).not.toBe(token2)
   })
 })
