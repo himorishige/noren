@@ -70,12 +70,13 @@ export class HitPool {
       hit.value = Array.from(randomBytes, (b) => String.fromCharCode(b & 0x7f)).join('')
     }
 
-    // Clear other potentially sensitive fields
-    hit.type = 'unknown' as PiiType
+    // Clear other potentially sensitive fields - use empty string instead of 'unknown'
+    hit.value = ''
     hit.start = 0
     hit.end = 0
     hit.risk = 'low'
     hit.priority = undefined
+    // Don't set type to avoid 'unknown' appearing in results
   }
 
   private forcePoolClear(): void {

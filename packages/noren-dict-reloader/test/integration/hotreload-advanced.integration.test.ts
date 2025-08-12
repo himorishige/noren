@@ -161,6 +161,19 @@ describe('Hot-reload System Integration', () => {
     if (policy && typeof policy === 'object' && 'error' in policy) {
       throw new Error('Compilation failed: Invalid policy structure')
     }
+    
+    // Check for malformed JSON that fallback to text
+    if (typeof policy === 'string' && policy.includes('json malformed')) {
+      throw new Error('Compilation failed: Invalid JSON format in policy')
+    }
+    
+    // Check dictionaries for malformed JSON as well
+    for (const dict of dicts) {
+      if (typeof dict === 'string' && dict.includes('malformed json')) {
+        throw new Error('Compilation failed: Invalid JSON format in dictionary')
+      }
+    }
+    
     return {
       policy,
       dicts,
@@ -226,7 +239,6 @@ describe('Hot-reload System Integration', () => {
 
     // First load should succeed
     await reloader.start()
-    const _initialSwapCount = swaps.length
 
     // Enable malformed JSON
     serverState.malformedJson = true
@@ -373,7 +385,7 @@ describe('Hot-reload System Integration', () => {
     const initialSwaps = swaps.length
 
     // Trigger multiple concurrent reloads with small delays
-    const reloadPromises = []
+    const reloadPromises: Promise<void>[] = []
     for (let i = 0; i < 5; i++) {
       serverState.policyETag = `W/"policy-concurrent-${i}"`
       serverState.policyData = { rules: { email: { action: 'mask' } }, version: i + 10 }
