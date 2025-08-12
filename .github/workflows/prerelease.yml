@@ -3,7 +3,6 @@ name: Prerelease
 on:
   push:
     branches:
-      - develop
       - alpha
       - beta
       - rc

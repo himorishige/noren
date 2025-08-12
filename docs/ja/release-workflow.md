@@ -9,14 +9,27 @@ Norenプロジェクトでは、[Changesets](https://github.com/changesets/chang
 - **Monorepo対応**: 5つのパッケージ（noren-core + 4つのプラグイン）を統合管理
 - **依存関係自動更新**: noren-coreが更新されると、依存するプラグインパッケージも自動的にバージョンアップ
 - **段階的リリース**: alpha → beta → rc → stable の段階的リリース戦略
-- **GitHub Actions統合**: mainブランチへのマージで自動リリース実行
+- **GitHub Actions統合**: develop→mainブランチへのPRマージで自動リリース実行
 - **npm自動公開**: 手動でのnpm publishは不要
+
+### ブランチ運用戦略
+
+- **developブランチ**: 開発用メインブランチ（日常的な開発・機能追加）
+- **mainブランチ**: リリース用ブランチ（安定版のみ）
+- **alpha/beta/rcブランチ**: プレリリース用（実験的機能・ベータテスト）
 
 ## 開発者向け：変更をリリースに含める方法
 
-### 1. 変更の実装
+### 1. 開発ブランチでの作業
 
-通常通りコードを変更・実装します。
+developブランチから機能ブランチを作成し、通常通りコードを変更・実装します：
+
+```bash
+# developブランチから機能ブランチ作成
+git checkout develop
+git pull origin develop
+git checkout -b feature/new-feature
+```
 
 ### 2. Changesetの作成
 
@@ -50,13 +63,32 @@ Fix IPv6 detection for compressed notation
 
 ### 4. プルリクエスト作成
 
-changesetファイルを含めてプルリクエストを作成します。
+changesetファイルを含めて**developブランチ**へのプルリクエストを作成します。
 
 ## メンテナー向け：リリース実行
 
-### mainブランチへのマージ
+### 段階的リリースプロセス
 
-プルリクエストがmainブランチにマージされると、GitHub Actionsが自動的に：
+#### 1. developブランチでの開発・統合
+
+日常的な開発とPRレビューはdevelopブランチで実行されます。
+
+#### 2. リリース準備（develop → main）
+
+リリース準備が整ったら、developからmainへのプルリクエストを作成します：
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b release/prepare-v0.x.x
+git merge develop
+# コンフリクト解決後
+git push origin release/prepare-v0.x.x
+```
+
+#### 3. 自動リリース実行
+
+develop→mainブランチへのPRがマージされると、GitHub Actionsが自動的に：
 
 1. **CIチェック**: テスト・ビルド・lint実行
 2. **バージョニング**: changesetに基づいてversion bump
@@ -77,12 +109,13 @@ pnpm changeset:version
 
 ### ブランチ別リリース
 
-| ブランチ | 用途 | バージョン例 | npm tag |
-|----------|------|--------------|---------|
-| `main` | 安定版リリース | `0.2.0` | `latest` |
-| `alpha` | 開発版・実験的機能 | `0.2.0-alpha.1` | `alpha` |
-| `beta` | ベータ版・機能凍結後 | `0.2.0-beta.1` | `beta` |
-| `rc` | リリース候補 | `0.2.0-rc.1` | `rc` |
+| ブランチ | 用途 | バージョン例 | npm tag | 備考 |
+|----------|------|--------------|---------|-------|
+| `develop` | 日常的な開発 | - | - | リリースは行わない |
+| `main` | 安定版リリース | `0.2.0` | `latest` | develop→mainのPRマージ時 |
+| `alpha` | 開発版・実験的機能 | `0.2.0-alpha.1` | `alpha` | 直接pushで自動プレリリース |
+| `beta` | ベータ版・機能凍結後 | `0.2.0-beta.1` | `beta` | 直接pushで自動プレリリース |
+| `rc` | リリース候補 | `0.2.0-rc.1` | `rc` | 直接pushで自動プレリリース |
 
 ### プレリリース版のインストール
 

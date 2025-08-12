@@ -1,0 +1,57 @@
+name: Develop CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+  push:
+    branches:
+      - develop
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeCheck
+        run: pnpm typecheck
+
+      - name: Run Tests
+        run: pnpm test
+
+      - name: Run Linting
+        run: pnpm check
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Check for changeset (only on PR to develop)
+        if: github.event_name == 'pull_request' && github.base_ref == 'develop'
+        run: |
+          if [ "${{ github.head_ref }}" != "changeset-release/develop" ]; then
+            if ! pnpm changeset status --since=origin/develop; then
+              echo "❌ No changeset found. Please run 'pnpm changeset' to add a changeset for your changes."
+              exit 1
+            else
+              echo "✅ Changeset found!"
+            fi
+          else
+            echo "⏭️ Skipping changeset check for release PR"
+          fi
