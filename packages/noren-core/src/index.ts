@@ -8,6 +8,26 @@ export {
   filterByConfidence,
   meetsConfidenceThreshold,
 } from './confidence.js'
+export {
+  type ContextFeatures,
+  type ContextMarkers,
+  type DocumentStructure,
+  detectContextMarkers,
+  detectDocumentStructure,
+  extractContextFeatures,
+} from './context-detection.js'
+export {
+  CONSERVATIVE_CONTEXTUAL_CONFIG,
+  DEFAULT_CONTEXTUAL_CONFIG,
+  DISABLED_CONTEXTUAL_CONFIG,
+  type ContextualConfig,
+  type ContextualConfidenceResult,
+  type ContextualExplanation,
+  type ContextualRule,
+  applyContextualConfidence,
+  calculateContextualConfidence,
+  createContextualConfig,
+} from './contextual-confidence.js'
 export { type IPv6ParseResult, parseIPv6 } from './ipv6-parser.js'
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
@@ -32,6 +52,13 @@ import {
   calculateConfidence,
   filterByConfidence,
 } from './confidence.js'
+import { 
+  applyContextualConfidence, 
+  createContextualConfig, 
+  DEFAULT_CONTEXTUAL_CONFIG,
+  DISABLED_CONTEXTUAL_CONFIG,
+  type ContextualConfig 
+} from './contextual-confidence.js'
 import { builtinDetect } from './detection.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'
 import { defaultMask } from './masking.js'
@@ -85,6 +112,7 @@ export interface RegistryOptions extends Policy {
   environment?: Environment
   allowDenyConfig?: AllowDenyConfig
   enableConfidenceScoring?: boolean // Enable confidence scoring (default: true in v0.3.0)
+  contextualConfig?: ContextualConfig // P2 contextual confidence configuration (v0.4.0)
 }
 
 export class Registry {
@@ -94,9 +122,10 @@ export class Registry {
   private contextHintsSet: Set<string>
   private allowDenyManager: AllowDenyManager
   private enableConfidenceScoring: boolean
+  private contextualConfig: ContextualConfig
 
   constructor(options: RegistryOptions) {
-    const { environment, allowDenyConfig, enableConfidenceScoring, ...policy } = options
+    const { environment, allowDenyConfig, enableConfidenceScoring, contextualConfig, ...policy } = options
     this.base = policy
     this.contextHintsSet = new Set(policy.contextHints ?? [])
     this.enableConfidenceScoring = enableConfidenceScoring ?? true
@@ -106,6 +135,23 @@ export class Registry {
       environment: environment ?? 'production',
       ...allowDenyConfig,
     })
+
+    // Initialize contextual confidence configuration
+    // Use policy flags to configure if no explicit contextualConfig provided
+    if (contextualConfig) {
+      this.contextualConfig = contextualConfig
+    } else {
+      // Create config from policy flags (backward compatibility)
+      const enabled = policy.enableContextualConfidence ?? false  // Default disabled for safety
+      const suppressionEnabled = policy.contextualSuppressionEnabled ?? true
+      const boostEnabled = policy.contextualBoostEnabled ?? false  // Conservative default
+
+      this.contextualConfig = createContextualConfig({
+        enabled,
+        suppressionEnabled,
+        boostEnabled,
+      })
+    }
   }
 
   use(detectors: Detector[] = [], maskers: Record<string, Masker> = {}, ctx: string[] = []) {
@@ -258,6 +304,12 @@ export class Registry {
           reasons: confidenceResult.reasons,
           features: confidenceResult.features,
         }
+        
+        // Apply P2 contextual confidence if enabled
+        if (this.contextualConfig.enabled) {
+          applyContextualConfidence(scoredHit, src, this.contextualConfig)
+        }
+        
         scoredHits.push(scoredHit)
       } else {
         scoredHits.push(hit)

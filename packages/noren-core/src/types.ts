@@ -32,6 +32,9 @@ export type Policy = {
   hmacKey?: string | CryptoKey
   sensitivity?: DetectionSensitivity // Added in v0.3.0
   confidenceThreshold?: number // Custom threshold override, added in v0.3.0
+  enableContextualConfidence?: boolean // Enable P2 contextual confidence, added in v0.4.0
+  contextualSuppressionEnabled?: boolean // Enable contextual suppression, added in v0.4.0
+  contextualBoostEnabled?: boolean // Enable contextual boost, added in v0.4.0
 }
 
 export type DetectUtils = {
