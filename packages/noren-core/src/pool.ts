@@ -76,7 +76,7 @@ export class HitPool {
     hit.end = 0
     hit.risk = 'low'
     hit.priority = undefined
-    hit.type = '' as PiiType // Initialize with empty string to maintain type safety
+    // Don't initialize type to avoid 'unknown' in results and potential serialization issues
   }
 
   private forcePoolClear(): void {
