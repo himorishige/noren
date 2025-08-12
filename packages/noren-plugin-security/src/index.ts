@@ -20,4 +20,5 @@ export {
   parseCookieHeader,
   parseHttpHeader,
   parseSetCookieHeader,
+  setSecurityDebugLogger,
 } from './utils.js'

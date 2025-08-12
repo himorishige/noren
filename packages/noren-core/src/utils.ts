@@ -48,27 +48,29 @@ export async function importHmacKey(secret: string | CryptoKey) {
     throw new Error('HMAC key must be at least 32 characters long')
   }
 
-  // Ensure minimum key length for security
-  if (secret.length < 32) {
+  // Check for null, undefined, or empty values
+  if (!secret || secret.length === 0) {
     throw new Error('HMAC key must be at least 32 characters long')
   }
 
-  return crypto.subtle.importKey(
-    'raw',
-    enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  )
+  // Ensure minimum key length for security (check byte length, not character length)
+  const keyBytes = enc.encode(secret)
+  if (keyBytes.length < 32) {
+    throw new Error('HMAC key must be at least 32 characters long')
+  }
+
+  return crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, [
+    'sign',
+  ])
 }
 
 export async function hmacToken(value: string, key: CryptoKey) {
   const mac = await crypto.subtle.sign('HMAC', key, enc.encode(value))
   const b = new Uint8Array(mac)
 
-  // Use lookup table for faster hex conversion (first 8 bytes = 64 bits)
+  // Use lookup table for faster hex conversion (first 16 bytes = 128 bits)
   let hex = ''
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 16; i++) {
     hex += HEX_TABLE[b[i]]
   }
   return hex

@@ -21,7 +21,11 @@ function toLastModifiedString(ms: number): string {
  */
 export function createFileLoader(
   fallback: LoaderFn = defaultLoader,
-  opts?: { baseDir?: string },
+  opts?: {
+    baseDir?: string
+    maxBytes?: number
+    allowRemoteFileHosts?: string[]
+  },
 ): LoaderFn {
   return async (url: string, prev, headers, force): Promise<LoaderResult> => {
     if (!url.startsWith('file://')) {
@@ -37,6 +41,14 @@ export function createFileLoader(
 
     if (parsedUrl.search || parsedUrl.hash) {
       throw new Error(`Invalid file URL (query/hash not allowed): ${url}`)
+    }
+
+    // Security: Check remote file hosts
+    if (parsedUrl.hostname && parsedUrl.hostname !== 'localhost') {
+      const allowedHosts = opts?.allowRemoteFileHosts ?? []
+      if (!allowedHosts.includes(parsedUrl.hostname)) {
+        throw new Error(`Remote file host not allowed: ${parsedUrl.hostname}`)
+      }
     }
 
     let text: string
@@ -55,6 +67,19 @@ export function createFileLoader(
         }
       }
       const st = await stat(real)
+
+      // Security: Reject non-regular files (devices, FIFOs, etc.)
+      if (!st.isFile()) {
+        throw new Error(`Access to non-regular file denied: ${real}`)
+      }
+
+      // Security: Enforce file size limit
+      if (opts?.maxBytes !== undefined && st.size > opts.maxBytes) {
+        throw new Error(
+          `File size ${st.size} bytes exceeds limit of ${opts.maxBytes} bytes: ${real}`,
+        )
+      }
+
       text = await readFile(real, 'utf8')
       etag = `W/"sha256:${sha256Hex(text)}"`
       lastModified = toLastModifiedString(st.mtimeMs)

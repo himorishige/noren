@@ -1,6 +1,11 @@
 import type { Masker } from '@himorishige/noren-core'
 import type { SecurityConfig } from './types.js'
-import { isCookieAllowed, parseCookieHeader, parseSetCookieHeader } from './utils.js'
+import {
+  isCookieAllowed,
+  logSecurityError,
+  parseCookieHeader,
+  parseSetCookieHeader,
+} from './utils.js'
 
 /** Mask JWT while preserving structure */
 function maskJwtStructure(jwt: string): string {
@@ -103,7 +108,9 @@ function maskCookieHeader(cookieHeader: string, config?: SecurityConfig): string
     }
 
     return `Cookie: ${maskedPairs.join('; ')}`
-  } catch {
+  } catch (error) {
+    const errorObj = error instanceof Error ? error : new Error(String(error))
+    logSecurityError('Cookie masking', errorObj, cookieHeader)
     return '[REDACTED:COOKIE]'
   }
 }
@@ -129,7 +136,9 @@ function maskSetCookieHeader(setCookieHeader: string, config?: SecurityConfig): 
 
     // Preserve original format while masking only the value
     return setCookieHeader.replace(/^(Set-Cookie\s*:\s*[^=]+=)([^;]+)(.*)$/i, `$1${maskedValue}$3`)
-  } catch {
+  } catch (error) {
+    const errorObj = error instanceof Error ? error : new Error(String(error))
+    logSecurityError('Set-Cookie masking', errorObj, setCookieHeader)
     return '[REDACTED:SET-COOKIE]'
   }
 }

@@ -142,7 +142,7 @@ describe('WHATWG Streams Integration', () => {
               // Try to enqueue quickly to test backpressure
               setTimeout(enqueueNext, 5)
             } catch (_error) {
-              console.log('Backpressure detected during enqueue')
+              // Silently count backpressure events without logging each one
               backpressureEvents++
               // Retry after delay
               setTimeout(enqueueNext, 100)

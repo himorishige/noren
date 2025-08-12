@@ -144,16 +144,18 @@ export class Registry {
 
         if (currentPriority < lastPriority) {
           // Current hit has higher priority (lower number = higher priority), replace the last one
-          hitPool.release([lastAcceptedHit])
+          const toRelease = lastAcceptedHit
           hits[writeIndex - 1] = currentHit
           currentEnd = currentHit.end
+          hitPool.release([toRelease])
         } else if (currentPriority === lastPriority) {
           // Same priority - use tiebreaker rules
           const shouldReplace = resolveSamePriorityConflict(currentHit, lastAcceptedHit)
           if (shouldReplace) {
-            hitPool.release([lastAcceptedHit])
+            const toRelease = lastAcceptedHit
             hits[writeIndex - 1] = currentHit
             currentEnd = currentHit.end
+            hitPool.release([toRelease])
           } else {
             hitPool.release([currentHit])
           }
@@ -164,7 +166,16 @@ export class Registry {
       }
     }
 
-    const finalHits = hits.slice(0, writeIndex)
+    // Create clean copies of final hits to avoid pool reference issues
+    const finalHits = hits.slice(0, writeIndex).map((hit) => ({
+      type: hit.type,
+      start: hit.start,
+      end: hit.end,
+      value: hit.value,
+      risk: hit.risk,
+      priority: hit.priority,
+    }))
+
     const releasedHits = hits.slice(writeIndex)
     if (releasedHits.length > 0) {
       hitPool.release(releasedHits)
