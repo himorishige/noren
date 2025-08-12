@@ -31,6 +31,7 @@ export type DetectUtils = {
   src: string
   hasCtx: (words?: string[]) => boolean
   push: (h: Hit) => void
+  canPush?: () => boolean
 }
 
 export type Detector = {

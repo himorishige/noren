@@ -21,6 +21,26 @@ export const normalize = (s: string) => {
   return trimmed.length > 0 ? trimmed : normalized
 }
 
+/**
+ * Iterate large inputs in safe chunks without collecting results
+ */
+export function forEachChunk(
+  input: string,
+  fn: (chunk: string, offset: number) => void,
+  chunkSize: number = SECURITY_LIMITS.chunkSize,
+): void {
+  if (input.length <= chunkSize) {
+    fn(input, 0)
+    return
+  }
+  let offset = 0
+  while (offset < input.length) {
+    const chunk = input.slice(offset, offset + chunkSize)
+    fn(chunk, offset)
+    offset += chunkSize
+  }
+}
+
 // Luhn algorithm for credit card validation
 export function luhn(d: string) {
   let sum = 0
@@ -376,8 +396,11 @@ export function isFalsePositive(input: string, piiType?: string): boolean {
  */
 export const SECURITY_LIMITS = {
   maxInputLength: 50000, // Reduced for better security (50KB text limit)
-  maxRegexComplexity: 3000, // Reduced complexity threshold for stricter security
-  chunkSize: 2000, // Increased chunk size for better performance
+  maxRegexComplexity: 5000, // Relaxed threshold to avoid over-blocking typical inputs
+  // Inputs shorter than this always use single-pass regex to keep small cases fast
+  smallSinglePassThreshold: 128,
+  // Chunk size for large inputs to control scaling and memory
+  chunkSize: 256,
   maxPatternMatches: 200, // Limit number of regex matches to prevent DoS
 } as const
 
@@ -410,16 +433,16 @@ export function calculateInputComplexity(input: string): number {
   }
 
   // Suspicious regex patterns that could cause backtracking
-  const suspiciousPatterns = [
-    /(\w+\s*){10,}/, // Many word+space repetitions
-    /([^\s]+\s+){10,}/, // Many non-space+space repetitions
-    /(a|a)*/, // Classic ReDoS pattern
-    /(.+)+/, // Nested quantifiers
+  const suspiciousPatterns: Array<{ pattern: RegExp; penalty: number }> = [
+    { pattern: /(\w+\s*){10,}/, penalty: 150 }, // Many word+space repetitions
+    { pattern: /([^\s]+\s+){10,}/, penalty: 150 }, // Many non-space+space repetitions
+    { pattern: /\(a\|a\)\*/, penalty: 700 }, // Classic ReDoS (a|a)*
+    { pattern: /\(\.\+\)\+/, penalty: 700 }, // Nested quantifiers (.+)+
   ]
 
-  for (const pattern of suspiciousPatterns) {
+  for (const { pattern, penalty } of suspiciousPatterns) {
     if (pattern.test(input)) {
-      complexity += 500 // High penalty for suspicious patterns
+      complexity += penalty
     }
   }
 

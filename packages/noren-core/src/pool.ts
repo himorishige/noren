@@ -31,6 +31,19 @@ export class HitPool {
     return { type, start, end, value, risk, priority }
   }
 
+  releaseOne(hit: Hit): void {
+    if (this.pool.length < this.maxSize) {
+      this.securelyWipeHit(hit)
+      this.pool.push(hit)
+    }
+
+    this.clearCounter++
+    if (this.clearCounter >= this.clearThreshold) {
+      this.forcePoolClear()
+      this.clearCounter = 0
+    }
+  }
+
   release(hits: Hit[]): void {
     // Return hits to pool for reuse
     for (const hit of hits) {
@@ -49,28 +62,33 @@ export class HitPool {
     }
   }
 
-  private securelyWipeHit(hit: Hit): void {
-    // Optimized secure wipe: single random overwrite is sufficient for memory security
-    // Multiple passes were overkill for JavaScript string objects in memory
-    const originalLength = hit.value.length
-
-    if (originalLength > 0) {
-      // Single random overwrite - sufficient for preventing memory dumps
-      // Modern V8 string interning makes multiple passes less effective anyway
-      const randomBytes = new Uint8Array(Math.min(originalLength, 64)) // Limit to 64 chars for performance
-      crypto.getRandomValues(randomBytes)
-      hit.value = Array.from(randomBytes, (b) => String.fromCharCode(32 + (b % 95)))
-        .join('')
-        .slice(0, originalLength)
+  releaseRange(hits: Hit[], count: number): void {
+    // Return first N hits to pool for reuse without allocating a new array
+    const n = Math.min(count, hits.length)
+    for (let i = 0; i < n; i++) {
+      if (this.pool.length < this.maxSize) {
+        const hit = hits[i]
+        this.securelyWipeHit(hit)
+        this.pool.push(hit)
+      }
     }
 
-    // Clear other potentially sensitive fields - use empty string instead of 'unknown'
+    // Periodically clear the entire pool for security
+    this.clearCounter++
+    if (this.clearCounter >= this.clearThreshold) {
+      this.forcePoolClear()
+      this.clearCounter = 0
+    }
+  }
+
+  private securelyWipeHit(hit: Hit): void {
+    // Clear fields to allow GC to reclaim memory. Random overwrites are unnecessary in JS runtime.
     hit.value = ''
     hit.start = 0
     hit.end = 0
     hit.risk = 'low'
     hit.priority = undefined
-    // Don't initialize type to avoid 'unknown' in results and potential serialization issues
+    // Do not modify type to avoid unintended serialization issues
   }
 
   private forcePoolClear(): void {

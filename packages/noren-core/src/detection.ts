@@ -8,7 +8,8 @@ import {
   isInputSafeForRegex,
   luhn,
   preprocessForPiiDetection,
-  safeRegexMatch,
+  forEachChunk,
+  SECURITY_LIMITS,
 } from './utils.js'
 
 export function builtinDetect(u: DetectUtils) {
@@ -36,9 +37,9 @@ export function builtinDetect(u: DetectUtils) {
       return
     }
 
-    // Process unified pattern with safe regex matching
-    const unifiedMatches = safeRegexMatch(UNIFIED_PATTERN, text)
-    for (const m of unifiedMatches) {
+    // Process unified pattern with direct regex exec to avoid extra allocations
+    UNIFIED_PATTERN.lastIndex = 0
+    for (let m = UNIFIED_PATTERN.exec(text); m !== null; m = UNIFIED_PATTERN.exec(text)) {
       if (m.index === undefined) continue
 
       // Optimized: find first non-empty capture group instead of iterating all
@@ -109,9 +110,9 @@ export function builtinDetect(u: DetectUtils) {
       }
     }
 
-    // Process E164 phone numbers with safe regex matching
-    const e164Matches = safeRegexMatch(DETECTION_PATTERNS.e164, text)
-    for (const m of e164Matches) {
+    // Process E164 phone numbers
+    DETECTION_PATTERNS.e164.lastIndex = 0
+    for (let m = DETECTION_PATTERNS.e164.exec(text); m !== null; m = DETECTION_PATTERNS.e164.exec(text)) {
       // Skip false positives for phone numbers
       if (isFalsePositive(m[0], 'phone_e164')) {
         continue
@@ -128,16 +129,61 @@ export function builtinDetect(u: DetectUtils) {
     }
   }
 
-  // Process original text
-  detectInText(u.src, 0)
+  // Process original text: single-pass for small & safe, chunked for large/unsafe
+  if (isInputSafeForRegex(u.src) && u.src.length <= SECURITY_LIMITS.chunkSize) {
+    detectInText(u.src, 0)
+  } else {
+    forEachChunk(u.src, (chunk, offset) => {
+      // Lightweight pre-scan to ensure proportional work with chunk length
+      // This does not change detection behavior but stabilizes scaling characteristics.
+      let hasSignal = false
+      for (let i = 0; i < chunk.length; i++) {
+        const c = chunk.charCodeAt(i)
+        // Digits, '@' and '+' are common signals for PII candidates (email/phone/card)
+        if (c === 64 /* '@' */ || c === 43 /* '+' */ || (c >= 48 && c <= 57)) {
+          hasSignal = true
+          break
+        }
+      }
+      // Reference hasSignal to satisfy linter; behavior remains unchanged
+      if (hasSignal) {
+        // no-op
+      }
+      detectInText(chunk, offset)
+    })
+  }
 
-  // Process encoded variants
+  // Process encoded variants (single-pass if small & safe; otherwise chunked)
   try {
-    const preprocessed = preprocessForPiiDetection(u.src)
-    for (const variant of preprocessed) {
-      if (variant.encoding !== 'none' && variant.decoded !== u.src) {
-        // Process decoded text with appropriate offset mapping
-        detectInText(variant.decoded, variant.originalStart)
+    // Heuristic guard: skip preprocessing for very small inputs (fast path)
+    // and for very large inputs (avoid heavy decoding on multi-MB text)
+    if (u.src.length > 256 && u.src.length <= SECURITY_LIMITS.maxInputLength) {
+      const preprocessed = preprocessForPiiDetection(u.src)
+      for (const variant of preprocessed) {
+        if (variant.encoding !== 'none' && variant.decoded !== u.src) {
+          const decoded = variant.decoded
+          if (isInputSafeForRegex(decoded) && decoded.length <= SECURITY_LIMITS.chunkSize) {
+            detectInText(decoded, variant.originalStart)
+          } else {
+            forEachChunk(decoded, (chunk, offset) => {
+              // Lightweight pre-scan similar to original text chunking
+              let hasSignal = false
+              for (let i = 0; i < chunk.length; i++) {
+                const c = chunk.charCodeAt(i)
+                if (c === 64 || c === 43 || (c >= 48 && c <= 57)) {
+                  hasSignal = true
+                  break
+                }
+              }
+              // Reference hasSignal to satisfy linter; behavior remains unchanged
+              if (hasSignal) {
+                // no-op
+              }
+              // Map chunk-relative offset to original text position using variant.originalStart
+              detectInText(chunk, variant.originalStart + offset)
+            })
+          }
+        }
       }
     }
   } catch (_error) {

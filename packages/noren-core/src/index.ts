@@ -20,10 +20,16 @@ import { type LazyPlugin, loadPlugin } from './lazy.js'
 import { defaultMask } from './masking.js'
 import { hitPool } from './pool.js'
 import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy } from './types.js'
-import { hmacToken, importHmacKey, normalize } from './utils.js'
+import { hmacToken, importHmacKey, normalize, SECURITY_LIMITS } from './utils.js'
 
 // Risk level weights for tiebreaker comparison
 const RISK_WEIGHTS = { high: 3, medium: 2, low: 1 } as const
+const DEFAULT_BUILTIN_PRIORITY = 10
+
+// Priority comparison: lower number = higher priority (e.g., -5 > -1 > 1 > 5)
+function isHigherPriority(a: number, b: number): boolean {
+  return a < b
+}
 
 /**
  * Resolve conflicts between hits with same priority
@@ -63,7 +69,14 @@ export class Registry {
 
   use(detectors: Detector[] = [], maskers: Record<string, Masker> = {}, ctx: string[] = []) {
     for (const d of detectors) this.detectors.push(d)
-    this.detectors.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    // Sort so that higher priority detectors run first (lower number first)
+    this.detectors.sort((a, b) => {
+      const ap = a.priority ?? 0
+      const bp = b.priority ?? 0
+      if (isHigherPriority(ap, bp)) return -1
+      if (isHigherPriority(bp, ap)) return 1
+      return 0
+    })
 
     for (const [k, m] of Object.entries(maskers)) this.maskers.set(k as PiiType, m)
 
@@ -89,25 +102,41 @@ export class Registry {
     const src = normalize(raw)
     const hits: Hit[] = []
 
-    const ctxHintsForCheck = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
-    const srcLower = src.toLowerCase()
+    // Lazily compute lowercase and hints only when needed to reduce overhead on hot path
+    let srcLower: string | null = null
+    const getSrcLower = () => {
+      if (srcLower === null) {
+        srcLower = src.toLowerCase()
+      }
+      return srcLower
+    }
     let contextCheckCache: boolean | null = null
 
     const u: DetectUtils = {
       src,
       hasCtx: (ws) => {
+        const hay = getSrcLower()
         if (!ws) {
           if (contextCheckCache === null) {
-            contextCheckCache = ctxHintsForCheck.some((w) => srcLower.includes(w.toLowerCase()))
+            const hints = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
+            contextCheckCache = hints.some((w) => hay.includes(w.toLowerCase()))
           }
           return contextCheckCache
         }
-        return ws.some((w) => srcLower.includes(w.toLowerCase()))
+        return ws.some((w) => hay.includes(w.toLowerCase()))
       },
-      push: (h) => hits.push(h),
+      push: (h) => {
+        if (hits.length >= SECURITY_LIMITS.maxPatternMatches) return
+        hits.push(h)
+      },
+      canPush: () => hits.length < SECURITY_LIMITS.maxPatternMatches,
     }
 
     builtinDetect(u)
+    // Assign default priority for builtin hits that didn't set one
+    for (let i = 0; i < hits.length; i++) {
+      if (hits[i].priority === undefined) hits[i].priority = DEFAULT_BUILTIN_PRIORITY
+    }
     for (const d of this.detectors) {
       const originalPush = u.push
       // Override push to set detector priority if not already set
@@ -143,12 +172,12 @@ export class Registry {
         const currentPriority = currentHit.priority ?? 0
         const lastPriority = lastAcceptedHit.priority ?? 0
 
-        if (currentPriority < lastPriority) {
-          // Current hit has higher priority (lower number = higher priority), replace the last one
+        if (isHigherPriority(currentPriority, lastPriority)) {
+          // Current hit has higher priority, replace the last one
           const toRelease = lastAcceptedHit
           hits[writeIndex - 1] = currentHit
           currentEnd = currentHit.end
-          hitPool.release([toRelease])
+          hitPool.releaseOne(toRelease)
         } else if (currentPriority === lastPriority) {
           // Same priority - use tiebreaker rules
           const shouldReplace = resolveSamePriorityConflict(currentHit, lastAcceptedHit)
@@ -156,13 +185,13 @@ export class Registry {
             const toRelease = lastAcceptedHit
             hits[writeIndex - 1] = currentHit
             currentEnd = currentHit.end
-            hitPool.release([toRelease])
+            hitPool.releaseOne(toRelease)
           } else {
-            hitPool.release([currentHit])
+            hitPool.releaseOne(currentHit)
           }
         } else {
           // Keep the existing hit, discard current one
-          hitPool.release([currentHit])
+          hitPool.releaseOne(currentHit)
         }
       }
     }
@@ -182,9 +211,9 @@ export class Registry {
       }
     }
 
-    const releasedHits = hits.slice(writeIndex)
-    if (releasedHits.length > 0) {
-      hitPool.release(releasedHits)
+    // Return accepted hit objects to the pool; rejected ones were already released
+    if (writeIndex > 0) {
+      hitPool.releaseRange(hits, writeIndex)
     }
 
     return { src, hits: finalHits }
