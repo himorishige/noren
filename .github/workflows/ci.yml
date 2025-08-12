@@ -20,7 +20,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -48,18 +49,24 @@ jobs:
       - name: Test
         run: pnpm -r --filter ./packages/** run test
 
+      - name: Ensure origin/main exists (PR)
+        if: github.event_name == 'pull_request'
+        run: git fetch origin main:refs/remotes/origin/main --depth=1
+
       - name: Check for changeset (only on PR)
         if: github.event_name == 'pull_request'
         run: |
-          if [ "${{ github.head_ref }}" != "changeset-release/main" ]; then
-            if ! pnpm changeset status --since=origin/main; then
-              echo "❌ No changeset found. Please run 'pnpm changeset' to add a changeset for your changes."
-              echo "If this PR doesn't require a release (e.g., docs, CI changes), add an empty changeset:"
-              echo "pnpm changeset --empty"
-              exit 1
-            else
-              echo "✅ Changeset found!"
-            fi
+          # Skip changeset check on release branches
+          if [[ "${{ github.head_ref }}" == "changeset-release/main" || "${{ github.head_ref }}" == release/* ]]; then
+            echo "⏭️ Skipping changeset check for release PR/branch (${{ github.head_ref }})"
+            exit 0
+          fi
+
+          if ! pnpm changeset status --since=origin/main; then
+            echo "❌ No changeset found. Please run 'pnpm changeset' to add a changeset for your changes."
+            echo "If this PR doesn't require a release (e.g., docs, CI changes), add an empty changeset:"
+            echo "pnpm changeset --empty"
+            exit 1
           else
-            echo "⏭️ Skipping changeset check for release PR"
+            echo "✅ Changeset found!"
           fi
