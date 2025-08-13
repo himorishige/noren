@@ -43,20 +43,20 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 
 ### 🔌 **Plugin Architecture**
 - **Region-specific plugins**: Japan, US, more coming
-- **Security plugins**: HTTP headers, API tokens, cookies  
+- **Security plugins**: HTTP headers, API tokens, cookies
 - **Custom dictionaries** with hot-reloading support
 - **Development tools** for testing and benchmarking
 
-## Package Structure
+## 🔌 Package Structure
 
 | Package Name                             | Description                                                               |
 | :--------------------------------------- | :----------------------------------------------------------------- |
-| `@himorishige/noren-core`                | 🎯 **Core library** - Fast PII detection, masking, and tokenization |
-| `@himorishige/noren-plugin-jp`           | 🇯🇵 **Japan plugin** - Phone numbers, postal codes, My Number |
-| `@himorishige/noren-plugin-us`           | 🇺🇸 **US plugin** - Phone numbers, ZIP codes, SSNs |
-| `@himorishige/noren-plugin-security`     | 🛡️ **Security plugin** - HTTP headers, API tokens, cookies |
-| `@himorishige/noren-dict-reloader`       | 🔄 **Dynamic reload** - ETag-based policy hot-reloading |
-| `@himorishige/noren-devtools`            | 🔧 **Development tools** - Benchmarking, A/B testing, evaluation |
+| [`@himorishige/noren-core`](./packages/noren-core/README.md)                | 🎯 **Core library** - Fast PII detection, masking, and tokenization |
+| [`@himorishige/noren-plugin-jp`](./packages/noren-plugin-jp/README.md)           | 🇯🇵 **Japan plugin** - Phone numbers, postal codes, My Number |
+| [`@himorishige/noren-plugin-us`](./packages/noren-plugin-us/README.md)           | 🇺🇸 **US plugin** - Phone numbers, ZIP codes, SSNs |
+| [`@himorishige/noren-plugin-security`](./packages/noren-plugin-security/README.md)     | 🛡️ **Security plugin** - HTTP headers, API tokens, cookies |
+| [`@himorishige/noren-dict-reloader`](./packages/noren-dict-reloader/README.md)       | 🔄 **Dynamic reload** - ETag-based policy hot-reloading |
+| [`@himorishige/noren-devtools`](./packages/noren-devtools/README.md)            | 🔧 **Development tools** - Benchmarking, A/B testing, evaluation |
 
 ## Requirements
 
@@ -71,7 +71,7 @@ npm install @himorishige/noren-core
 npm install @himorishige/noren-core @himorishige/noren-plugin-jp @himorishige/noren-plugin-security
 ```
 
-### 2. **Basic Usage** (5-minute setup)
+### 2. **Basic Usage** (1-minute setup)
 ```typescript
 import { Registry, redactText } from '@himorishige/noren-core'
 
@@ -206,9 +206,9 @@ registry.use([myDetector], { ssn: (hit) => '***-**-****' })
 ## ⚡ Performance & Benchmarks
 
 ### 📊 **Benchmarks** (v0.4.0)
-- **Bundle Size**: < 100KB (65% reduction from v0.3.0)
+- **Bundle Size**: < 125KB (65% reduction from v0.3.0)
 - **Memory Usage**: < 10MB for 1M characters
-- **Processing Speed**: > 1MB/s on typical hardware  
+- **Processing Speed**: > 1MB/s on typical hardware
 - **Startup Time**: < 5ms cold start
 
 ### 🔬 **Testing & Development**
@@ -227,7 +227,11 @@ node examples/benchmark-demo.mjs
 ### 🔄 **Upgrade Guide**
 Migrating from v0.3.x? See our **[Migration Guide](./docs/migration-guide-ja.md)** for breaking changes and update instructions.
 
-### 📄 **License**
+## Disclaimer
+
+This software is provided "AS IS", without warranty of any kind. There is a possibility of missed detections or false positives. Users are responsible for verifying the final output and ensuring compliance with all applicable laws and regulations. No information in this repository constitutes legal advice.
+
+## 📄 **License**
 MIT License - see [LICENSE](./LICENSE) for details.
 
 ---
