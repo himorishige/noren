@@ -1,6 +1,6 @@
 {
   "name": "@himorishige/noren-core",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Core PII detection, masking, and tokenization library built on Web Standards",
   "keywords": [
     "pii",
