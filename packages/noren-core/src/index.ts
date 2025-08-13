@@ -46,9 +46,11 @@ export {
   type ContextualExplanation,
   type ContextualRule,
   calculateContextualConfidence,
+  calculateContextualConfidenceWithDebug,
   createContextualConfig,
   DEFAULT_CONTEXTUAL_CONFIG,
   DISABLED_CONTEXTUAL_CONFIG,
+  visualizeRules,
 } from './contextual-confidence.js'
 export {
   type AggregateMetrics,

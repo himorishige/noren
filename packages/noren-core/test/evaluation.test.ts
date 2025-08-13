@@ -3,8 +3,7 @@
  * Comprehensive testing of ground truth management and evaluation metrics
  */
 
-import { deepStrictEqual, ok, strictEqual, throws } from 'node:assert'
-import { test } from 'node:test'
+import { describe, expect, it } from 'vitest'
 import {
   type DetectionResult,
   EvaluationEngine,
@@ -13,8 +12,8 @@ import {
   TestDatasetBuilder,
 } from '../src/evaluation.js'
 
-test('GroundTruthManager - basic operations', async (t) => {
-  await t.test('should add and retrieve entries', () => {
+describe('GroundTruthManager - basic operations', () => {
+  it('should add and retrieve entries', () => {
     const manager = new GroundTruthManager()
 
     const entry: GroundTruthEntry = {
@@ -33,10 +32,10 @@ test('GroundTruthManager - basic operations', async (t) => {
     manager.addEntry(entry)
     const retrieved = manager.getEntry('test1')
 
-    deepStrictEqual(retrieved, entry)
+    expect(retrieved).toEqual(entry)
   })
 
-  await t.test('should validate annotation bounds', () => {
+  it('should validate annotation bounds', () => {
     const manager = new GroundTruthManager()
 
     const invalidEntry: GroundTruthEntry = {
@@ -52,10 +51,10 @@ test('GroundTruthManager - basic operations', async (t) => {
       ],
     }
 
-    throws(() => manager.addEntry(invalidEntry), /Invalid annotation bounds/)
+    expect(() => manager.addEntry(invalidEntry)).toThrow(/Invalid annotation bounds/)
   })
 
-  await t.test('should detect overlapping annotations', () => {
+  it('should detect overlapping annotations', () => {
     const manager = new GroundTruthManager()
 
     const overlappingEntry: GroundTruthEntry = {
@@ -77,10 +76,10 @@ test('GroundTruthManager - basic operations', async (t) => {
       ],
     }
 
-    throws(() => manager.addEntry(overlappingEntry), /Overlapping annotations/)
+    expect(() => manager.addEntry(overlappingEntry)).toThrow(/Overlapping annotations/)
   })
 
-  await t.test('should validate annotation values match text', () => {
+  it('should validate annotation values match text', () => {
     const manager = new GroundTruthManager()
 
     const mismatchEntry: GroundTruthEntry = {
@@ -96,10 +95,10 @@ test('GroundTruthManager - basic operations', async (t) => {
       ],
     }
 
-    throws(() => manager.addEntry(mismatchEntry), /Annotation value mismatch/)
+    expect(() => manager.addEntry(mismatchEntry)).toThrow(/Annotation value mismatch/)
   })
 
-  await t.test('should provide dataset statistics', () => {
+  it('should provide dataset statistics', () => {
     const manager = new GroundTruthManager()
 
     manager.addEntry({
@@ -141,25 +140,25 @@ test('GroundTruthManager - basic operations', async (t) => {
 
     const stats = manager.getDatasetStats()
 
-    strictEqual(stats.total_entries, 2)
-    strictEqual(stats.total_annotations, 3)
-    strictEqual(stats.avg_annotations_per_entry, 1.5)
-    deepStrictEqual(stats.type_distribution, {
+    expect(stats.total_entries).toBe(2)
+    expect(stats.total_annotations).toBe(3)
+    expect(stats.avg_annotations_per_entry).toBe(1.5)
+    expect(stats.type_distribution).toEqual({
       email: 1,
       phone: 1,
       ip: 1,
     })
-    deepStrictEqual(stats.domain_distribution, {
+    expect(stats.domain_distribution).toEqual({
       contact: 1,
       network: 1,
     })
-    deepStrictEqual(stats.difficulty_distribution, {
+    expect(stats.difficulty_distribution).toEqual({
       easy: 2,
       medium: 1,
     })
   })
 
-  await t.test('should export and import JSON', () => {
+  it('should export and import JSON', () => {
     const manager = new GroundTruthManager()
 
     const entry: GroundTruthEntry = {
@@ -182,12 +181,12 @@ test('GroundTruthManager - basic operations', async (t) => {
     newManager.importFromJson(exported)
 
     const imported = newManager.getEntry('export1')
-    deepStrictEqual(imported, entry)
+    expect(imported).toEqual(entry)
   })
 })
 
-test('EvaluationEngine - overlap calculation', async (t) => {
-  await t.test('should calculate IoU correctly', () => {
+describe('EvaluationEngine - overlap calculation', () => {
+  it('should calculate IoU correctly', () => {
     const manager = new GroundTruthManager()
     manager.addEntry({
       id: 'overlap1',
@@ -214,8 +213,8 @@ test('EvaluationEngine - overlap calculation', async (t) => {
     }
 
     const result1 = engine.evaluateEntry('overlap1', [perfectMatch])
-    strictEqual(result1.true_positives.length, 1)
-    strictEqual(result1.true_positives[0].overlap_ratio, 1.0)
+    expect(result1.true_positives.length).toBe(1)
+    expect(result1.true_positives[0].overlap_ratio).toBe(1.0)
 
     // Partial match (john@company vs john@company.com)
     const partialMatch: DetectionResult = {
@@ -228,13 +227,13 @@ test('EvaluationEngine - overlap calculation', async (t) => {
 
     const result2 = engine.evaluateEntry('overlap1', [partialMatch])
     // IoU = overlap / union = 12 / (12 + 16 - 12) = 12/16 = 0.75
-    strictEqual(result2.true_positives.length, 1)
-    strictEqual(result2.true_positives[0].overlap_ratio, 0.75)
+    expect(result2.true_positives.length).toBe(1)
+    expect(result2.true_positives[0].overlap_ratio).toBe(0.75)
   })
 })
 
-test('EvaluationEngine - evaluation metrics', async (t) => {
-  await t.test('should calculate precision, recall, and F1 correctly', () => {
+describe('EvaluationEngine - evaluation metrics', () => {
+  it('should calculate precision, recall, and F1 correctly', () => {
     const manager = new GroundTruthManager()
     manager.addEntry({
       id: 'metrics1',
@@ -280,21 +279,21 @@ test('EvaluationEngine - evaluation metrics', async (t) => {
     const result = engine.evaluateEntry('metrics1', detections)
 
     // TP = 1 (email), FP = 1 (credit_card), FN = 1 (phone)
-    strictEqual(result.true_positives.length, 1)
-    strictEqual(result.false_positives.length, 1)
-    strictEqual(result.false_negatives.length, 1)
+    expect(result.true_positives.length).toBe(1)
+    expect(result.false_positives.length).toBe(1)
+    expect(result.false_negatives.length).toBe(1)
 
     // Precision = TP / (TP + FP) = 1 / (1 + 1) = 0.5
-    strictEqual(result.precision, 0.5)
+    expect(result.precision).toBe(0.5)
 
     // Recall = TP / (TP + FN) = 1 / (1 + 1) = 0.5
-    strictEqual(result.recall, 0.5)
+    expect(result.recall).toBe(0.5)
 
     // F1 = 2 * (precision * recall) / (precision + recall) = 2 * 0.25 / 1.0 = 0.5
-    strictEqual(result.f1_score, 0.5)
+    expect(result.f1_score).toBe(0.5)
   })
 
-  await t.test('should handle confidence thresholds', () => {
+  it('should handle confidence thresholds', () => {
     const manager = new GroundTruthManager()
     manager.addEntry({
       id: 'threshold1',
@@ -329,14 +328,14 @@ test('EvaluationEngine - evaluation metrics', async (t) => {
     const result = engine.evaluateEntry('threshold1', detections)
 
     // Detection filtered out, so it becomes a false negative
-    strictEqual(result.true_positives.length, 0)
-    strictEqual(result.false_positives.length, 0)
-    strictEqual(result.false_negatives.length, 1)
-    strictEqual(result.precision, 0) // 0 / 0 → 0
-    strictEqual(result.recall, 0) // 0 / 1 = 0
+    expect(result.true_positives.length).toBe(0)
+    expect(result.false_positives.length).toBe(0)
+    expect(result.false_negatives.length).toBe(1)
+    expect(result.precision).toBe(0) // 0 / 0 → 0
+    expect(result.recall).toBe(0) // 0 / 1 = 0
   })
 
-  await t.test('should exclude specified types', () => {
+  it('should exclude specified types', () => {
     const manager = new GroundTruthManager()
     manager.addEntry({
       id: 'exclude1',
@@ -383,16 +382,16 @@ test('EvaluationEngine - evaluation metrics', async (t) => {
     const result = engine.evaluateEntry('exclude1', detections)
 
     // Only email should be evaluated, IP should be ignored
-    strictEqual(result.true_positives.length, 1)
-    strictEqual(result.false_positives.length, 0)
-    strictEqual(result.false_negatives.length, 0)
-    strictEqual(result.precision, 1.0)
-    strictEqual(result.recall, 1.0)
+    expect(result.true_positives.length).toBe(1)
+    expect(result.false_positives.length).toBe(0)
+    expect(result.false_negatives.length).toBe(0)
+    expect(result.precision).toBe(1.0)
+    expect(result.recall).toBe(1.0)
   })
 })
 
-test('EvaluationEngine - aggregate metrics', async (t) => {
-  await t.test('should aggregate multiple entries correctly', () => {
+describe('EvaluationEngine - aggregate metrics', () => {
+  it('should aggregate multiple entries correctly', () => {
     const manager = new GroundTruthManager()
 
     manager.addEntry({
@@ -454,35 +453,35 @@ test('EvaluationEngine - aggregate metrics', async (t) => {
     const aggregateResults = engine.evaluateDataset(detectionResults)
 
     // Total: TP=2, FP=0, FN=1
-    strictEqual(aggregateResults.total_entries, 2)
-    strictEqual(aggregateResults.total_annotations, 3)
-    strictEqual(aggregateResults.total_detections, 2)
-    strictEqual(aggregateResults.true_positives, 2)
-    strictEqual(aggregateResults.false_positives, 0)
-    strictEqual(aggregateResults.false_negatives, 1)
+    expect(aggregateResults.total_entries).toBe(2)
+    expect(aggregateResults.total_annotations).toBe(3)
+    expect(aggregateResults.total_detections).toBe(2)
+    expect(aggregateResults.true_positives).toBe(2)
+    expect(aggregateResults.false_positives).toBe(0)
+    expect(aggregateResults.false_negatives).toBe(1)
 
     // Overall precision = 2/2 = 1.0, recall = 2/3 = 0.667
-    strictEqual(aggregateResults.precision, 1.0)
-    strictEqual(Math.round(aggregateResults.recall * 1000) / 1000, 0.667)
+    expect(aggregateResults.precision).toBe(1.0)
+    expect(Math.round(aggregateResults.recall * 1000) / 1000).toBe(0.667)
 
     // Type-specific metrics
-    ok(aggregateResults.type_metrics.email)
-    strictEqual(aggregateResults.type_metrics.email.tp, 1)
-    strictEqual(aggregateResults.type_metrics.email.fp, 0)
-    strictEqual(aggregateResults.type_metrics.email.fn, 0)
+    expect(aggregateResults.type_metrics.email).toBeTruthy()
+    expect(aggregateResults.type_metrics.email.tp).toBe(1)
+    expect(aggregateResults.type_metrics.email.fp).toBe(0)
+    expect(aggregateResults.type_metrics.email.fn).toBe(0)
 
-    ok(aggregateResults.type_metrics.phone)
-    strictEqual(aggregateResults.type_metrics.phone.tp, 1)
-    strictEqual(aggregateResults.type_metrics.phone.fp, 0)
-    strictEqual(aggregateResults.type_metrics.phone.fn, 0)
+    expect(aggregateResults.type_metrics.phone).toBeTruthy()
+    expect(aggregateResults.type_metrics.phone.tp).toBe(1)
+    expect(aggregateResults.type_metrics.phone.fp).toBe(0)
+    expect(aggregateResults.type_metrics.phone.fn).toBe(0)
 
-    ok(aggregateResults.type_metrics.ip)
-    strictEqual(aggregateResults.type_metrics.ip.tp, 0)
-    strictEqual(aggregateResults.type_metrics.ip.fp, 0)
-    strictEqual(aggregateResults.type_metrics.ip.fn, 1)
+    expect(aggregateResults.type_metrics.ip).toBeTruthy()
+    expect(aggregateResults.type_metrics.ip.tp).toBe(0)
+    expect(aggregateResults.type_metrics.ip.fp).toBe(0)
+    expect(aggregateResults.type_metrics.ip.fn).toBe(1)
   })
 
-  await t.test('should analyze confidence distribution', () => {
+  it('should analyze confidence distribution', () => {
     const manager = new GroundTruthManager()
     manager.addEntry({
       id: 'conf1',
@@ -530,89 +529,89 @@ test('EvaluationEngine - aggregate metrics', async (t) => {
     const aggregate = engine.evaluateDataset(detectionResults)
 
     // Check confidence analysis
-    strictEqual(aggregate.confidence_analysis.avg_tp_confidence, 0.95)
-    strictEqual(aggregate.confidence_analysis.avg_fp_confidence, 0.65)
+    expect(aggregate.confidence_analysis.avg_tp_confidence).toBe(0.95)
+    expect(aggregate.confidence_analysis.avg_fp_confidence).toBe(0.65)
 
     // Check confidence buckets
     const buckets = aggregate.confidence_analysis.confidence_buckets
-    strictEqual(buckets.length, 4)
+    expect(buckets.length).toBe(4)
 
     // High confidence bucket (0.9-1.0) should have 1 TP, 0 FP
     const highConfBucket = buckets.find((b) => b.range === '0.9-1.0')
-    ok(highConfBucket)
-    strictEqual(highConfBucket.tp, 1)
-    strictEqual(highConfBucket.fp, 0)
-    strictEqual(highConfBucket.precision, 1.0)
+    expect(highConfBucket).toBeTruthy()
+    expect(highConfBucket.tp).toBe(1)
+    expect(highConfBucket.fp).toBe(0)
+    expect(highConfBucket.precision).toBe(1.0)
 
     // Medium confidence bucket (0.5-0.7) should have 0 TP, 1 FP
     const medConfBucket = buckets.find((b) => b.range === '0.5-0.7')
-    ok(medConfBucket)
-    strictEqual(medConfBucket.tp, 0)
-    strictEqual(medConfBucket.fp, 1)
-    strictEqual(medConfBucket.precision, 0.0)
+    expect(medConfBucket).toBeTruthy()
+    expect(medConfBucket.tp).toBe(0)
+    expect(medConfBucket.fp).toBe(1)
+    expect(medConfBucket.precision).toBe(0.0)
   })
 })
 
-test('TestDatasetBuilder - synthetic data generation', async (t) => {
-  await t.test('should create synthetic entries correctly', () => {
+describe('TestDatasetBuilder - synthetic data generation', () => {
+  it('should create synthetic entries correctly', () => {
     const entry = TestDatasetBuilder.createSyntheticEntry('synthetic1', [
       { type: 'email', pattern: 'john@company.com' },
       { type: 'phone', pattern: '090-1234-5678' },
       { type: 'ip', pattern: '192.168.1.1' },
     ])
 
-    strictEqual(entry.id, 'synthetic1')
-    ok(entry.text.includes('john@company.com'))
-    ok(entry.text.includes('090-1234-5678'))
-    ok(entry.text.includes('192.168.1.1'))
+    expect(entry.id).toBe('synthetic1')
+    expect(entry.text.includes('john@company.com')).toBe(true)
+    expect(entry.text.includes('090-1234-5678')).toBe(true)
+    expect(entry.text.includes('192.168.1.1')).toBe(true)
 
-    strictEqual(entry.annotations.length, 3)
+    expect(entry.annotations.length).toBe(3)
 
     // Verify email annotation
     const emailAnnotation = entry.annotations.find((a) => a.type === 'email')
-    ok(emailAnnotation)
-    strictEqual(emailAnnotation.value, 'john@company.com')
-    strictEqual(entry.text.slice(emailAnnotation.start, emailAnnotation.end), 'john@company.com')
+    expect(emailAnnotation).toBeTruthy()
+    expect(emailAnnotation.value).toBe('john@company.com')
+    expect(entry.text.slice(emailAnnotation.start, emailAnnotation.end)).toBe('john@company.com')
 
     // Verify phone annotation
     const phoneAnnotation = entry.annotations.find((a) => a.type === 'phone')
-    ok(phoneAnnotation)
-    strictEqual(phoneAnnotation.value, '090-1234-5678')
-    strictEqual(entry.text.slice(phoneAnnotation.start, phoneAnnotation.end), '090-1234-5678')
+    expect(phoneAnnotation).toBeTruthy()
+    expect(phoneAnnotation.value).toBe('090-1234-5678')
+    expect(entry.text.slice(phoneAnnotation.start, phoneAnnotation.end)).toBe('090-1234-5678')
 
     // Verify metadata
-    strictEqual(entry.metadata?.source, 'synthetic')
-    strictEqual(entry.metadata?.domain, 'test')
+    expect(entry.metadata?.source).toBe('synthetic')
+    expect(entry.metadata?.domain).toBe('test')
   })
 
-  await t.test('should handle empty patterns', () => {
+  it('should handle empty patterns', () => {
     const entry = TestDatasetBuilder.createSyntheticEntry('empty1', [])
 
-    strictEqual(entry.annotations.length, 0)
-    ok(entry.text.includes('End of test document'))
+    expect(entry.annotations.length).toBe(0)
+    expect(entry.text.includes('End of test document')).toBe(true)
   })
 
-  await t.test('should handle single pattern', () => {
+  it('should handle single pattern', () => {
     const entry = TestDatasetBuilder.createSyntheticEntry('single1', [
       { type: 'email', pattern: 'test@example.com' },
     ])
 
-    strictEqual(entry.annotations.length, 1)
-    ok(entry.text.includes('test@example.com'))
+    expect(entry.annotations.length).toBe(1)
+    expect(entry.text.includes('test@example.com')).toBe(true)
     // Should not have comma separator for single pattern
-    ok(!entry.text.includes('test@example.com,'))
+    expect(entry.text.includes('test@example.com,')).toBe(false)
   })
 })
 
-test('EvaluationEngine - edge cases', async (t) => {
-  await t.test('should handle missing ground truth entries gracefully', () => {
+describe('EvaluationEngine - edge cases', () => {
+  it('should handle missing ground truth entries gracefully', () => {
     const manager = new GroundTruthManager()
     const engine = new EvaluationEngine(manager)
 
-    throws(() => engine.evaluateEntry('nonexistent', []), /Ground truth entry not found/)
+    expect(() => engine.evaluateEntry('nonexistent', [])).toThrow(/Ground truth entry not found/)
   })
 
-  await t.test('should handle empty detections and annotations', () => {
+  it('should handle empty detections and annotations', () => {
     const manager = new GroundTruthManager()
     manager.addEntry({
       id: 'empty1',
@@ -623,15 +622,15 @@ test('EvaluationEngine - edge cases', async (t) => {
     const engine = new EvaluationEngine(manager)
     const result = engine.evaluateEntry('empty1', [])
 
-    strictEqual(result.true_positives.length, 0)
-    strictEqual(result.false_positives.length, 0)
-    strictEqual(result.false_negatives.length, 0)
-    strictEqual(result.precision, 0) // 0/0 case handled
-    strictEqual(result.recall, 0)
-    strictEqual(result.f1_score, 0)
+    expect(result.true_positives.length).toBe(0)
+    expect(result.false_positives.length).toBe(0)
+    expect(result.false_negatives.length).toBe(0)
+    expect(result.precision).toBe(0) // 0/0 case handled
+    expect(result.recall).toBe(0)
+    expect(result.f1_score).toBe(0)
   })
 
-  await t.test('should skip entries with errors in dataset evaluation', () => {
+  it('should skip entries with errors in dataset evaluation', () => {
     const manager = new GroundTruthManager()
     manager.addEntry({
       id: 'good1',
@@ -664,8 +663,8 @@ test('EvaluationEngine - edge cases', async (t) => {
     // Should skip nonexistent entry and continue with good1
     const aggregate = engine.evaluateDataset(detectionResults)
 
-    strictEqual(aggregate.total_entries, 1) // Only good1 was processed
-    strictEqual(aggregate.true_positives, 1)
-    strictEqual(aggregate.precision, 1.0)
+    expect(aggregate.total_entries).toBe(1) // Only good1 was processed
+    expect(aggregate.true_positives).toBe(1)
+    expect(aggregate.precision).toBe(1.0)
   })
 })
