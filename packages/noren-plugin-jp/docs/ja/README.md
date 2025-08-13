@@ -1,6 +1,6 @@
 # @himorishige/noren-plugin-jp
 
-Noren PIIマスキングライブラリのプラグインで、日本の個人情報（PII）に特化した検出器とマスカーを提供します。
+Noren PIIマスキングライブラリのプラグインで、日本の個人情報（PII）に特化したディテクターとマスカーを提供します。
 
 ## 主な機能
 
@@ -30,7 +30,7 @@ const registry = new Registry({
   contextHints: ['電話', '住所', '〒', 'マイナンバー'],
 });
 
-// 日本向けプラグインの検出器とマスカーを登録
+// 日本向けプラグインのディテクターとマスカーを登録
 registry.use(jpPlugin.detectors, jpPlugin.maskers);
 
 const inputText = '私の電話番号は090-1234-5678で、住所は〒150-0001です。';

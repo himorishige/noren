@@ -25,7 +25,7 @@ import { PolicyDictReloader } from '@himorishige/noren-dict-reloader';
 // ポリシーと辞書をRegistryに変換するコンパイル関数を定義
 function compile(policy, dicts) {
   const registry = new Registry(policy);
-  // ここで、dictsの内容を解析してカスタム検出器を作成し、
+  // ここで、dictsの内容を解析してカスタムディテクターを作成し、
   // registry.use()で登録する処理を実装します。
   console.log('Compiled with new policy and dictionaries.');
   return registry;
@@ -94,9 +94,9 @@ const initialRegistry = reloader.getCompiled();
 - パッケージ内の `example/manifest.template.json` と `example/dictionary.template.json` を参照。
 - ルートの `examples/dictionary-files/company-dict.json` も実例として利用可能。
 
-## 例: 辞書エントリを検出器として登録する compile()
+## 例: 辞書エントリをディテクターとして登録する compile()
 
-以下は、読み込んだ辞書をカスタム検出器に変換して `Registry` に登録する最小例。
+以下は、読み込んだ辞書をカスタムディテクターに変換して `Registry` に登録する最小例。
 
 ```ts
 import type { Detector, PiiType, Policy } from '@himorishige/noren-core'

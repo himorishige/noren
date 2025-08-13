@@ -1,6 +1,6 @@
 # @himorishige/noren-plugin-us
 
-Noren PIIマスキングライブラリのプラグインで、米国の個人情報（PII）に特化した検出器とマスカーを提供します。
+Noren PIIマスキングライブラリのプラグインで、米国の個人情報（PII）に特化したディテクターとマスカーを提供します。
 
 ## 主な機能
 
@@ -30,7 +30,7 @@ const registry = new Registry({
   contextHints: ['Phone', 'Address', 'ZIP', 'SSN'],
 });
 
-// 米国向けプラグインの検出器とマスカーを登録
+// 米国向けプラグインのディテクターとマスカーを登録
 registry.use(usPlugin.detectors, usPlugin.maskers);
 
 const inputText = 'My SSN is 123-45-6789 and my ZIP code is 94105.';

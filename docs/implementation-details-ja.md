@@ -10,8 +10,8 @@ graph TB
     end
     
     subgraph "検出層"
-        C --> D[組み込み検出器]
-        C --> E[プラグイン検出器]
+        C --> D[組み込みディテクター]
+        C --> E[プラグインディテクター]
         D --> F[Hit Pool]
         E --> F
     end
