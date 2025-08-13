@@ -1,25 +1,15 @@
 // Noren Core - Fast, lightweight PII detection and masking (Web Standards only)
 
-// Core exports - Essential functionality
-export { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'
-export {
-  CONFIDENCE_THRESHOLDS,
-  type ConfidenceFeatures,
-  calculateConfidence,
-  filterByConfidence,
-  meetsConfidenceThreshold,
-} from './confidence.js'
-export { extractIPv6Candidates, type IPv6ParseResult, parseIPv6 } from './ipv6-parser.js'
+export { type AllowDenyConfig, AllowDenyManager } from './allowlist.js'
+export { CONFIDENCE_THRESHOLDS, filterByConfidence } from './confidence.js'
+export { type IPv6ParseResult, parseIPv6 } from './ipv6-parser.js'
+
+// Advanced exports for plugins and power users
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
-export {
-  DETECTION_PATTERNS,
-  NORMALIZE_PATTERNS,
-  PATTERN_TYPES,
-  UNIFIED_PATTERN,
-} from './patterns.js'
-export { HitPool, hitPool } from './pool.js'
+export { HitPool } from './pool.js'
 export { createRedactionTransform } from './stream-utils.js'
+// Essential API exports for v0.5.0
 export type {
   Action,
   DetectionSensitivity,
@@ -30,14 +20,7 @@ export type {
   PiiType,
   Policy,
 } from './types.js'
-export {
-  hmacToken,
-  importHmacKey,
-  isBinaryChunk,
-  luhn,
-  normalize,
-  SECURITY_LIMITS,
-} from './utils.js'
+export { hmacToken, importHmacKey } from './utils.js'
 
 import { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'
 import { calculateConfidence, filterByConfidence } from './confidence.js'

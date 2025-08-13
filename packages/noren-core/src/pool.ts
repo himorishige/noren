@@ -1,12 +1,11 @@
-// Hit object pool (separate for tree-shaking)
+// Lightweight hit object pool for v0.5.0
 import type { Hit, PiiType } from './types.js'
 
-// Hit object pool for reducing GC pressure
+// Optimized hit pool with minimal overhead
 export class HitPool {
   private pool: Hit[] = []
-  private maxSize = 50 // Reduced pool size for security
+  private maxSize = 20 // Smaller pool for better performance
   private clearCounter = 0
-  private clearThreshold = 20 // Clear pool every N releases for security
 
   acquire(
     type: PiiType,
@@ -32,75 +31,34 @@ export class HitPool {
   }
 
   releaseOne(hit: Hit): void {
-    if (this.pool.length < this.maxSize) {
-      this.securelyWipeHit(hit)
-      this.pool.push(hit)
-    }
-
-    this.clearCounter++
-    if (this.clearCounter >= this.clearThreshold) {
-      this.forcePoolClear()
-      this.clearCounter = 0
-    }
+    this.release([hit])
   }
 
   release(hits: Hit[]): void {
     // Return hits to pool for reuse
     for (const hit of hits) {
       if (this.pool.length < this.maxSize) {
-        // Clear sensitive data securely before pooling
-        this.securelyWipeHit(hit)
+        // Simple cleanup - let JS GC handle the rest
+        hit.value = ''
+        hit.priority = undefined
         this.pool.push(hit)
       }
     }
 
-    // Periodically clear the entire pool for security
-    this.clearCounter++
-    if (this.clearCounter >= this.clearThreshold) {
-      this.forcePoolClear()
+    // Periodic cleanup every 100 releases
+    if (++this.clearCounter >= 100) {
+      this.pool.length = 0
       this.clearCounter = 0
     }
   }
 
   releaseRange(hits: Hit[], count: number): void {
-    // Return first N hits to pool for reuse without allocating a new array
-    const n = Math.min(count, hits.length)
-    for (let i = 0; i < n; i++) {
-      if (this.pool.length < this.maxSize) {
-        const hit = hits[i]
-        this.securelyWipeHit(hit)
-        this.pool.push(hit)
-      }
-    }
-
-    // Periodically clear the entire pool for security
-    this.clearCounter++
-    if (this.clearCounter >= this.clearThreshold) {
-      this.forcePoolClear()
-      this.clearCounter = 0
-    }
-  }
-
-  private securelyWipeHit(hit: Hit): void {
-    // Clear fields to allow GC to reclaim memory. Random overwrites are unnecessary in JS runtime.
-    hit.value = ''
-    hit.start = 0
-    hit.end = 0
-    hit.risk = 'low'
-    hit.priority = undefined
-    // Do not modify type to avoid unintended serialization issues
-  }
-
-  private forcePoolClear(): void {
-    // Completely clear the pool for security reasons
-    for (const hit of this.pool) {
-      this.securelyWipeHit(hit)
-    }
-    this.pool.length = 0
+    const toRelease = hits.slice(0, Math.min(count, hits.length))
+    this.release(toRelease)
   }
 
   clear(): void {
-    this.forcePoolClear()
+    this.pool.length = 0
     this.clearCounter = 0
   }
 }

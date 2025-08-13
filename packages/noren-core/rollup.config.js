@@ -1,63 +1,33 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import terser from '@rollup/plugin-terser'
 
-export default [
-  // Development build
-  {
-    input: 'dist/index.js',
-    output: {
-      file: 'dist/index.min.js',
-      format: 'es',
-      sourcemap: true,
-    },
-    plugins: [
-      nodeResolve(),
-      terser({
-        mangle: {
-          // Preserve public API names
-          reserved: ['Registry', 'redactText', 'normalize'],
-        },
-        compress: {
-          // Aggressive compression for size
-          drop_console: false,
-          drop_debugger: true,
-          passes: 2,
-        },
-        format: {
-          // Preserve comments for licensing
-          comments: /^!|license|copyright/i,
-        },
-      }),
-    ],
-    external: [], // Bundle everything for single-file distribution
+export default {
+  // Optimized single build for v0.5.0
+  input: 'dist/index.js',
+  output: {
+    file: 'dist/index.min.js',
+    format: 'es',
+    sourcemap: false, // No sourcemap for smaller size
   },
-
-  // Tree-shakeable modules build (individual files)
-  {
-    input: [
-      'dist/index.js',
-      'dist/types.js',
-      'dist/utils.js',
-      'dist/patterns.js',
-      'dist/detection.js',
-      'dist/masking.js',
-      'dist/pool.js',
-      'dist/lazy.js',
-    ],
-    output: {
-      dir: 'dist/esm',
-      format: 'es',
-      preserveModules: true,
-      sourcemap: true,
-    },
-    plugins: [
-      terser({
-        mangle: false, // Keep names for tree-shaking
-        compress: {
-          drop_console: false,
-          drop_debugger: true,
-        },
-      }),
-    ],
-  },
-]
+  plugins: [
+    nodeResolve(),
+    terser({
+      mangle: {
+        // More aggressive mangling for size reduction
+        reserved: ['Registry', 'redactText'],
+      },
+      compress: {
+        drop_console: true, // Remove console for production
+        drop_debugger: true,
+        passes: 3, // More passes for better compression
+        pure_funcs: ['console.log', 'console.info'], // Remove specific console calls
+        dead_code: true,
+        unused: true,
+      },
+      format: {
+        comments: false, // Remove all comments for smaller size
+      },
+    }),
+  ],
+  external: [],
+}
