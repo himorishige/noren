@@ -140,10 +140,12 @@ export class PolicyDictReloader<TCompiled> {
 
   // Optimized internal implementation
   private nextDelay(ok: boolean): number {
-    this.backoff = ok ? 0 : Math.min(
-      (this.backoff || 1) * 2,
-      Math.floor(this.opts.maxIntervalMs / this.opts.intervalMs)
-    )
+    this.backoff = ok
+      ? 0
+      : Math.min(
+          (this.backoff || 1) * 2,
+          Math.floor(this.opts.maxIntervalMs / this.opts.intervalMs),
+        )
     const base = this.opts.intervalMs * (this.backoff || 1)
     const jitter = 1 + (Math.random() * 2 * this.opts.jitter - this.opts.jitter)
     return Math.floor(base * jitter)
@@ -277,7 +279,7 @@ class Semaphore {
       this.available--
       return
     }
-    return new Promise(resolve => this.waiting.push(resolve))
+    return new Promise((resolve) => this.waiting.push(resolve))
   }
 
   release(): void {
@@ -327,7 +329,7 @@ async function conditionalGet(
   // Prepare headers with cache control
   const h: Record<string, string> = { 'cache-control': 'no-cache', ...(headers ?? {}) }
   let reqUrl = url
-  
+
   if (force) {
     const u = new URL(url)
     u.searchParams.set('_bust', String(Date.now()))
@@ -390,8 +392,7 @@ async function conditionalGet(
 const enc = new TextEncoder()
 async function sha256Hex(s: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', enc.encode(s))
-  return Array.from(new Uint8Array(buf), byte => 
-    byte.toString(16).padStart(2, '0')).join('')
+  return Array.from(new Uint8Array(buf), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
 function parseManifestJson(j: unknown): Array<{ id: string; url: string }> {

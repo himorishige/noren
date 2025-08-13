@@ -44,8 +44,11 @@ export function createFileLoader(
       throw new Error(`Invalid file URL (query/hash not allowed): ${url}`)
     }
 
-    if (parsedUrl.hostname && parsedUrl.hostname !== 'localhost' && 
-        !opts?.allowRemoteFileHosts?.includes(parsedUrl.hostname)) {
+    if (
+      parsedUrl.hostname &&
+      parsedUrl.hostname !== 'localhost' &&
+      !opts?.allowRemoteFileHosts?.includes(parsedUrl.hostname)
+    ) {
       throw new Error(`Remote file host not allowed: ${parsedUrl.hostname}`)
     }
 
