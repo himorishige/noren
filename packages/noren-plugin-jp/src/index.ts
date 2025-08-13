@@ -1,5 +1,5 @@
 import type { Detector, DetectUtils, Masker } from '@himorishige/noren-core'
-import { validateMyNumber } from './validators'
+import { validateMyNumber } from './validators.js'
 
 // Pre-compiled regex patterns for JP detectors
 const JP_PATTERNS = {

@@ -1,0 +1,33 @@
+# GitGuardian configuration file
+# This file excludes test files containing fake secrets for PII detection testing
+
+version: v1
+
+paths-ignore:
+  # Exclude test files containing intentionally fake secrets
+  - "packages/noren-plugin-security/test/**"
+  - "examples/**"
+  
+  # Additional common test patterns
+  - "**/test/**"
+  - "**/tests/**" 
+  - "**/*.test.*"
+  - "**/*.spec.*"
+
+# Specific patterns to ignore in test files
+matches-ignore:
+  # Fake JWT tokens used for testing PII detection
+  - match: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature"
+    name: "Test JWT token"
+  - match: "eyJmYWtlIjoiaGVhZGVyIn0.eyJmYWtlIjoicGF5bG9hZCJ9.fake_signature"
+    name: "Test JWT token"
+    
+  # Fake API keys used for testing
+  - match: "sk_live_"
+    name: "Test API keys"
+    
+  # Development/demo keys
+  - match: "development-security-demo-key"
+    name: "Demo HMAC key"
+  - match: "cookie-demo-key"
+    name: "Demo cookie key"

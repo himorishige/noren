@@ -97,7 +97,7 @@ export type {
   Masker,
   PiiType,
   Policy,
-} from './types'
+} from './types.js'
 export { hmacToken, importHmacKey, isBinaryChunk, normalize } from './utils.js'
 
 import { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'

@@ -1,5 +1,5 @@
 import type { Detector, DetectUtils, Hit, Masker } from '@himorishige/noren-core'
-import { validateSSN } from './validators'
+import { validateSSN } from './validators.js'
 
 // Pre-compiled regex patterns for US detectors
 const US_PATTERNS = {

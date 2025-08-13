@@ -39,3 +39,45 @@ export interface HeaderInfo {
   value: string
   isAllowed: boolean
 }
+
+/** Security-specific features for Hit objects */
+export interface SecurityFeatures {
+  // JWT-specific features
+  hasJwtStructure?: boolean
+  partCount?: number
+  validationPassed?: boolean
+
+  // API Key-specific features
+  hasKnownPrefix?: boolean
+  keyLength?: number
+  prefix?: string
+  entropy?: number
+
+  // General security features
+  requiresContext?: boolean
+
+  // Token-specific features
+  tokenLength?: number
+  riskLevel?: string
+  isSensitiveParam?: boolean
+
+  // Header/Cookie-specific features
+  hasAuthStructure?: boolean
+  authType?: string
+  cookieCount?: number
+  hasSensitiveCookies?: boolean
+
+  // Session-specific features
+  hasSessionStructure?: boolean
+  parameterName?: string
+  valueLength?: number
+
+  // Credential-specific features
+  credentialType?: string
+  isClientSecret?: boolean
+
+  // UUID/Hex token features
+  hasUuidFormat?: boolean
+  isHexadecimal?: boolean
+  phoneType?: string
+}

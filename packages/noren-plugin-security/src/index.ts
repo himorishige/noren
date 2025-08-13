@@ -10,6 +10,7 @@ export type {
   CookieInfo,
   HeaderInfo,
   SecurityConfig,
+  SecurityFeatures,
   SecurityPiiType,
 } from './types.js'
 // Utilities for advanced usage

@@ -13,6 +13,7 @@ function runDetect(src: string, ctxHints: string[] = []): Hit[] {
     src,
     hasCtx: (ws?: string[]) => (ws ?? ctxHints).some((w) => src.includes(w)),
     push: (h: Hit) => hits.push(h),
+    canPush: () => true, // Always allow push in tests
   }
   for (const d of detectors) void d.match(u)
   return hits
