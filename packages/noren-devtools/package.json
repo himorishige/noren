@@ -1,23 +1,22 @@
 {
-  "name": "@himorishige/noren-plugin-security",
+  "name": "@himorishige/noren-devtools",
   "version": "0.4.0",
-  "description": "Security-focused plugin for Noren (JWT tokens, API keys, HTTP headers, cookies)",
+  "description": "Development and testing tools for Noren PII detection library",
   "keywords": [
     "pii",
     "privacy",
     "redaction",
-    "security",
-    "jwt",
-    "api-key",
-    "http-headers",
-    "cookies",
-    "noren-plugin"
+    "testing",
+    "benchmarking",
+    "evaluation",
+    "a-b-testing",
+    "noren-devtools"
   ],
   "homepage": "https://github.com/himorishige/noren#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/himorishige/noren.git",
-    "directory": "packages/noren-plugin-security"
+    "directory": "packages/noren-devtools"
   },
   "bugs": {
     "url": "https://github.com/himorishige/noren/issues"
@@ -28,7 +27,11 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/index.js",
+    "./ab-testing": "./dist/ab-testing.js",
+    "./benchmark": "./dist/benchmark.js", 
+    "./evaluation": "./dist/evaluation.js",
+    "./improvement-cycle": "./dist/improvement-cycle.js"
   },
   "sideEffects": false,
   "engines": {
@@ -48,11 +51,11 @@
     "test": "vitest run",
     "test:watch": "vitest watch"
   },
-  "dependencies": {
-    "@himorishige/noren-core": "workspace:*"
-  },
   "devDependencies": {
     "typescript": "^5.6.2",
     "@types/node": "^20"
+  },
+  "peerDependencies": {
+    "@himorishige/noren-core": "workspace:*"
   }
 }

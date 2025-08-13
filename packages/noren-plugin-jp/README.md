@@ -1,22 +1,34 @@
 # @himorishige/noren-plugin-jp
 
-[English](./README.md) | [日本語](./docs/ja/README.md)
+[![npm version](https://img.shields.io/npm/v/@himorishige/noren-plugin-jp.svg)](https://www.npmjs.com/package/@himorishige/noren-plugin-jp)
 
-A plugin for the Noren PII masking library that provides detectors and maskers specific to Japanese Personally Identifiable Information (PII).
+**Japanese PII detection plugin for Noren**
 
-## Features
+Specialized detectors and maskers for Japanese Personally Identifiable Information (PII) including phone numbers, postal codes, and My Number (マイナンバー).
 
-- **Detection of Japan-Specific PII**: Detects major types of PII used in Japan.
-  - **Phone Numbers**: Mobile (090/080/070/060), landlines with area codes, and international format (+81).
-  - **Postal Codes**: Formats like `123-4567` and `1234567`.
-  - **My Number**: 12-digit individual identification numbers.
-- **High-Accuracy Contextual Detection**: Improves detection accuracy and reduces false positives by using surrounding keywords (context hints) like `"電話"` (phone), `"〒"` (postal mark), and `"マイナンバー"` (My Number).
-- **Appropriate Masking**: Provides masking appropriate for each PII type (e.g., `〒123-4567` → `〒•••-••••`).
+## ✨ Features
 
-## Installation
+### 📞 **Phone Numbers**
+- **Mobile**: 090, 080, 070, 060 prefixes
+- **Landline**: Area codes with proper validation  
+- **International**: +81 format support
+- **Context-aware**: Uses hints like "電話", "TEL"
 
-```sh
-pnpm add @himorishige/noren-plugin-jp @himorishige/noren-core
+### 📮 **Postal Codes** 
+- **Standard format**: `123-4567`
+- **Numeric format**: `1234567`
+- **Context detection**: "〒", "住所" hints
+- **Smart masking**: `〒123-4567` → `〒•••-••••`
+
+### 🆔 **My Number (マイナンバー)**
+- **12-digit validation**: Proper checksum verification
+- **Context required**: Only detects with "マイナンバー", "個人番号" hints
+- **High security**: `[REDACTED:MYNUMBER]` output
+
+## 🚀 Installation
+
+```bash
+npm install @himorishige/noren-plugin-jp @himorishige/noren-core
 ```
 
 ## Basic Usage
