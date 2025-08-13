@@ -53,9 +53,9 @@
   "scripts": {
     "prebuild": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "tsc -p tsconfig.json",
-    "build:min": "pnpm build && rollup -c",
+    "build:min": "rollup -c",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prepublishOnly": "pnpm run build:min",
+    "prepublishOnly": "pnpm run build && pnpm run build:min",
     "test": "vitest run",
     "test:watch": "vitest watch"
   },
