@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractIPv6Candidates, parseIPv6, validateIPv6Candidates } from '../src/ipv6-parser.js'
+import { extractIPv6Candidates, parseIPv6, validateIPv6Candidates } from '../src/ipv6-parser'
 
 describe('IPv6 Parser', () => {
   describe('parseIPv6', () => {

@@ -30,7 +30,7 @@ export const UNIFIED_PATTERN = new RegExp(
     // Group 4: IPv6 (simplified pattern for reliable detection - uses lookaround for compatibility with test runner)
     '|(?:^|[^0-9A-Fa-f:]|\\s)((?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(?:[0-9A-Fa-f]{1,4}:){1,7}:|(?:[0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}|(?:[0-9A-Fa-f]{1,4}:){1,5}(?::[0-9A-Fa-f]{1,4}){1,2}|(?:[0-9A-Fa-f]{1,4}:){1,4}(?::[0-9A-Fa-f]{1,4}){1,3}|(?:[0-9A-Fa-f]{1,4}:){1,3}(?::[0-9A-Fa-f]{1,4}){1,4}|(?:[0-9A-Fa-f]{1,4}:){1,2}(?::[0-9A-Fa-f]{1,4}){1,5}|[0-9A-Fa-f]{1,4}:(?::[0-9A-Fa-f]{1,4}){1,6}|:(?::[0-9A-Fa-f]{1,4}){1,7}|::|::ffff:(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})(?![0-9A-Fa-f:])',
     // Group 5: Credit Card (simplified for unified pattern)
-    '|\\b((?:\\d[ -]?){12,18}\\d)\\b',
+    '|(?<![\\d])\\b((?:\\d[ -]?){12,18}\\d)\\b(?![\\d])',
   ].join(''),
   'gi',
 )

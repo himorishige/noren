@@ -1,7 +1,7 @@
-// Simplified built-in detection logic for v0.4.0
+// Optimized built-in detection logic for v0.5.0 - single-pass unified detection
 
 import { parseIPv6 } from './ipv6-parser.js'
-import { DETECTION_PATTERNS } from './patterns.js'
+import { DETECTION_PATTERNS, PATTERN_TYPES, UNIFIED_PATTERN } from './patterns.js'
 import { hitPool } from './pool.js'
 import type { DetectUtils } from './types.js'
 import { luhn, SECURITY_LIMITS } from './utils.js'
@@ -14,81 +14,55 @@ export function builtinDetect(u: DetectUtils) {
     return
   }
 
-  // Email detection
-  for (const match of src.matchAll(DETECTION_PATTERNS.email)) {
+  // Single-pass unified detection for common patterns
+  for (const match of src.matchAll(UNIFIED_PATTERN)) {
     if (!u.canPush || !u.canPush()) break
-
     if (match.index == null) continue
 
-    const hit = hitPool.acquire(
-      'email',
-      match.index,
-      match.index + match[0].length,
-      match[0],
-      'medium',
-    )
-    u.push(hit)
-  }
+    // Find which group matched
+    for (let i = 1; i < match.length; i++) {
+      if (match[i]) {
+        const patternType = PATTERN_TYPES[i - 1]
+        let isValid = true
+        const value = match[i]
+        let startIndex = match.index
 
-  // Credit card detection with Luhn validation
-  for (const match of src.matchAll(DETECTION_PATTERNS.creditCardChunk)) {
-    if (!u.canPush || !u.canPush()) break
+        // Adjust for IPv6 lookahead match
+        if (patternType.type === 'ipv6') {
+          const fullMatch = match[0]
+          const ipv6Start = fullMatch.lastIndexOf(value)
+          startIndex = match.index + ipv6Start
+          // Additional validation for IPv6
+          const result = parseIPv6(value)
+          if (!result.valid) {
+            isValid = false
+          }
+        }
 
-    const digits = match[0].replace(/[ -]/g, '')
-    if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
-      if (match.index == null) continue
+        // Additional validation for credit cards
+        if (patternType.type === 'credit_card') {
+          const digits = value.replace(/[ -]/g, '')
+          if (digits.length < 13 || digits.length > 19 || !luhn(digits)) {
+            isValid = false
+          }
+        }
 
-      const hit = hitPool.acquire(
-        'credit_card',
-        match.index,
-        match.index + match[0].length,
-        match[0],
-        'high',
-      )
-      u.push(hit)
+        if (isValid) {
+          const hit = hitPool.acquire(
+            patternType.type,
+            startIndex,
+            startIndex + value.length,
+            value,
+            patternType.risk,
+          )
+          u.push(hit)
+        }
+        break // Only process the first matching group
+      }
     }
   }
 
-  // IPv4 detection
-  for (const match of src.matchAll(DETECTION_PATTERNS.ipv4)) {
-    if (!u.canPush || !u.canPush()) break
-
-    if (match.index == null) continue
-
-    const hit = hitPool.acquire('ipv4', match.index, match.index + match[0].length, match[0], 'low')
-    u.push(hit)
-  }
-
-  // IPv6 detection (simplified - just use regex)
-  for (const match of src.matchAll(DETECTION_PATTERNS.ipv6)) {
-    if (!u.canPush || !u.canPush()) break
-
-    const result = parseIPv6(match[0])
-    if (result.valid) {
-      if (match.index == null) continue
-
-      const hit = hitPool.acquire(
-        'ipv6',
-        match.index,
-        match.index + match[0].length,
-        match[0],
-        'low',
-      )
-      u.push(hit)
-    }
-  }
-
-  // MAC address detection
-  for (const match of src.matchAll(DETECTION_PATTERNS.mac)) {
-    if (!u.canPush || !u.canPush()) break
-
-    if (match.index == null) continue
-
-    const hit = hitPool.acquire('mac', match.index, match.index + match[0].length, match[0], 'low')
-    u.push(hit)
-  }
-
-  // Phone E164 detection
+  // Phone E164 detection (not in unified pattern due to complexity)
   for (const match of src.matchAll(DETECTION_PATTERNS.e164)) {
     if (!u.canPush || !u.canPush()) break
 
