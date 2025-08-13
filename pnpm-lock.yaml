@@ -52,6 +52,10 @@ importers:
         version: 5.9.2
 
   packages/noren-dict-reloader:
+    dependencies:
+      '@himorishige/noren-core':
+        specifier: ^0.3.0
+        version: 0.3.0
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -399,6 +403,10 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@himorishige/noren-core@0.3.0':
+    resolution: {integrity: sha512-uRan4ZkrE7BaaaChUBEhgxozBGINRNR/s1qj0wtoAZFa3gYbWvyq18g10yuANzU9twyAZGs+t7XdE0+WdoMsGQ==}
+    engines: {node: '>=20.10.0'}
 
   '@isaacs/balanced-match@4.0.1':
     resolution: {integrity: sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ==}
@@ -1720,6 +1728,8 @@ snapshots:
 
   '@esbuild/win32-x64@0.25.8':
     optional: true
+
+  '@himorishige/noren-core@0.3.0': {}
 
   '@isaacs/balanced-match@4.0.1': {}
 
