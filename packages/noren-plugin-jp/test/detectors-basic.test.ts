@@ -6,8 +6,10 @@ function runDetect(src: string, ctxHints: string[] = []): Hit[] {
   const hits: Hit[] = []
   const u: DetectUtils = {
     src,
-    hasCtx: (ws?: string[]) => (ws ?? ctxHints).some((w) => src.includes(w)),
+    hasCtx: (ws?: string[]) =>
+      (ws ?? ctxHints).some((w) => src.toLowerCase().includes(w.toLowerCase())),
     push: (h: Hit) => hits.push(h),
+    canPush: () => true,
   }
   for (const d of detectors) void d.match(u)
   return hits
@@ -17,8 +19,8 @@ describe('noren-plugin-jp detectors', () => {
   it('detects jp.postal when context present', () => {
     const text = '住所: 〒123-4567 東京都…'
     const hits = runDetect(text)
-    expect(hits.find((h) => h.type === 'jp_postal')).toBeTruthy()
-    expect(maskers.jp_postal({ value: '123-4567' } as unknown as Hit)).toBe('•••-••••')
+    expect(hits.find((h) => h.type === 'postal_jp')).toBeTruthy()
+    expect(maskers.postal_jp({ value: '123-4567' } as unknown as Hit)).toBe('•••-••••')
   })
 
   it('detects jp.phone patterns and masks digits', () => {
@@ -37,11 +39,11 @@ describe('noren-plugin-jp detectors', () => {
     const text = 'これは 123456789012 の記述'
     const hits = runDetect(text)
     // Without context, none
-    expect(hits.find((h) => h.type === 'jp_my_number')).toBeFalsy()
+    expect(hits.find((h) => h.type === 'mynumber_jp')).toBeFalsy()
 
     const hitsCtx = runDetect(`${text} マイナンバーあり`)
-    expect(hitsCtx.find((h) => h.type === 'jp_my_number')).toBeTruthy()
-    expect(maskers.jp_my_number({ value: '123456789012' } as unknown as Hit)).toBe(
+    expect(hitsCtx.find((h) => h.type === 'mynumber_jp')).toBeTruthy()
+    expect(maskers.mynumber_jp({ value: '123456789012' } as unknown as Hit)).toBe(
       '[REDACTED:MYNUMBER]',
     )
   })

@@ -48,8 +48,8 @@ console.log(redactedText);
 
 ## Detected Types
 
-| PII Type   | Description                | Masking Example (`mask`)      |
-| :--------- | :------------------------- | :---------------------------- |
-| `us_phone` | US phone number            | `(•••) •••-••••`              |
-| `us_zip`   | US ZIP code                | `•••••` or `•••••-••••`       |
-| `us_ssn`   | Social Security Number (SSN) | `***-**-6789`                 |
+| PII Type   | Description                | Masking Example (`mask`)      | v0.5.0 |
+| :--------- | :------------------------- | :---------------------------- | :------ |
+| `phone_us` | US phone number            | `(•••) •••-••••`              | ✓ Renamed |
+| `zip_us`   | US ZIP code                | `•••••` or `•••••-••••`       | ✓ Renamed |
+| `ssn_us`   | Social Security Number (SSN) | `***-**-6789`                 | ✓ Renamed |

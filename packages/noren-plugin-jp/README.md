@@ -60,8 +60,8 @@ console.log(redactedText);
 
 ## Detected Types
 
-| PII Type       | Description          | Masking Example (`mask`) |
-| :------------- | :------------------- | :----------------------- |
-| `phone_jp`     | Japanese phone number| `•••-••••-••••`          |
-| `jp_postal`    | Japanese postal code | `〒•••-••••`             |
-| `jp_my_number` | My Number            | `[REDACTED:MYNUMBER]`    |
+| PII Type       | Description          | Masking Example (`mask`) | v0.5.0 |
+| :------------- | :------------------- | :----------------------- | :------ |
+| `phone_jp`     | Japanese phone number| `•••-••••-••••`          | ✓ Renamed |
+| `postal_jp`    | Japanese postal code | `〒•••-••••`             | ✓ Renamed |
+| `mynumber_jp`  | My Number            | `[REDACTED:MYNUMBER]`    | ✓ Renamed |

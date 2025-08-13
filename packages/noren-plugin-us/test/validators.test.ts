@@ -101,13 +101,13 @@ describe('validateSSN', () => {
   })
 
   it('rejects SSN with sequential pattern (descending)', () => {
-    // 987 is invalid area code (>= 900), so this fails basic validation
-    const result = validateSSN('987-65-4321')
-    expect(result.valid).toBe(false) // Fails basic due to area code
-    expect(result.basic).toBe(false)
-    expect(result.strict).toBe(false)
-    expect(result.confidence).toBe(0.3)
-    expect(result.reason).toContain('invalid_area')
+    // Use valid area code but sequential pattern
+    const result = validateSSN('876-54-3210')
+    expect(result.valid).toBe(true) // Passes basic validation
+    expect(result.basic).toBe(true)
+    expect(result.strict).toBe(false) // Fails strict due to sequential
+    expect(result.confidence).toBe(0.75)
+    expect(result.reason).toContain('basic_rules_valid')
     expect(result.reason).toContain('sequential_pattern')
   })
 
