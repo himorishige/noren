@@ -12,7 +12,7 @@ describe('Dictionary Performance Tests', () => {
       pattern: `ENTRY${i.toString().padStart(4, '0')}\\d{4}`,
       type: `test_type_${i % 10}`,
       risk: i % 3 === 0 ? 'high' : i % 3 === 1 ? 'medium' : 'low',
-      priority: i % 5 - 2, // Range from -2 to 2
+      priority: (i % 5) - 2, // Range from -2 to 2
     }))
 
     // Mock responses
@@ -48,12 +48,19 @@ describe('Dictionary Performance Tests', () => {
       dictManifestUrl: 'https://test.local/manifest.json',
       compile: (policy, dicts) => {
         const compileStart = performance.now()
-        
+
         // Simulate Registry compilation with pre-compiled patterns
         const compiledDetectors = new Map()
-        
+
         for (const dict of dicts) {
-          const { entries = [] } = dict as { entries: any[] }
+          const { entries = [] } = dict as {
+            entries: Array<{
+              pattern: string
+              type: string
+              risk: string
+              priority?: number
+            }>
+          }
           for (const entry of entries) {
             try {
               // Pre-compile regex patterns for performance
@@ -64,9 +71,9 @@ describe('Dictionary Performance Tests', () => {
             }
           }
         }
-        
+
         compileTime = performance.now() - compileStart
-        
+
         return {
           detectors: compiledDetectors,
           policy,
@@ -104,7 +111,7 @@ describe('Dictionary Performance Tests', () => {
 
     globalThis.fetch = async (url: string) => {
       fetchCount++
-      
+
       if (url.includes('policy')) {
         return new Response(JSON.stringify({ defaultAction: 'mask' }), {
           status: 200,
@@ -122,9 +129,7 @@ describe('Dictionary Performance Tests', () => {
       if (url.includes('cached.json')) {
         return new Response(
           JSON.stringify({
-            entries: [
-              { pattern: 'CACHE\\d{4}', type: 'cached_type', risk: 'medium' },
-            ],
+            entries: [{ pattern: 'CACHE\\d{4}', type: 'cached_type', risk: 'medium' }],
           }),
           { status: 200, headers: { etag: 'dict-v1' } },
         )
@@ -144,10 +149,10 @@ describe('Dictionary Performance Tests', () => {
     })
 
     await reloader.start()
-    
+
     // Wait for potential additional reloads
     await new Promise((resolve) => setTimeout(resolve, 150))
-    
+
     // Force another reload
     await reloader.forceReload()
 
@@ -188,12 +193,12 @@ describe('Dictionary Performance Tests', () => {
         concurrentLoads++
         maxConcurrent = Math.max(maxConcurrent, concurrentLoads)
         loadTimes.push(Date.now())
-        
+
         // Simulate network delay
         await new Promise((resolve) => setTimeout(resolve, 20))
-        
+
         concurrentLoads--
-        
+
         return new Response(
           JSON.stringify({
             entries: [{ pattern: 'TEST\\d+', type: 'test', risk: 'low' }],

@@ -75,7 +75,13 @@ export class PolicyDictReloader<TCompiled> {
   > &
     Pick<
       ReloaderOptions<TCompiled>,
-      'onSwap' | 'onError' | 'compile' | 'requestTimeoutMs' | 'validateUrl' | 'maxConcurrent' | 'compileOptions'
+      | 'onSwap'
+      | 'onError'
+      | 'compile'
+      | 'requestTimeoutMs'
+      | 'validateUrl'
+      | 'maxConcurrent'
+      | 'compileOptions'
     >
   private timer: ReturnType<typeof setTimeout> | null = null
   private running = false
