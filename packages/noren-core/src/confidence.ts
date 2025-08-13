@@ -18,7 +18,7 @@ export const CONFIDENCE_THRESHOLDS = {
 /**
  * Features extracted from text for confidence calculation
  */
-export interface ConfidenceFeatures {
+export interface ConfidenceFeatures extends Record<string, unknown> {
   // Context features
   hasTestKeywords: boolean
   hasExampleKeywords: boolean

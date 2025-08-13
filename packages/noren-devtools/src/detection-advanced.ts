@@ -200,9 +200,12 @@ export function builtinDetect(u: DetectUtils) {
         }
       }
     }
-  } catch (_error) {
+  } catch (error) {
     // If preprocessing fails, continue with original detection
-    // Error handling is silent to prevent disruption of main detection flow
+    // Log warning but don't disrupt main detection flow
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[Noren DevTools] Preprocessing error in enhanced detection:', error)
+    }
   }
 }
 

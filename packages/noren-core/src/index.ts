@@ -247,7 +247,7 @@ export class Registry {
           ...hit,
           confidence: confidenceResult.confidence,
           reasons: confidenceResult.reasons,
-          features: confidenceResult.features as unknown as Record<string, unknown>,
+          features: confidenceResult.features,
         }
 
         scoredHits.push(scoredHit)

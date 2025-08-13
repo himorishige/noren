@@ -42,8 +42,8 @@ export function luhn(d: string) {
 export async function importHmacKey(secret: string | CryptoKey) {
   if (secret instanceof CryptoKey) return secret
 
-  if (typeof secret !== 'string' || secret.length < 16) {
-    throw new Error('HMAC key must be at least 16 characters long')
+  if (typeof secret !== 'string' || secret.length < 32) {
+    throw new Error('HMAC key must be at least 32 characters long')
   }
 
   const encoder = new TextEncoder()
