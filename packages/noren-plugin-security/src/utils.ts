@@ -16,49 +16,48 @@ export function logSecurityError(context: string, error: Error, input?: string) 
   }
 }
 
-/** Parse Cookie header string */
-export function parseCookieHeader(cookieHeader: string): CookieInfo[] {
-  const cookies: CookieInfo[] = []
+/**
+ * Generic header/cookie parser
+ */
+function parseNameValuePairs(
+  input: string,
+  separator = ';',
+): Array<{ name: string; value: string }> {
+  const pairs: Array<{ name: string; value: string }> = []
+  const items = input.split(separator)
 
-  // Parse format: "Cookie: name1=value1; name2=value2; name3=value3"
-  const cookieValue = cookieHeader.replace(/^Cookie\s*:\s*/i, '')
-  const pairs = cookieValue.split(';')
-
-  for (const pair of pairs) {
-    const trimmed = pair.trim()
+  for (const item of items) {
+    const trimmed = item.trim()
     const equalIndex = trimmed.indexOf('=')
 
     if (equalIndex > 0) {
       const name = trimmed.substring(0, equalIndex).trim()
       const value = trimmed.substring(equalIndex + 1).trim()
-
-      cookies.push({
-        name,
-        value,
-        isAllowed: false, // Updated later by allowlist check
-      })
+      pairs.push({ name, value })
     }
   }
 
-  return cookies
+  return pairs
+}
+
+/** Parse Cookie header string */
+export function parseCookieHeader(cookieHeader: string): CookieInfo[] {
+  const cookieValue = cookieHeader.replace(/^Cookie\s*:\s*/i, '')
+  return parseNameValuePairs(cookieValue).map(({ name, value }) => ({
+    name,
+    value,
+    isAllowed: false, // Updated later by allowlist check
+  }))
 }
 
 /** Parse Set-Cookie header string */
 export function parseSetCookieHeader(setCookieHeader: string): CookieInfo | null {
-  // Parse format: "Set-Cookie: name=value; Path=/; HttpOnly"
   const cookieValue = setCookieHeader.replace(/^Set-Cookie\s*:\s*/i, '')
-  const parts = cookieValue.split(';')
+  const pairs = parseNameValuePairs(cookieValue)
 
-  if (parts.length === 0) return null
+  if (pairs.length === 0) return null
 
-  const mainPart = parts[0].trim()
-  const equalIndex = mainPart.indexOf('=')
-
-  if (equalIndex <= 0) return null
-
-  const name = mainPart.substring(0, equalIndex).trim()
-  const value = mainPart.substring(equalIndex + 1).trim()
-
+  const { name, value } = pairs[0]
   return {
     name,
     value,
@@ -81,32 +80,37 @@ export function parseHttpHeader(headerLine: string): HeaderInfo | null {
   }
 }
 
-/** Check if cookie is in allowlist */
-export function isCookieAllowed(cookieName: string, config?: SecurityConfig): boolean {
-  if (!config?.cookieAllowlist) return false
+/**
+ * Generic allowlist checker for names with wildcard support
+ */
+function isInAllowlist(itemName: string, allowlist?: string[]): boolean {
+  if (!allowlist || allowlist.length === 0) return false
 
-  return config.cookieAllowlist.some((allowed) => {
-    // Case-insensitive comparison
-    if (allowed.toLowerCase() === cookieName.toLowerCase()) return true
+  const lowerItem = itemName.toLowerCase()
+  return allowlist.some((allowed) => {
+    const lowerAllowed = allowed.toLowerCase()
 
-    // Support wildcard patterns (ending with *)
+    // Exact match
+    if (lowerAllowed === lowerItem) return true
+
+    // Wildcard pattern (ending with *)
     if (allowed.endsWith('*')) {
-      const prefix = allowed.slice(0, -1).toLowerCase()
-      return cookieName.toLowerCase().startsWith(prefix)
+      const prefix = lowerAllowed.slice(0, -1)
+      return lowerItem.startsWith(prefix)
     }
 
     return false
   })
 }
 
+/** Check if cookie is in allowlist */
+export function isCookieAllowed(cookieName: string, config?: SecurityConfig): boolean {
+  return isInAllowlist(cookieName, config?.cookieAllowlist)
+}
+
 /** Check if header is in allowlist */
 export function isHeaderAllowed(headerName: string, config?: SecurityConfig): boolean {
-  if (!config?.headerAllowlist) return false
-
-  return config.headerAllowlist.some((allowed) => {
-    // Case-insensitive comparison (HTTP headers are case-insensitive)
-    return allowed.toLowerCase() === headerName.toLowerCase()
-  })
+  return isInAllowlist(headerName, config?.headerAllowlist)
 }
 
 /** Apply default values to security configuration */
@@ -120,49 +124,38 @@ export function applyDefaultConfig(config: SecurityConfig = {}): Required<Securi
   }
 }
 
-/** Validate security configuration to prevent injection attacks */
-export function validateSecurityConfig(config: SecurityConfig): void {
-  // Validate cookie allowlist patterns
-  if (config.cookieAllowlist) {
-    for (const pattern of config.cookieAllowlist) {
-      if (typeof pattern !== 'string') {
-        throw new Error(`Invalid cookie allowlist pattern: must be string, got ${typeof pattern}`)
-      }
-      // Check for potentially dangerous characters (prevent injection)
-      if (pattern.includes('\0') || pattern.includes('\n') || pattern.includes('\r')) {
-        throw new Error(
-          `Invalid cookie allowlist pattern: contains dangerous characters: ${pattern}`,
-        )
-      }
-      // Validate wildcard usage (only * at end is allowed)
-      const asteriskCount = (pattern.match(/\*/g) || []).length
-      if (asteriskCount > 1 || (asteriskCount === 1 && !pattern.endsWith('*'))) {
-        throw new Error(
-          `Invalid cookie allowlist pattern: wildcard (*) only allowed at end: ${pattern}`,
-        )
-      }
+/**
+ * Validate allowlist patterns for security
+ */
+function validateAllowlistPatterns(patterns: string[], type: string): void {
+  for (const pattern of patterns) {
+    if (typeof pattern !== 'string') {
+      throw new Error(`Invalid ${type} allowlist pattern: must be string, got ${typeof pattern}`)
+    }
+
+    // Check for dangerous characters
+    if (pattern.includes('\0') || pattern.includes('\n') || pattern.includes('\r')) {
+      throw new Error(
+        `Invalid ${type} allowlist pattern: contains dangerous characters: ${pattern}`,
+      )
+    }
+
+    // Validate wildcard usage (only * at end is allowed)
+    const asteriskCount = (pattern.match(/\*/g) || []).length
+    if (asteriskCount > 1 || (asteriskCount === 1 && !pattern.endsWith('*'))) {
+      throw new Error(
+        `Invalid ${type} allowlist pattern: wildcard (*) only allowed at end: ${pattern}`,
+      )
     }
   }
+}
 
-  // Validate header allowlist patterns
+/** Validate security configuration to prevent injection attacks */
+export function validateSecurityConfig(config: SecurityConfig): void {
+  if (config.cookieAllowlist) {
+    validateAllowlistPatterns(config.cookieAllowlist, 'cookie')
+  }
   if (config.headerAllowlist) {
-    for (const pattern of config.headerAllowlist) {
-      if (typeof pattern !== 'string') {
-        throw new Error(`Invalid header allowlist pattern: must be string, got ${typeof pattern}`)
-      }
-      // Check for potentially dangerous characters
-      if (pattern.includes('\0') || pattern.includes('\n') || pattern.includes('\r')) {
-        throw new Error(
-          `Invalid header allowlist pattern: contains dangerous characters: ${pattern}`,
-        )
-      }
-      // Validate wildcard usage
-      const asteriskCount = (pattern.match(/\*/g) || []).length
-      if (asteriskCount > 1 || (asteriskCount === 1 && !pattern.endsWith('*'))) {
-        throw new Error(
-          `Invalid header allowlist pattern: wildcard (*) only allowed at end: ${pattern}`,
-        )
-      }
-    }
+    validateAllowlistPatterns(config.headerAllowlist, 'header')
   }
 }
