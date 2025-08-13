@@ -1,14 +1,14 @@
 # @himorishige/noren-devtools
 
-## 1.0.0
+## 0.5.0
 
-### Major Changes
+### Minor Changes
 
 - [#44](https://github.com/himorishige/noren/pull/44) [`d060507`](https://github.com/himorishige/noren/commit/d060507d95dca8e27647f70aba618af064a59a35) Thanks [@himorishige](https://github.com/himorishige)! - # v0.5.0: Major Code Optimization and Unified Architecture
 
   This release delivers significant code optimization and architectural improvements to noren-devtools, achieving ~30% code reduction while enhancing functionality and maintainability.
 
-  ## 🚀 Major Changes
+  ## 🚀 Minor Changes
 
   ### Unified Statistical Analysis
 
