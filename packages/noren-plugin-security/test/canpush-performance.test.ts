@@ -114,7 +114,7 @@ describe('canPush Performance Tests', () => {
 
     expect(jwt).toBeTruthy()
     expect(jwt?.confidence).toBeGreaterThan(0.9) // JWT should have high confidence
-    expect(jwt?.reasons).toContain('jwt_structure_match')
+    expect(jwt?.reasons).toContain('jwt_pattern_match')
     expect(jwt?.features).toHaveProperty('hasJwtStructure', true)
   })
 })

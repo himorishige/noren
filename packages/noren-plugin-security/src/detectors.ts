@@ -4,6 +4,114 @@ import { SECURITY_CONTEXTS, SECURITY_PATTERNS } from './patterns.js'
 import type { SecurityConfig } from './types.js'
 import { logSecurityError, parseCookieHeader, parseSetCookieHeader } from './utils.js'
 
+/**
+ * Calculate entropy of a string (rough estimate for randomness)
+ */
+function calculateEntropy(str: string): number {
+  const chars = new Map<string, number>()
+  for (const char of str) {
+    chars.set(char, (chars.get(char) || 0) + 1)
+  }
+
+  let entropy = 0
+  for (const count of chars.values()) {
+    const p = count / str.length
+    entropy -= p * Math.log2(p)
+  }
+
+  return entropy
+}
+
+/**
+ * Validate API key format and entropy
+ */
+function validateApiKey(key: string): { confidence: number; reasons: string[] } {
+  const reasons: string[] = []
+  let confidence = 0.5 // Base confidence
+
+  // Check length (good API keys are usually 20+ chars)
+  if (key.length >= 20) {
+    confidence += 0.1
+    reasons.push('sufficient_length')
+  } else if (key.length < 16) {
+    confidence -= 0.1
+    reasons.push('short_length')
+  }
+
+  // Check entropy (good keys should have high entropy)
+  const entropy = calculateEntropy(key)
+  if (entropy > 4.0) {
+    confidence += 0.2
+    reasons.push('high_entropy')
+  } else if (entropy < 3.0) {
+    confidence -= 0.1
+    reasons.push('low_entropy')
+  }
+
+  // Check for repeating patterns
+  if (/(.{3,})\1/.test(key)) {
+    confidence -= 0.2
+    reasons.push('repeating_pattern')
+  }
+
+  // Check character diversity
+  const hasLower = /[a-z]/.test(key)
+  const hasUpper = /[A-Z]/.test(key)
+  const hasDigits = /\d/.test(key)
+  const hasSpecial = /[_\-+/=]/.test(key)
+
+  const diversity = [hasLower, hasUpper, hasDigits, hasSpecial].filter(Boolean).length
+  if (diversity >= 3) {
+    confidence += 0.1
+    reasons.push('diverse_characters')
+  }
+
+  return { confidence: Math.max(0.1, Math.min(0.95, confidence)), reasons }
+}
+
+/**
+ * Validate JWT structure and format
+ */
+function validateJwtStructure(token: string): {
+  valid: boolean
+  confidence: number
+  reasons: string[]
+} {
+  const parts = token.split('.')
+  if (parts.length !== 3) {
+    return { valid: false, confidence: 0.2, reasons: ['invalid_part_count'] }
+  }
+
+  const reasons: string[] = ['three_part_format']
+  let confidence = 0.7 // Base confidence for 3-part structure
+
+  try {
+    // Validate Base64URL encoding for header and payload
+    for (let i = 0; i < 2; i++) {
+      const part = parts[i]
+      // Convert Base64URL to Base64
+      const base64 = part.replace(/-/g, '+').replace(/_/g, '/')
+      const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+
+      const decoded = atob(padded)
+      JSON.parse(decoded) // Ensure it's valid JSON
+
+      confidence += 0.1
+      reasons.push(i === 0 ? 'valid_header' : 'valid_payload')
+    }
+
+    // Check if signature part looks reasonable (not empty, reasonable length)
+    if (parts[2].length >= 8) {
+      confidence += 0.05
+      reasons.push('signature_present')
+    }
+
+    return { valid: true, confidence: Math.min(confidence, 0.99), reasons }
+  } catch {
+    return { valid: false, confidence: 0.4, reasons: ['invalid_base64_or_json'] }
+  }
+}
+
 /** Security plugin detectors */
 export const detectors: Detector[] = [
   // JWT Token Detection (highest priority)
@@ -15,19 +123,25 @@ export const detectors: Detector[] = [
       for (const m of src.matchAll(SECURITY_PATTERNS.jwt)) {
         if (m.index !== undefined) {
           if (!canPush?.()) break
-          push({
-            type: 'sec_jwt_token',
-            start: m.index,
-            end: m.index + m[0].length,
-            value: m[0],
-            risk: 'high',
-            confidence: 0.95, // JWT format is highly structured and reliable
-            reasons: ['jwt_structure_match', 'three_part_format'],
-            features: {
-              hasJwtStructure: true,
-              partCount: m[0].split('.').length,
-            },
-          })
+
+          const validation = validateJwtStructure(m[0])
+          // Only push if validation confidence is reasonable or if it's a valid JWT
+          if (validation.valid || validation.confidence >= 0.4) {
+            push({
+              type: 'sec_jwt_token',
+              start: m.index,
+              end: m.index + m[0].length,
+              value: m[0],
+              risk: 'high',
+              confidence: validation.confidence,
+              reasons: ['jwt_pattern_match', ...validation.reasons],
+              features: {
+                hasJwtStructure: validation.valid,
+                partCount: m[0].split('.').length,
+                validationPassed: validation.valid,
+              },
+            })
+          }
         }
       }
     },
@@ -43,18 +157,21 @@ export const detectors: Detector[] = [
       for (const m of src.matchAll(SECURITY_PATTERNS.apiKey)) {
         if (m.index !== undefined) {
           if (!canPush?.()) break
+
+          const validation = validateApiKey(m[0])
           push({
             type: 'sec_api_key',
             start: m.index,
             end: m.index + m[0].length,
             value: m[0],
             risk: 'high',
-            confidence: 0.9, // API keys with prefixes are highly reliable
-            reasons: ['api_key_prefix_match', 'structured_format'],
+            confidence: validation.confidence,
+            reasons: ['api_key_prefix_match', ...validation.reasons],
             features: {
               hasKnownPrefix: true,
               keyLength: m[0].length,
               prefix: m[0].split('_')[0],
+              entropy: calculateEntropy(m[0]),
             },
           })
         }
