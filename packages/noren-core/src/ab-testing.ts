@@ -184,7 +184,7 @@ export class StdlibStatisticsBackend implements StatisticsBackend {
       }
       return typeof this.tcdfModule === 'function'
         ? this.tcdfModule(t, df)
-        : this.tcdfModule.default(t, df)
+        : (this.tcdfModule as { default: (t: number, df: number) => number }).default(t, df)
     } catch (error) {
       throw new Error(
         `Stdlib tcdf failed: ${error}. Install @stdlib/stats-base-dists-t-cdf package`,
@@ -203,7 +203,7 @@ export class StdlibStatisticsBackend implements StatisticsBackend {
       }
       return typeof this.tquantileModule === 'function'
         ? this.tquantileModule(p, df)
-        : this.tquantileModule.default(p, df)
+        : (this.tquantileModule as { default: (p: number, df: number) => number }).default(p, df)
     } catch (error) {
       throw new Error(
         `Stdlib tquantile failed: ${error}. Install @stdlib/stats-base-dists-t-quantile package`,
