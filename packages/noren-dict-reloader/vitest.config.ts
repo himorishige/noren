@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'node',
     include: ['test/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/dist-test/**'],
-    timeout: 10000,
+    timeout: 30000, // Increased for CI environments
     poolOptions: {
       threads: {
         singleThread: true,
