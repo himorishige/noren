@@ -4,7 +4,12 @@
  */
 
 import { type BenchmarkConfig, BenchmarkRunner } from './benchmark.js'
-import { type AggregateMetrics, EvaluationEngine, type GroundTruthManager } from './evaluation.js'
+import {
+  type AggregateMetrics,
+  type DetectionResult,
+  EvaluationEngine,
+  type GroundTruthManager,
+} from './evaluation.js'
 import { Registry } from './index.js'
 
 /**
@@ -179,15 +184,217 @@ class StatisticalAnalysis {
   }
 
   /**
-   * Approximate p-value for t-distribution (simplified implementation)
+   * Calculate p-value for t-distribution using improved approximation
+   *
+   * @warning This is still an approximation. For critical applications,
+   * consider using a proper statistics library like jStat or similar.
+   * The current implementation provides reasonable accuracy for typical A/B testing scenarios.
    */
-  private static approximateTDistributionPValue(t: number, _df: number): number {
-    // Very simplified approximation - in production use a proper statistics library
-    if (t < 1) return 0.2
-    if (t < 2) return 0.1
-    if (t < 3) return 0.01
-    if (t < 4) return 0.001
-    return 0.0001
+  private static approximateTDistributionPValue(t: number, df: number): number {
+    const absT = Math.abs(t)
+
+    // For very large degrees of freedom (>100), approximate as normal distribution
+    if (df > 100) {
+      return StatisticalAnalysis.approximateNormalCDF(-absT)
+    }
+
+    // Improved t-distribution approximation using Abramowitz & Stegun method
+    // This provides better accuracy than the previous simple thresholds
+
+    // For small t-values, use series expansion
+    if (absT < 0.5) {
+      const tSquared = absT * absT
+      const beta = StatisticalAnalysis.incompleteBeta(0.5, df / 2, df / (df + tSquared))
+      return beta / 2
+    }
+
+    // For larger t-values, use asymptotic approximation
+    const x = df / (df + absT * absT)
+    const beta = StatisticalAnalysis.incompleteBeta(df / 2, 0.5, x)
+    return beta / 2
+  }
+
+  /**
+   * Approximate normal cumulative distribution function
+   */
+  private static approximateNormalCDF(z: number): number {
+    // Abramowitz & Stegun approximation for standard normal CDF
+    const a1 = 0.31938153
+    const a2 = -0.356563782
+    const a3 = 1.781477937
+    const a4 = -1.821255978
+    const a5 = 1.330274429
+    const p = 0.2316419
+
+    const absZ = Math.abs(z)
+    const t = 1 / (1 + p * absZ)
+    const phi = (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * absZ * absZ)
+    const y =
+      1 - phi * (a1 * t + a2 * t * t + a3 * t * t * t + a4 * t * t * t * t + a5 * t * t * t * t * t)
+
+    return z >= 0 ? y : 1 - y
+  }
+
+  /**
+   * Approximate incomplete beta function for t-distribution
+   * Uses continued fraction method for better accuracy
+   */
+  private static incompleteBeta(a: number, b: number, x: number): number {
+    if (x <= 0) return 0
+    if (x >= 1) return 1
+
+    // Use symmetry relation when appropriate
+    if (x > a / (a + b)) {
+      return 1 - StatisticalAnalysis.incompleteBeta(b, a, 1 - x)
+    }
+
+    // Continued fraction method (simplified)
+    const logBeta =
+      StatisticalAnalysis.logGamma(a) +
+      StatisticalAnalysis.logGamma(b) -
+      StatisticalAnalysis.logGamma(a + b)
+    const front = Math.exp(a * Math.log(x) + b * Math.log(1 - x) - logBeta) / a
+
+    // Simplified continued fraction for demonstration
+    // In production, a more sophisticated implementation would be needed
+    let cf = 1
+    let m = 1
+    for (let i = 0; i < 100; i++) {
+      const numerator = (m * (b - m) * x) / ((a + 2 * m - 1) * (a + 2 * m))
+      cf = 1 + numerator / cf
+
+      const numerator2 = (-(a + m) * (a + b + m) * x) / ((a + 2 * m) * (a + 2 * m + 1))
+      cf = 1 + numerator2 / cf
+
+      m++
+      if (Math.abs(numerator) < 1e-10 && Math.abs(numerator2) < 1e-10) break
+    }
+
+    return front * cf
+  }
+
+  /**
+   * Approximate log gamma function using Stirling's approximation
+   */
+  private static logGamma(x: number): number {
+    // Stirling's approximation for log(Gamma(x))
+    if (x < 1) {
+      // Use reflection formula: Gamma(x) * Gamma(1-x) = pi/sin(pi*x)
+      return Math.log(Math.PI / Math.sin(Math.PI * x)) - StatisticalAnalysis.logGamma(1 - x)
+    }
+
+    const g = 7
+    const c = [
+      0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+      -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6,
+      1.5056327351493116e-7,
+    ]
+
+    let sum = c[0]
+    for (let i = 1; i < c.length; i++) {
+      sum += c[i] / (x + i - 1)
+    }
+
+    const tmp = x + g - 0.5
+    return (x - 0.5) * Math.log(tmp) - tmp + 0.5 * Math.log(2 * Math.PI) + Math.log(sum)
+  }
+
+  /**
+   * Calculate critical t-value for given alpha and degrees of freedom
+   * Uses iterative method to find the inverse of the t-distribution CDF
+   */
+  private static calculateTCritical(alpha: number, df: number): number {
+    // For large degrees of freedom, approximate with normal distribution
+    if (df > 100) {
+      return StatisticalAnalysis.calculateZCritical(alpha)
+    }
+
+    // Use Newton-Raphson method to find t-critical value
+    let t = StatisticalAnalysis.calculateZCritical(alpha) // Start with normal approximation
+
+    for (let i = 0; i < 20; i++) {
+      const cdf = StatisticalAnalysis.approximateTDistributionCDF(t, df)
+      const pdf = StatisticalAnalysis.approximateTDistributionPDF(t, df)
+
+      const error = cdf - alpha
+      if (Math.abs(error) < 1e-8) break
+
+      t = t - error / pdf
+    }
+
+    return Math.abs(t) // Return positive critical value
+  }
+
+  /**
+   * Calculate critical z-value for normal distribution
+   */
+  private static calculateZCritical(alpha: number): number {
+    // Approximate inverse normal CDF using Beasley-Springer-Moro algorithm
+    const _a = [
+      0, -3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.38357751867269e2,
+      -3.066479806614716e1, 2.506628277459239,
+    ]
+    const _b = [
+      0, -5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1,
+      -1.328068155288572e1,
+    ]
+    const c = [
+      0, -7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734,
+      4.374664141464968, 2.938163982698783,
+    ]
+    const d = [0, 7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416]
+
+    let x: number
+
+    if (alpha > 0.5) {
+      x = Math.sqrt(-2 * Math.log(1 - alpha))
+      x =
+        x -
+        (c[1] +
+          c[2] * x +
+          c[3] * x * x +
+          c[4] * x * x * x +
+          c[5] * x * x * x * x +
+          c[6] * x * x * x * x * x) /
+          (1 + d[1] * x + d[2] * x * x + d[3] * x * x * x + d[4] * x * x * x * x)
+      return x
+    } else {
+      x = Math.sqrt(-2 * Math.log(alpha))
+      x =
+        x -
+        (c[1] +
+          c[2] * x +
+          c[3] * x * x +
+          c[4] * x * x * x +
+          c[5] * x * x * x * x +
+          c[6] * x * x * x * x * x) /
+          (1 + d[1] * x + d[2] * x * x + d[3] * x * x * x + d[4] * x * x * x * x)
+      return -x
+    }
+  }
+
+  /**
+   * Approximate t-distribution CDF
+   */
+  private static approximateTDistributionCDF(t: number, df: number): number {
+    if (t < 0) {
+      return 1 - StatisticalAnalysis.approximateTDistributionCDF(-t, df)
+    }
+
+    const x = df / (df + t * t)
+    const beta = StatisticalAnalysis.incompleteBeta(df / 2, 0.5, x)
+    return 1 - beta / 2
+  }
+
+  /**
+   * Approximate t-distribution PDF
+   */
+  private static approximateTDistributionPDF(t: number, df: number): number {
+    const gamma1 = Math.exp(StatisticalAnalysis.logGamma((df + 1) / 2))
+    const gamma2 = Math.exp(StatisticalAnalysis.logGamma(df / 2))
+    const coefficient = gamma1 / (Math.sqrt(df * Math.PI) * gamma2)
+
+    return coefficient * (1 + (t * t) / df) ** (-(df + 1) / 2)
   }
 
   /**
@@ -210,9 +417,10 @@ class StatisticalAnalysis {
     const variance = sample.reduce((acc, x) => acc + (x - mean) ** 2, 0) / (sample.length - 1)
     const standardError = Math.sqrt(variance / sample.length)
 
-    // Approximate critical t-value (simplified)
-    // const alpha = 1 - confidenceLevel // Currently unused but kept for future statistical calculations
-    const tCritical = confidenceLevel > 0.9 ? 2.0 : 1.64 // Rough approximation
+    // Calculate critical t-value using improved approximation
+    const alpha = 1 - confidenceLevel
+    const df = sample.length - 1
+    const tCritical = StatisticalAnalysis.calculateTCritical(alpha / 2, df) // Two-tailed test
 
     const margin = tCritical * standardError
 
@@ -379,7 +587,7 @@ export class ABTestEngine {
     const evaluationEngine = new EvaluationEngine(groundTruthManager)
     const entries = groundTruthManager.getAllEntries()
 
-    const detectionResults: Record<string, unknown[]> = {}
+    const detectionResults: Record<string, DetectionResult[]> = {}
 
     // Run detection on all ground truth entries
     for (const entry of entries.slice(0, 10)) {
@@ -492,7 +700,7 @@ export class ABTestEngine {
     // Analyze accuracy patterns
     const accuracyResults = results
       .filter((r) => r.accuracy)
-      .map((r) => r.accuracy) as AccuracyMetrics[]
+      .map((r) => r.accuracy) as AggregateMetrics[]
     if (accuracyResults.length > 1) {
       const avgF1 =
         accuracyResults.reduce((sum, acc) => sum + acc.f1_score, 0) / accuracyResults.length

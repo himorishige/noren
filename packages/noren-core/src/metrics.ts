@@ -305,17 +305,15 @@ export async function measurePerformance<T>(
   labels?: Record<string, string>,
 ): Promise<T> {
   const startTime = performance.now()
-  const startMemory = (performance as Record<string, unknown>).memory?.usedJSHeapSize as
-    | number
-    | undefined
+  const startMemory = (performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory
+    ?.usedJSHeapSize
 
   try {
     const result = await fn()
 
     const endTime = performance.now()
-    const endMemory = (performance as Record<string, unknown>).memory?.usedJSHeapSize as
-      | number
-      | undefined
+    const endMemory = (performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory
+      ?.usedJSHeapSize
 
     const metric: PerformanceMetric = {
       duration_ms: endTime - startTime,

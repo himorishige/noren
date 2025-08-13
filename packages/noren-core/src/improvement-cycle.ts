@@ -10,7 +10,7 @@ import {
   type Recommendation,
 } from './ab-testing.js'
 import { type BenchmarkConfig, BenchmarkRunner } from './benchmark.js'
-import { EvaluationEngine, type GroundTruthManager } from './evaluation.js'
+import { type DetectionResult, EvaluationEngine, type GroundTruthManager } from './evaluation.js'
 import { Registry } from './index.js'
 import { getMetricsCollector } from './metrics.js'
 
@@ -299,7 +299,7 @@ export class ImprovementCycleEngine {
       const evaluationEngine = new EvaluationEngine(this.config.ground_truth_manager)
       const entries = this.config.ground_truth_manager.getAllEntries()
 
-      const detectionResults: Record<string, unknown[]> = {}
+      const detectionResults: Record<string, DetectionResult[]> = {}
       for (const entry of entries.slice(0, 10)) {
         const result = await registry.detect(entry.text)
         detectionResults[entry.id] = result.hits.map((hit) => ({

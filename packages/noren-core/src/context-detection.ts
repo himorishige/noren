@@ -27,7 +27,20 @@ export interface ValidatedDocumentStructure extends DocumentStructure {
     csv_confidence: number // 0-1: How confident we are it's valid CSV
     format_errors: string[] // List of detected format issues
     recovery_suggestions: string[] // Suggested fallback interpretations
+    validation_warnings: ValidationWarning[] // Structured warnings about validation limitations
   }
+}
+
+/**
+ * Structured warning about validation limitations
+ */
+export interface ValidationWarning {
+  type: 'accuracy' | 'completeness' | 'performance' | 'compatibility'
+  severity: 'low' | 'medium' | 'high'
+  message: string
+  details?: string
+  recommendation?: string
+  affected_format: 'json' | 'xml' | 'csv' | 'all'
 }
 
 /**
@@ -91,6 +104,69 @@ export function detectDocumentStructure(text: string): DocumentStructure {
 }
 
 /**
+ * Add general validation warnings about heuristic detection limitations
+ */
+function addValidationWarnings(
+  warnings: ValidationWarning[],
+  text: string,
+  structure: DocumentStructure,
+): void {
+  const textLength = text.length
+
+  // Warn about performance limitations for very large texts
+  if (textLength > 100000) {
+    warnings.push({
+      type: 'performance',
+      severity: 'medium',
+      message: 'Large document size may affect validation accuracy and performance',
+      details: `Document size: ${(textLength / 1024).toFixed(1)}KB`,
+      recommendation: 'Consider processing smaller chunks for better accuracy',
+      affected_format: 'all',
+    })
+  }
+
+  // Warn about multiple format detection
+  const formatCount = [structure.json_like, structure.xml_like, structure.csv_like].filter(
+    Boolean,
+  ).length
+  if (formatCount > 1) {
+    warnings.push({
+      type: 'accuracy',
+      severity: 'low',
+      message: 'Multiple document formats detected - validation may be ambiguous',
+      details: 'Document appears to contain mixed or nested formats',
+      recommendation: 'Verify the intended format and validate accordingly',
+      affected_format: 'all',
+    })
+  }
+
+  // Warn about heuristic nature of detection
+  if (structure.json_like || structure.xml_like || structure.csv_like) {
+    warnings.push({
+      type: 'completeness',
+      severity: 'low',
+      message: 'Document format detection uses heuristics and may not catch all edge cases',
+      details: 'Basic pattern matching is used instead of full parsing',
+      recommendation: 'Use dedicated parsers for mission-critical validation',
+      affected_format: 'all',
+    })
+  }
+
+  // Warn about encoding assumptions
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally checking for control characters in text encoding validation
+  if (text.includes('\ufffd') || /[\x00-\x08\x0E-\x1F\x7F]/.test(text)) {
+    warnings.push({
+      type: 'compatibility',
+      severity: 'medium',
+      message: 'Potential encoding issues detected in document',
+      details: 'Non-printable characters or replacement characters found',
+      recommendation: 'Verify document encoding before processing',
+      affected_format: 'all',
+    })
+  }
+}
+
+/**
  * P2-Sprint2: Enhanced document structure detection with validation
  */
 export function validateDocumentStructure(text: string): ValidatedDocumentStructure {
@@ -101,7 +177,11 @@ export function validateDocumentStructure(text: string): ValidatedDocumentStruct
     csv_confidence: 0,
     format_errors: [] as string[],
     recovery_suggestions: [] as string[],
+    validation_warnings: [] as ValidationWarning[],
   }
+
+  // Add general validation warnings about heuristic limitations
+  addValidationWarnings(validation.validation_warnings, text, basic)
 
   // Validate JSON if detected
   if (basic.json_like) {
@@ -109,6 +189,20 @@ export function validateDocumentStructure(text: string): ValidatedDocumentStruct
     validation.json_confidence = jsonValidation.confidence
     validation.format_errors.push(...jsonValidation.errors)
     validation.recovery_suggestions.push(...jsonValidation.suggestions)
+
+    // Add JSON-specific warnings
+    if (jsonValidation.confidence < 0.8) {
+      validation.validation_warnings.push({
+        type: 'accuracy',
+        severity: 'medium',
+        message:
+          'JSON structure validation is based on heuristics and may miss complex syntax errors',
+        details: `Confidence level: ${(jsonValidation.confidence * 100).toFixed(1)}%`,
+        recommendation:
+          'For critical applications, consider using a full JSON parser for validation',
+        affected_format: 'json',
+      })
+    }
   }
 
   // Validate XML if detected
@@ -117,6 +211,18 @@ export function validateDocumentStructure(text: string): ValidatedDocumentStruct
     validation.xml_confidence = xmlValidation.confidence
     validation.format_errors.push(...xmlValidation.errors)
     validation.recovery_suggestions.push(...xmlValidation.suggestions)
+
+    // Add XML-specific warnings
+    if (xmlValidation.confidence < 0.7) {
+      validation.validation_warnings.push({
+        type: 'completeness',
+        severity: 'medium',
+        message: 'XML validation does not include DTD, schema, or namespace validation',
+        details: `Basic structure confidence: ${(xmlValidation.confidence * 100).toFixed(1)}%`,
+        recommendation: 'Use a dedicated XML parser for comprehensive validation',
+        affected_format: 'xml',
+      })
+    }
   }
 
   // Validate CSV if detected
@@ -125,6 +231,17 @@ export function validateDocumentStructure(text: string): ValidatedDocumentStruct
     validation.csv_confidence = csvValidation.confidence
     validation.format_errors.push(...csvValidation.errors)
     validation.recovery_suggestions.push(...csvValidation.suggestions)
+
+    // Add CSV-specific warnings for complex cases
+    if (text.includes('"') && text.includes(',')) {
+      validation.validation_warnings.push({
+        type: 'accuracy',
+        severity: 'low',
+        message: 'CSV with quoted fields may have escaping complexities not fully validated',
+        recommendation: 'Consider using a dedicated CSV parser for complex quoting scenarios',
+        affected_format: 'csv',
+      })
+    }
   }
 
   return {

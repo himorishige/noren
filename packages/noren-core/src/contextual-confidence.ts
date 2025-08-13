@@ -31,6 +31,55 @@ export interface ContextualExplanation {
 }
 
 /**
+ * Detailed debug information for rule application
+ */
+export interface RuleDebugInfo {
+  rule: ContextualRule
+  evaluated: boolean
+  condition_result: boolean
+  applied: boolean
+  conflict_resolution?: 'priority' | 'category' | 'tiebreaker'
+  execution_time_ms?: number
+  features_used: string[]
+}
+
+/**
+ * Comprehensive debug result for contextual confidence calculation
+ */
+export interface ContextualDebugResult extends ContextualConfidenceResult {
+  debug: {
+    rules_evaluated: RuleDebugInfo[]
+    total_execution_time_ms: number
+    feature_extraction_time_ms: number
+    rule_resolution_time_ms: number
+    performance_warnings: string[]
+    rule_conflicts: {
+      detected: boolean
+      resolved_by: string[]
+      details: string[]
+    }
+  }
+}
+
+/**
+ * Rule visualization helper for understanding rule structure
+ */
+export interface RuleVisualization {
+  rule_id: string
+  category: 'format-specific' | 'locale-specific' | 'marker-based' | 'structural' | 'boost'
+  priority: number
+  conditions: string[]
+  effect: {
+    type: 'suppress' | 'boost' | 'neutral'
+    strength: 'weak' | 'medium' | 'strong'
+    multiplier: number
+    offset?: number
+  }
+  dependencies: string[]
+  estimated_frequency: 'rare' | 'common' | 'frequent'
+}
+
+/**
  * Configuration for contextual confidence adjustments
  */
 export interface ContextualConfig {
@@ -655,4 +704,372 @@ export const CONSERVATIVE_CONTEXTUAL_CONFIG: ContextualConfig = {
   suppressionEnabled: true,
   boostEnabled: false,
   minConfidenceFloor: 0.6, // Slightly higher floor for safety
+}
+
+/**
+ * Calculate contextual confidence with detailed debug information
+ * Useful for understanding rule application and performance analysis
+ */
+export function calculateContextualConfidenceWithDebug(
+  hit: Hit,
+  text: string,
+  baseConfidence: number,
+  config: ContextualConfig = DEFAULT_CONTEXTUAL_CONFIG,
+): ContextualDebugResult {
+  const startTime = performance.now()
+
+  if (!config.enabled) {
+    return {
+      baseConfidence,
+      contextualConfidence: baseConfidence,
+      adjustmentFactor: 1.0,
+      explanations: [],
+      features: extractContextFeatures(text, hit.start),
+      debug: {
+        rules_evaluated: [],
+        total_execution_time_ms: performance.now() - startTime,
+        feature_extraction_time_ms: 0,
+        rule_resolution_time_ms: 0,
+        performance_warnings: ['Contextual confidence is disabled'],
+        rule_conflicts: {
+          detected: false,
+          resolved_by: [],
+          details: [],
+        },
+      },
+    }
+  }
+
+  // Extract context features with timing
+  const featureStartTime = performance.now()
+  const features = extractContextFeatures(text, hit.start)
+  const feature_extraction_time_ms = performance.now() - featureStartTime
+
+  // Evaluate rules with detailed tracking
+  const ruleStartTime = performance.now()
+  const debugInfo: RuleDebugInfo[] = []
+  const applicableRules: ContextualRule[] = []
+
+  for (const rule of config.rules) {
+    const ruleEvalStartTime = performance.now()
+    const debugEntry: RuleDebugInfo = {
+      rule,
+      evaluated: true,
+      condition_result: false,
+      applied: false,
+      execution_time_ms: 0,
+      features_used: [],
+    }
+
+    try {
+      // Track which features are accessed during condition evaluation
+      const featuresUsed = new Set<string>()
+      const proxyFeatures = createFeatureProxy(features, featuresUsed)
+
+      const conditionResult = rule.condition(proxyFeatures, hit)
+      debugEntry.condition_result = conditionResult
+      debugEntry.features_used = Array.from(featuresUsed)
+
+      if (conditionResult) {
+        applicableRules.push(rule)
+      }
+    } catch (error) {
+      debugEntry.condition_result = false
+      console.warn(`Rule ${rule.id} evaluation failed:`, error)
+    }
+
+    debugEntry.execution_time_ms = performance.now() - ruleEvalStartTime
+    debugInfo.push(debugEntry)
+  }
+
+  // Apply rule conflict resolution with tracking
+  const resolvedRules = resolveRuleConflictsWithDebug(applicableRules, features, debugInfo)
+  const rule_resolution_time_ms = performance.now() - ruleStartTime
+
+  // Apply resolved rules and build explanations
+  const explanations: ContextualExplanation[] = []
+  let adjustmentFactor = 1.0
+  let totalOffset = 0
+
+  for (const rule of resolvedRules) {
+    const debugEntry = debugInfo.find((d) => d.rule.id === rule.id)
+    if (debugEntry) {
+      debugEntry.applied = true
+    }
+
+    const isBoost = rule.multiplier > 1.0 || (rule.offset && rule.offset > 0)
+    const isSuppression = rule.multiplier < 1.0 || (rule.offset && rule.offset < 0)
+
+    if ((isBoost && !config.boostEnabled) || (isSuppression && !config.suppressionEnabled)) {
+      continue
+    }
+
+    adjustmentFactor *= rule.multiplier
+    if (rule.offset) {
+      totalOffset += rule.offset
+    }
+
+    explanations.push({
+      ruleId: rule.id,
+      effect: isBoost ? 'boost' : isSuppression ? 'suppress' : 'neutral',
+      weight: rule.multiplier,
+      reason: rule.description,
+      distance:
+        features.markers.distance_to_nearest_marker >= 0
+          ? features.markers.distance_to_nearest_marker
+          : undefined,
+    })
+  }
+
+  // Calculate final confidence with safety bounds
+  const rawContextualConfidence = baseConfidence * adjustmentFactor + totalOffset
+  const minConfidence = Math.max(0.01, baseConfidence * config.minConfidenceFloor)
+  const maxConfidence = config.maxConfidenceCeiling
+  const contextualConfidence = Math.max(
+    minConfidence,
+    Math.min(maxConfidence, rawContextualConfidence),
+  )
+
+  // Generate performance warnings
+  const performance_warnings: string[] = []
+  const total_execution_time_ms = performance.now() - startTime
+
+  if (total_execution_time_ms > 5) {
+    performance_warnings.push(
+      `Slow contextual confidence calculation: ${total_execution_time_ms.toFixed(2)}ms`,
+    )
+  }
+
+  if (debugInfo.length > 20) {
+    performance_warnings.push(`Large number of rules evaluated: ${debugInfo.length}`)
+  }
+
+  const slowRules = debugInfo.filter((d) => (d.execution_time_ms || 0) > 1)
+  if (slowRules.length > 0) {
+    performance_warnings.push(`Slow rules detected: ${slowRules.map((r) => r.rule.id).join(', ')}`)
+  }
+
+  // Detect and document rule conflicts
+  const conflicts = detectRuleConflicts(applicableRules)
+
+  return {
+    baseConfidence,
+    contextualConfidence,
+    adjustmentFactor,
+    explanations,
+    features,
+    debug: {
+      rules_evaluated: debugInfo,
+      total_execution_time_ms,
+      feature_extraction_time_ms,
+      rule_resolution_time_ms,
+      performance_warnings,
+      rule_conflicts: conflicts,
+    },
+  }
+}
+
+/**
+ * Create a proxy for features to track which ones are accessed
+ */
+function createFeatureProxy(
+  features: ContextFeatures,
+  accessedFeatures: Set<string>,
+): ContextFeatures {
+  const handler: ProxyHandler<ContextFeatures> = {
+    get(target, prop) {
+      if (typeof prop === 'string') {
+        accessedFeatures.add(prop)
+      }
+      return Reflect.get(target, prop)
+    },
+  }
+  return new Proxy(features, handler)
+}
+
+/**
+ * Resolve rule conflicts with debug tracking
+ */
+function resolveRuleConflictsWithDebug(
+  applicableRules: ContextualRule[],
+  features: ContextFeatures,
+  debugInfo: RuleDebugInfo[],
+): ContextualRule[] {
+  const resolved = resolveRuleConflicts(applicableRules, features)
+
+  // Update debug info with conflict resolution details
+  for (const rule of applicableRules) {
+    const debugEntry = debugInfo.find((d) => d.rule.id === rule.id)
+    if (debugEntry) {
+      if (resolved.includes(rule)) {
+        debugEntry.applied = true
+      } else {
+        debugEntry.conflict_resolution = 'priority'
+      }
+    }
+  }
+
+  return resolved
+}
+
+/**
+ * Detect potential rule conflicts
+ */
+function detectRuleConflicts(rules: ContextualRule[]): {
+  detected: boolean
+  resolved_by: string[]
+  details: string[]
+} {
+  const conflicts = {
+    detected: false,
+    resolved_by: [] as string[],
+    details: [] as string[],
+  }
+
+  if (rules.length <= 1) {
+    return conflicts
+  }
+
+  // Group rules by priority
+  const priorityGroups = new Map<number, ContextualRule[]>()
+  for (const rule of rules) {
+    const priority = rule.priority
+    if (!priorityGroups.has(priority)) {
+      priorityGroups.set(priority, [])
+    }
+    const group = priorityGroups.get(priority)
+    if (group) {
+      group.push(rule)
+    }
+  }
+
+  // Check for conflicts within priority groups
+  for (const [priority, group] of priorityGroups) {
+    if (group.length > 1) {
+      conflicts.detected = true
+      conflicts.resolved_by.push('priority-grouping')
+      conflicts.details.push(
+        `${group.length} rules with priority ${priority}: ${group.map((r) => r.id).join(', ')}`,
+      )
+    }
+  }
+
+  return conflicts
+}
+
+/**
+ * Visualize all rules in a configuration for better understanding
+ */
+export function visualizeRules(config: ContextualConfig): RuleVisualization[] {
+  return config.rules.map((rule) => {
+    // Categorize rule
+    const category = categorizeRuleForVisualization(rule)
+
+    // Determine effect strength
+    const effectStrength = determineEffectStrength(rule.multiplier, rule.offset)
+
+    // Extract condition descriptions
+    const conditions = extractConditionDescriptions(rule)
+
+    // Estimate frequency based on rule type
+    const frequency = estimateRuleFrequency(rule)
+
+    return {
+      rule_id: rule.id,
+      category,
+      priority: rule.priority,
+      conditions,
+      effect: {
+        type: rule.multiplier > 1.0 ? 'boost' : rule.multiplier < 1.0 ? 'suppress' : 'neutral',
+        strength: effectStrength,
+        multiplier: rule.multiplier,
+        offset: rule.offset,
+      },
+      dependencies: extractRuleDependencies(rule),
+      estimated_frequency: frequency,
+    }
+  })
+}
+
+/**
+ * Helper functions for rule visualization
+ */
+function categorizeRuleForVisualization(rule: ContextualRule): RuleVisualization['category'] {
+  if (
+    rule.id.includes('json') ||
+    rule.id.includes('xml') ||
+    rule.id.includes('csv') ||
+    rule.id.includes('markdown')
+  ) {
+    return 'format-specific'
+  }
+  if (rule.id.includes('placeholder') || rule.id.includes('locale')) {
+    return 'locale-specific'
+  }
+  if (rule.id.includes('marker') || rule.id.includes('example') || rule.id.includes('test')) {
+    return 'marker-based'
+  }
+  if (rule.multiplier > 1.0) {
+    return 'boost'
+  }
+  return 'structural'
+}
+
+function determineEffectStrength(
+  multiplier: number,
+  offset?: number,
+): 'weak' | 'medium' | 'strong' {
+  const effectMagnitude = Math.abs(multiplier - 1.0) + Math.abs(offset || 0)
+  if (effectMagnitude < 0.2) return 'weak'
+  if (effectMagnitude < 0.5) return 'medium'
+  return 'strong'
+}
+
+function extractConditionDescriptions(rule: ContextualRule): string[] {
+  // This is a simplified implementation - in practice, you might want to
+  // parse the function or maintain separate condition descriptions
+  const conditions: string[] = []
+
+  if (rule.id.includes('marker')) {
+    conditions.push('Marker proximity check')
+  }
+  if (rule.id.includes('distance')) {
+    conditions.push('Distance threshold evaluation')
+  }
+  if (rule.id.includes('structure')) {
+    conditions.push('Document structure analysis')
+  }
+
+  return conditions.length > 0 ? conditions : ['Complex condition (see rule definition)']
+}
+
+function extractRuleDependencies(rule: ContextualRule): string[] {
+  const dependencies: string[] = []
+
+  // Analyze rule dependencies based on what features it likely uses
+  if (rule.id.includes('marker')) {
+    dependencies.push('markers')
+  }
+  if (rule.id.includes('structure') || rule.id.includes('json') || rule.id.includes('xml')) {
+    dependencies.push('structure')
+  }
+  if (rule.id.includes('repetition')) {
+    dependencies.push('repetition_detected')
+  }
+
+  return dependencies
+}
+
+function estimateRuleFrequency(rule: ContextualRule): 'rare' | 'common' | 'frequent' {
+  // Estimate based on rule type and conditions
+  if (rule.id.includes('example') || rule.id.includes('test')) {
+    return 'common'
+  }
+  if (rule.id.includes('template') || rule.id.includes('schema')) {
+    return 'rare'
+  }
+  if (rule.id.includes('code') || rule.id.includes('header')) {
+    return 'frequent'
+  }
+  return 'common'
 }
