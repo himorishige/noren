@@ -10,7 +10,7 @@ const registry = new Registry({
     sec_jwt_token: { action: 'mask' },
     sec_api_key: { action: 'mask' },
     credit_card: { action: 'mask', preserveLast4: true },
-    jp_my_number: { action: 'remove' },
+    mynumber_jp: { action: 'remove' },
   },
   contextHints: [
     // Core security contexts

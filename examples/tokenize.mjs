@@ -8,7 +8,7 @@ const reg = new Registry({
     email: { action: 'tokenize' },
     phone_e164: { action: 'tokenize' },
     phone_jp: { action: 'tokenize' },
-    us_phone: { action: 'tokenize' },
+    phone_us: { action: 'tokenize' },
     credit_card: { action: 'mask', preserveLast4: true },
   },
   contextHints: [
