@@ -6,7 +6,7 @@
     "node": ">=20.10.0"
   },
   "scripts": {
-    "clean": "pnpm -r --filter './packages/**' run prebuild",
+    "clean": "pnpm -r --filter './packages/**' run clean",
     "build": "pnpm run clean && pnpm -r --filter './packages/**' run --if-present build",
     "typecheck": "pnpm -r --filter './packages/**' run --if-present typecheck",
     "test": "pnpm -r --filter './packages/**' run --if-present test",

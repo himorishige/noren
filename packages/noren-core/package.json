@@ -51,7 +51,7 @@
     "access": "public"
   },
   "scripts": {
-    "prebuild": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "tsc -p tsconfig.json",
     "build:min": "rollup -c",
     "typecheck": "tsc -p tsconfig.json --noEmit",
