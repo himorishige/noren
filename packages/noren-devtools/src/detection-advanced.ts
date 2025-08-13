@@ -1,10 +1,22 @@
 // Built-in detection logic
 
-import { extractIPv6Candidates, parseIPv6 } from './ipv6-parser.js'
-import { DETECTION_PATTERNS, PATTERN_TYPES, UNIFIED_PATTERN } from './patterns.js'
-import { hitPool } from './pool.js'
-import type { DetectUtils, Hit, PiiType } from './types.js'
-import { luhn, SECURITY_LIMITS } from './utils.js'
+import type { DetectUtils, Hit, PiiType } from '@himorishige/noren-core'
+import {
+  DETECTION_PATTERNS,
+  extractIPv6Candidates,
+  hitPool,
+  luhn,
+  PATTERN_TYPES,
+  parseIPv6,
+  UNIFIED_PATTERN,
+} from '@himorishige/noren-core'
+import {
+  forEachChunk,
+  isFalsePositive,
+  isInputSafeForRegex,
+  preprocessForPiiDetection,
+  SECURITY_LIMITS,
+} from './utils-advanced.js'
 
 export function builtinDetect(u: DetectUtils) {
   const createHit = (

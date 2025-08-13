@@ -3,6 +3,7 @@
  * Integrates A/B testing results into systematic configuration improvements
  */
 
+import { Registry } from '@himorishige/noren-core'
 import {
   type ABTestConfig,
   ABTestEngine,
@@ -11,7 +12,6 @@ import {
 } from './ab-testing.js'
 import { type BenchmarkConfig, BenchmarkRunner } from './benchmark.js'
 import { type DetectionResult, EvaluationEngine, type GroundTruthManager } from './evaluation.js'
-import { Registry } from './index.js'
 import { getMetricsCollector } from './metrics.js'
 
 /**

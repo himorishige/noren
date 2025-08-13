@@ -1,5 +1,5 @@
 // Utility functions (separate module for tree-shaking)
-import { NORMALIZE_PATTERNS } from './patterns.js'
+import { NORMALIZE_PATTERNS } from '@himorishige/noren-core'
 
 export const normalize = (s: string) => {
   // Fast path: if string is already ASCII-only and doesn't need normalization, return as-is

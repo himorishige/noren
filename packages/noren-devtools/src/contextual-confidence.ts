@@ -3,9 +3,9 @@
  * Combines base confidence with context-aware adjustments
  */
 
+import type { Hit } from '@himorishige/noren-core'
 import { type ContextFeatures, extractContextFeatures } from './context-detection.js'
 import { type ContextualMetric, getMetricsCollector } from './metrics.js'
-import type { Hit } from './types.js'
 
 /**
  * Contextual confidence calculation result
