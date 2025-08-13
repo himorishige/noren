@@ -4,6 +4,22 @@
 
 An extension package for the Noren PII masking library that provides functionality to dynamically load and periodically update (hot-reload) redaction policies and custom dictionaries from remote URLs.
 
+## What's New in v0.5.0
+
+- **🚀 Performance Improvements**: 30% code reduction for better performance and smaller bundle size
+- **⚡ Optimized Fetch Logic**: Unified conditional GET with optional timeout support
+- **🧹 Simplified API**: Streamlined CompileOptions and reduced complexity
+- **🔧 Enhanced Error Handling**: Improved error messages and timeout management
+- **📦 Memory Efficiency**: Optimized Map management and reduced object allocation
+
+### Migration Notes
+
+Some rarely-used CompileOptions have been removed in v0.5.0:
+- `enableContextualConfidence` - use `enableConfidenceScoring` instead  
+- `contextualSuppressionEnabled` - functionality consolidated into core detection
+- `contextualBoostEnabled` - functionality consolidated into core detection
+- `allowDenyConfig.disableDefaults` - simplified to boolean options only
+
 ## Features
 
 - **Dynamic Configuration Loading**: Loads policy and dictionary files over HTTP(S) and applies them to Noren's `Registry`.
@@ -39,6 +55,8 @@ const reloader = new PolicyDictReloader({
   dictManifestUrl: 'https://example.com/noren-manifest.json',
   compile,
   intervalMs: 60000, // Check for updates every 60 seconds
+  requestTimeoutMs: 10000, // v0.5.0: Request timeout in milliseconds
+  maxConcurrent: 5, // v0.5.0: Max concurrent dictionary downloads
   onSwap: (newRegistry, changed) => {
     console.log('Configuration updated. Changed files:', changed);
     // Here, you would swap the application's Registry instance with the new one

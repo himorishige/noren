@@ -7,7 +7,7 @@ const reg = new Registry({
   defaultAction: 'mask',
   rules: {
     credit_card: { action: 'mask', preserveLast4: true },
-    jp_my_number: { action: 'remove' },
+    mynumber_jp: { action: 'remove' },
   },
   contextHints: ['TEL', '電話', '〒', '住所', 'Zip', 'Address', 'SSN', 'Social Security'],
 })

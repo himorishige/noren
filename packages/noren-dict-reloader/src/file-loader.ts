@@ -39,16 +39,17 @@ export function createFileLoader(
       throw new Error(`Invalid file URL: ${url}`)
     }
 
+    // Validate URL format and security constraints
     if (parsedUrl.search || parsedUrl.hash) {
       throw new Error(`Invalid file URL (query/hash not allowed): ${url}`)
     }
 
-    // Security: Check remote file hosts
-    if (parsedUrl.hostname && parsedUrl.hostname !== 'localhost') {
-      const allowedHosts = opts?.allowRemoteFileHosts ?? []
-      if (!allowedHosts.includes(parsedUrl.hostname)) {
-        throw new Error(`Remote file host not allowed: ${parsedUrl.hostname}`)
-      }
+    if (
+      parsedUrl.hostname &&
+      parsedUrl.hostname !== 'localhost' &&
+      !opts?.allowRemoteFileHosts?.includes(parsedUrl.hostname)
+    ) {
+      throw new Error(`Remote file host not allowed: ${parsedUrl.hostname}`)
     }
 
     let text: string
@@ -58,26 +59,24 @@ export function createFileLoader(
       const p = fileURLToPath(parsedUrl)
       // Resolve symlinks and normalize to mitigate path traversal via symlinks
       const real = await realpath(p)
+      // Security: Ensure path is within baseDir if specified
       if (opts?.baseDir) {
         const base = resolve(opts.baseDir)
-        const baseWithSep = base.endsWith(sep) ? base : base + sep
-        const realWithSep = real.endsWith(sep) ? real : real + sep
-        if (!realWithSep.startsWith(baseWithSep)) {
+        const normalizedBase = base.endsWith(sep) ? base : base + sep
+        const normalizedReal = real.endsWith(sep) ? real : real + sep
+        if (!normalizedReal.startsWith(normalizedBase)) {
           throw new Error(`Access outside of baseDir is not allowed: ${real}`)
         }
       }
       const st = await stat(real)
 
-      // Security: Reject non-regular files (devices, FIFOs, etc.)
+      // Security: Validate file type and size
       if (!st.isFile()) {
         throw new Error(`Access to non-regular file denied: ${real}`)
       }
 
-      // Security: Enforce file size limit
-      if (opts?.maxBytes !== undefined && st.size > opts.maxBytes) {
-        throw new Error(
-          `File size ${st.size} bytes exceeds limit of ${opts.maxBytes} bytes: ${real}`,
-        )
+      if (opts?.maxBytes && st.size > opts.maxBytes) {
+        throw new Error(`File size ${st.size} exceeds limit ${opts.maxBytes}: ${real}`)
       }
 
       text = await readFile(real, 'utf8')

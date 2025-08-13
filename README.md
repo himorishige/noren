@@ -100,7 +100,7 @@ const registry = new Registry({
   enableConfidenceScoring: true, // Enhanced accuracy
   rules: {
     credit_card: { action: 'mask', preserveLast4: true },
-    jp_my_number: { action: 'remove' }
+    mynumber_jp: { action: 'remove' } // v0.5.0: Updated PII type naming
   }
 })
 

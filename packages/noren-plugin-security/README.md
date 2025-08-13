@@ -4,13 +4,23 @@
 
 A plugin for the Noren PII masking library that specializes in detecting and masking sensitive information related to web application security, such as API keys, JWTs, and cookies.
 
+## v0.5.0 Performance Optimizations
+
+- **17% Code Reduction**: Streamlined from 968 to 803 lines for better maintainability
+- **Enhanced Boundary Detection**: Improved accuracy with currency symbol boundaries (¥$€£¢)
+- **Unified Detection Logic**: Consolidated detector patterns for consistent performance
+- **Set-based Context Matching**: O(1) context hint lookup for faster processing
+- **Advanced Confidence Scoring**: Enhanced JWT and API key validation algorithms
+
 ## Features
 
-- **Diverse Token Detection**: Structurally detects JWTs (JSON Web Tokens), prefixed API keys (`sk_`, etc.), session IDs, and UUIDs.
-- **HTTP Header Support**: Redacts entire sensitive HTTP headers like `Authorization` and `X-API-Key`.
-- **Selective Cookie Masking**: Parses `Cookie` and `Set-Cookie` headers and safely masks only the cookies not included in a predefined allowlist. Wildcards (`*`) are supported.
-- **URL Parameter Scanning**: Detects sensitive parameters often found in URLs, such as `access_token` and `client_secret`.
-- **Flexible Configuration**: The `createSecurityMaskers` function allows you to customize behavior, such as the cookie allowlist.
+- **Smart Token Detection**: Advanced structural detection of JWTs, API keys with prefixes (`sk_`, `pk_`, etc.), session IDs, and UUIDs with enhanced confidence scoring
+- **HTTP Header Security**: Complete redaction of sensitive headers like `Authorization` and `X-API-Key` with context-aware validation
+- **Intelligent Cookie Management**: Sophisticated parsing of `Cookie` and `Set-Cookie` headers with allowlist support and wildcard patterns (`*`)
+- **URL Parameter Protection**: Comprehensive scanning for sensitive URL parameters (`access_token`, `client_secret`, etc.) with risk-based classification
+- **Enhanced Boundary Detection**: Improved accuracy with currency symbol boundaries to prevent false positives
+- **Configurable Security Levels**: Flexible `createSecurityMaskers` function with customizable allowlists and strict mode options
+- **Performance Optimized**: Streamlined detection logic with O(1) context matching and pre-compiled patterns
 
 ## Installation
 

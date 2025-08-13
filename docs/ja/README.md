@@ -100,7 +100,7 @@ const registry = new Registry({
   enableConfidenceScoring: true, // 信頼度スコアリングで精度向上
   rules: {
     credit_card: { action: 'mask', preserveLast4: true }, // クレカは末尾4桁を保持
-    jp_my_number: { action: 'remove' } // マイナンバーは完全に削除
+    mynumber_jp: { action: 'remove' } // v0.5.0: マイナンバーは完全に削除
   }
 })
 
