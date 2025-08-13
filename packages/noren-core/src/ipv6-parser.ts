@@ -81,8 +81,8 @@ export function parseIPv6(address: string): IPv6ParseResult {
     const afterCompress = ipv6Parts.slice(ipv6Parts.lastIndexOf('') + 1).filter((p) => p !== '')
     const expectedParts = hasIPv4 ? 6 : 8
     const missing = expectedParts - beforeCompress.length - afterCompress.length
-    if (missing < 0) {
-      return { valid: false, error: 'Too many parts' }
+    if (missing < 0 || missing > 8) {
+      return { valid: false, error: 'Invalid compression' }
     }
     expandedParts = [...beforeCompress, ...Array(missing).fill('0'), ...afterCompress]
   } else {
