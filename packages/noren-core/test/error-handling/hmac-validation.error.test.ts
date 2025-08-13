@@ -8,23 +8,23 @@ import { describe, expect, it } from 'vitest'
  */
 
 describe('HMAC Key Validation', () => {
-  it('should throw error for keys shorter than 32 characters', async () => {
+  it('should throw error for keys shorter than 16 characters', async () => {
     const shortKeys = [
       '',
       'a',
       'short-key',
-      'this-is-only-31-chars-long-key!', // exactly 31 chars
+      'exactly-15-char', // exactly 15 chars
     ]
 
     for (const shortKey of shortKeys) {
       await expect(importHmacKey(shortKey)).rejects.toThrow(
-        /HMAC key must be at least 32 characters long/,
+        /HMAC key must be at least 16 characters long/,
       )
     }
   })
 
-  it('should accept exactly 32 character keys', async () => {
-    const validKey = 'a'.repeat(32) // exactly 32 chars
+  it('should accept exactly 16 character keys', async () => {
+    const validKey = 'a'.repeat(16) // exactly 16 chars
     const key = await importHmacKey(validKey)
 
     expect(key instanceof CryptoKey).toBeTruthy()
@@ -33,9 +33,10 @@ describe('HMAC Key Validation', () => {
     expect((key.algorithm as HmacKeyAlgorithm).hash.name).toBe('SHA-256')
   })
 
-  it('should accept keys longer than 32 characters', async () => {
+  it('should accept keys longer than 16 characters', async () => {
     const longKeys = [
-      'a'.repeat(33), // 33 chars
+      'a'.repeat(17), // 17 chars
+      'a'.repeat(32), // 32 chars
       'a'.repeat(64), // 64 chars
       'this-is-a-very-long-secret-key-with-more-than-32-characters-for-testing', // 73 chars
     ]
@@ -56,17 +57,17 @@ describe('HMAC Key Validation', () => {
 
   it('should reject null and undefined inputs', async () => {
     await expect(importHmacKey(null as never)).rejects.toThrow(
-      /HMAC key must be at least 32 characters long/,
+      /HMAC key must be at least 16 characters long/,
     )
 
     await expect(importHmacKey(undefined as never)).rejects.toThrow(
-      /HMAC key must be at least 32 characters long/,
+      /HMAC key must be at least 16 characters long/,
     )
   })
 
   it('should handle CryptoKey inputs without validation', async () => {
     // First create a valid CryptoKey
-    const validKeyString = 'a'.repeat(32)
+    const validKeyString = 'a'.repeat(16)
     const cryptoKey = await importHmacKey(validKeyString)
 
     // Pass the CryptoKey back to importHmacKey (should return as-is)
@@ -75,14 +76,14 @@ describe('HMAC Key Validation', () => {
   })
 
   it('should handle special characters and spaces', async () => {
-    const specialKey = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`' + 'abc!' // 32 chars with special chars
+    const specialKey = '!@#$%^&*()_+-=[]' // 16 chars with special chars
     const key = await importHmacKey(specialKey)
 
     expect(key instanceof CryptoKey).toBeTruthy()
   })
 
   it('should be consistent with key generation', async () => {
-    const keyString = 'consistent-test-key-for-hmac-generation-32chars'
+    const keyString = 'consistent-test-key-16ch'
     const key1 = await importHmacKey(keyString)
     const key2 = await importHmacKey(keyString)
 

@@ -207,7 +207,7 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
     const macAddress = '00:11:22:33:44:55'
     const result = await redactText(reg, `Device MAC: ${macAddress}`)
 
-    expect(result).toMatch(/TKN_MAC_[0-9a-f]{16}/)
+    expect(result).toMatch(/TKN_MAC_[A-Za-z0-9_-]+/)
     expect(result).not.toContain(macAddress)
   })
 
@@ -254,8 +254,8 @@ describe('MAC Address Pattern Detection Edge Cases', () => {
     const result2 = await redactText(reg, 'Device2: aa:bb:cc:dd:ee:ff')
 
     // Extract the token parts
-    const token1 = result1.match(/TKN_MAC_([0-9a-f]{16})/)?.[1]
-    const token2 = result2.match(/TKN_MAC_([0-9a-f]{16})/)?.[1]
+    const token1 = result1.match(/TKN_MAC_([A-Za-z0-9_-]+)/)?.[1]
+    const token2 = result2.match(/TKN_MAC_([A-Za-z0-9_-]+)/)?.[1]
 
     expect(token1 && token2).toBeTruthy()
     expect(token1).not.toBe(token2)

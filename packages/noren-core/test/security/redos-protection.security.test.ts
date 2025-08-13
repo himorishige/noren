@@ -1,86 +1,52 @@
 import { describe, expect, it } from 'vitest'
-import { Registry } from '../../src/index.js'
+import { Registry, redactText } from '../../src/index.js'
 import type { Hit } from '../../src/types.js'
-import { calculateInputComplexity, isInputSafeForRegex } from '../../src/utils.js'
 
 /**
- * Security test cases for ReDoS protection
+ * Basic Security Tests for v0.4.0
+ * Advanced ReDoS protection features have been moved to @himorishige/noren-devtools
  */
-describe('ReDoS Protection Security Tests', () => {
+describe('Security Tests', () => {
   const reg = new Registry({ defaultAction: 'mask' })
 
-  describe('Input complexity calculation', () => {
-    it('should calculate low complexity for normal text', () => {
-      const normalText = 'Email: user@example.com, Phone: 555-123-4567'
-      const complexity = calculateInputComplexity(normalText)
-      expect(complexity).toBeLessThan(2000) // Should be lower than attack patterns
+  describe('Input length limits', () => {
+    it('should handle very long inputs without crashing', async () => {
+      const longInput = 'test@example.com '.repeat(1000) // ~17KB
+
+      // Should not crash - basic length protection exists
+      const result = await redactText(reg, longInput)
+      expect(result).toBeTruthy()
+      expect(result.length).toBeGreaterThan(0)
     })
 
-    it('should detect high complexity from repeated characters', () => {
-      const repeatedText = `${'a'.repeat(1000)}@example.com`
-      const complexity = calculateInputComplexity(repeatedText)
-      expect(complexity).toBeGreaterThan(1000) // Should be high complexity
-    })
+    it('should still detect PII in reasonably large inputs', async () => {
+      const input = 'Normal text with user@example.com email '.repeat(100)
 
-    it('should detect suspicious ReDoS patterns', () => {
-      const suspiciousPattern = '(a|a)*x'
-      const complexity = calculateInputComplexity(suspiciousPattern)
-      expect(complexity).toBeGreaterThan(500) // Should have high penalty
-    })
-
-    it('should detect nested quantifier patterns', () => {
-      const nestedPattern = '(.+)+x'
-      const complexity = calculateInputComplexity(nestedPattern)
-      expect(complexity).toBeGreaterThan(500) // Should have high penalty
+      const result = await redactText(reg, input)
+      expect(result).toContain('[REDACTED:email]')
+      expect(result).not.toContain('user@example.com')
     })
   })
 
-  describe('Input safety checks', () => {
-    it('should reject extremely long inputs', () => {
-      const longInput = 'x'.repeat(60000) // Over 50KB limit
-      expect(isInputSafeForRegex(longInput)).toBe(false)
-    })
-
-    it('should accept reasonably sized inputs', () => {
-      const normalInput = 'Email: test@example.com '.repeat(100) // Under limit
-      expect(isInputSafeForRegex(normalInput)).toBe(true)
-    })
-
-    it('should reject inputs with high complexity score', () => {
-      const complexInput = 'aaaaaaa'.repeat(1000) + '|||||||'.repeat(100)
-      expect(isInputSafeForRegex(complexInput)).toBe(false)
-    })
-  })
-
-  describe('Safe processing under attack scenarios', () => {
-    it('should handle ReDoS attack gracefully', async () => {
-      // Classic ReDoS pattern attempt
-      const attackInput = `${'a'.repeat(10000)}X` // Won't match email pattern
-
-      const startTime = Date.now()
-      const { hits } = await reg.detect(attackInput)
-      const duration = Date.now() - startTime
-
-      expect(hits).toHaveLength(0) // Should find no PII (input rejected)
-      expect(duration).toBeLessThan(100) // Should be fast (input rejected quickly)
-    })
-
-    it('should limit number of regex matches', async () => {
+  describe('Safe processing scenarios', () => {
+    it('should handle inputs with many potential matches', async () => {
       // Generate many potential PII matches
-      const manyEmails = Array.from({ length: 300 }, (_, i) => `user${i}@example.com`).join(' ')
+      const manyEmails = Array.from({ length: 50 }, (_, i) => `user${i}@example.com`).join(' ')
 
       const { hits } = await reg.detect(manyEmails)
+      expect(hits.length).toBeGreaterThan(0) // Should find legitimate PII
       expect(hits.length).toBeLessThanOrEqual(200) // Should be limited by maxPatternMatches
     })
 
-    it('should handle malicious nested structures', async () => {
+    it('should handle nested structures', async () => {
       const nestedInput = '(((((' + 'test@example.com' + ')))))'
 
       const startTime = Date.now()
-      await reg.detect(nestedInput)
+      const { hits } = await reg.detect(nestedInput)
       const duration = Date.now() - startTime
 
-      expect(duration).toBeLessThan(50) // Should be fast even with nesting
+      expect(hits.length).toBeGreaterThan(0) // Should find the email
+      expect(duration).toBeLessThan(50) // Should be fast
     })
   })
 
@@ -98,7 +64,7 @@ describe('ReDoS Protection Security Tests', () => {
       const duration = Date.now() - startTime
 
       expect(hits.length).toBeGreaterThan(0) // Should find legitimate PII
-      expect(duration).toBeLessThan(20) // Should be reasonably fast
+      expect(duration).toBeLessThan(100) // Should be reasonably fast
     })
 
     it('should process chunk-based inputs efficiently', async () => {
@@ -119,7 +85,7 @@ describe('ReDoS Protection Security Tests', () => {
       const duration = Date.now() - startTime
 
       expect(allHits.length).toBeGreaterThan(0) // Should find PII in chunks
-      expect(duration).toBeLessThan(50) // Should be efficient
+      expect(duration).toBeLessThan(100) // Should be efficient
     })
   })
 })

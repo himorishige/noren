@@ -159,7 +159,7 @@ describe('Hit Processing Complex Scenarios', () => {
     expect(result).not.toContain('admin@company.com')
 
     // Credit card should be tokenized
-    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(result).toMatch(/TKN_CREDIT_CARD_[A-Za-z0-9_-]+/)
     expect(result).not.toContain('4242')
 
     // IP should be ignored (remain unchanged)

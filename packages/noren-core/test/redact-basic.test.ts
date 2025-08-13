@@ -30,7 +30,7 @@ describe('redactText - credit card masking/tokenization', () => {
     })
     const input = 'Card: 4242 4242 4242 4242'
     const out = await redactText(reg, input)
-    expect(out).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(out).toMatch(/TKN_CREDIT_CARD_[A-Za-z0-9_-]+/)
   })
 })
 

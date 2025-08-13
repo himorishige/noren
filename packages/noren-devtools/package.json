@@ -29,7 +29,7 @@
   "exports": {
     ".": "./dist/index.js",
     "./ab-testing": "./dist/ab-testing.js",
-    "./benchmark": "./dist/benchmark.js", 
+    "./benchmark": "./dist/benchmark.js",
     "./evaluation": "./dist/evaluation.js",
     "./improvement-cycle": "./dist/improvement-cycle.js"
   },

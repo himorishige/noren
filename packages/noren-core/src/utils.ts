@@ -28,7 +28,10 @@ export function luhn(d: string) {
   for (let i = d.length - 1; i >= 0; i--) {
     let x = d.charCodeAt(i) - 48
     if (x < 0 || x > 9) return false
-    if (dbl && (x *= 2) > 9) x -= 9
+    if (dbl) {
+      x *= 2
+      if (x > 9) x -= 9
+    }
     sum += x
     dbl = !dbl
   }
@@ -46,13 +49,7 @@ export async function importHmacKey(secret: string | CryptoKey) {
   const encoder = new TextEncoder()
   const keyData = encoder.encode(secret)
 
-  return crypto.subtle.importKey(
-    'raw',
-    keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  )
+  return crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
 }
 
 // HMAC-based token generation
@@ -60,7 +57,7 @@ export async function hmacToken(value: string, key: CryptoKey) {
   const encoder = new TextEncoder()
   const data = encoder.encode(value)
   const signature = await crypto.subtle.sign('HMAC', key, data)
-  
+
   // Convert to base64url (URL-safe)
   const base64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
@@ -75,13 +72,13 @@ export function isBinaryChunk(chunk: Uint8Array): boolean {
 
   for (let i = 0; i < threshold; i++) {
     const byte = chunk[i]
-    
+
     // Null bytes are strong indicators of binary data
     if (byte === 0) {
       nullCount++
       if (nullCount >= 3) return true // Multiple nulls = likely binary
     }
-    
+
     // Control characters (except common whitespace)
     if (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13) {
       controlCount++
@@ -92,7 +89,7 @@ export function isBinaryChunk(chunk: Uint8Array): boolean {
   // Heuristic: if >2% null bytes or >5% control chars, likely binary
   const nullRatio = nullCount / threshold
   const controlRatio = controlCount / threshold
-  
+
   return nullRatio > 0.02 || controlRatio > 0.05
 }
 

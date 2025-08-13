@@ -2,7 +2,8 @@
  * P3-3: A/B testing framework tests
  */
 
-import { describe, it } from 'vitest'
+import { Registry } from '@himorishige/noren-core'
+import { describe, expect, it } from 'vitest'
 import {
   AB_TEST_SCENARIOS,
   type ABTestConfig,
@@ -10,7 +11,6 @@ import {
   type ConfigurationVariant,
 } from '../src/ab-testing.js'
 import { GroundTruthManager } from '../src/evaluation.js'
-import { Registry } from '../src/index.js'
 
 describe('A/B Testing Framework', () => {
   it('should create basic configuration variants', () => {

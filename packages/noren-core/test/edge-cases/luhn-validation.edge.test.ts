@@ -274,7 +274,7 @@ describe('Credit Card Luhn Validation Edge Cases', () => {
 
     // Valid card should be tokenized
     const validResult = await redactText(reg, `Valid: ${validCard}`)
-    expect(validResult).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(validResult).toMatch(/TKN_CREDIT_CARD_[A-Za-z0-9_-]+/)
 
     // Invalid card should not be processed
     const invalidResult = await redactText(reg, `Invalid: ${invalidCard}`)

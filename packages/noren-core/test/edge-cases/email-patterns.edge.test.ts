@@ -228,7 +228,7 @@ describe('Email Pattern Detection Edge Cases', () => {
     const email = 'user@example.com'
     const result = await redactText(reg, `Contact: ${email}`)
 
-    expect(result).toMatch(/TKN_EMAIL_[0-9a-f]{16}/)
+    expect(result).toMatch(/TKN_EMAIL_[A-Za-z0-9_-]+/)
     expect(result).not.toContain(email)
   })
 
@@ -270,8 +270,8 @@ describe('Email Pattern Detection Edge Cases', () => {
     const result2 = await redactText(reg, 'Contact: user2@example.com')
 
     // Extract the token parts
-    const token1 = result1.match(/TKN_EMAIL_([0-9a-f]{16})/)?.[1]
-    const token2 = result2.match(/TKN_EMAIL_([0-9a-f]{16})/)?.[1]
+    const token1 = result1.match(/TKN_EMAIL_([A-Za-z0-9_-]+)/)?.[1]
+    const token2 = result2.match(/TKN_EMAIL_([A-Za-z0-9_-]+)/)?.[1]
 
     expect(token1 && token2).toBeTruthy()
     expect(token1).not.toBe(token2)
