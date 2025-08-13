@@ -93,10 +93,21 @@ globalThis.fetch = async (url, init) => {
 }
 
 // Compile function: converts policy + dictionaries into Registry
-function compile(policy, dicts) {
+function compile(policy, dicts, options = {}) {
   console.log('  📦 Compiling Registry with policy and', dicts.length, 'dictionaries')
 
-  const registry = new Registry(policy)
+  // Enhanced Registry options with new v0.3.0+ features
+  const registryOptions = {
+    ...policy,
+    environment: options.environment ?? 'production',
+    enableConfidenceScoring: options.enableConfidenceScoring ?? true,
+    enableContextualConfidence: options.enableContextualConfidence ?? false,
+    contextualSuppressionEnabled: options.contextualSuppressionEnabled ?? true,
+    contextualBoostEnabled: options.contextualBoostEnabled ?? false,
+    allowDenyConfig: options.allowDenyConfig,
+  }
+
+  const registry = new Registry(registryOptions)
 
   // Add standard plugins first
   registry.use(jp.detectors, jp.maskers, ['TEL', '電話', '〒', '住所'])
@@ -108,28 +119,61 @@ function compile(policy, dicts) {
     const { entries = [] } = dict
     const customDetectors = []
     const customMaskers = {}
+    
+    // Pre-compile patterns for better performance
+    const compiledPatterns = new Map()
 
     for (const entry of entries) {
       if (entry.pattern) {
+        try {
+          // Pre-compile and cache the regex pattern
+          const regex = new RegExp(entry.pattern, 'gi')
+          compiledPatterns.set(entry.type, { regex, entry })
+        } catch (error) {
+          console.warn(`  ⚠️  Invalid pattern: ${entry.pattern}`, error.message)
+          continue
+        }
+
         customDetectors.push({
           id: `custom.${entry.type}`,
-          priority: -1, // Higher priority than built-in detectors
-          match: ({ src, push }) => {
-            try {
-              const regex = new RegExp(entry.pattern, 'gi')
-              for (const m of src.matchAll(regex)) {
-                if (m.index !== undefined) {
-                  push({
-                    type: entry.type,
-                    start: m.index,
-                    end: m.index + m[0].length,
-                    value: m[0],
-                    risk: entry.risk || 'medium',
-                  })
+          // Support configurable priority from dictionary entry
+          priority: entry.priority ?? -1, // Default higher priority than built-in detectors
+          match: ({ src, push, canPush }) => {
+            const compiled = compiledPatterns.get(entry.type)
+            if (!compiled || !canPush?.()) return
+
+            const { regex, entry: dictEntry } = compiled
+            
+            // Reset regex state for each match operation
+            regex.lastIndex = 0
+            
+            for (const m of src.matchAll(regex)) {
+              if (m.index !== undefined) {
+                const hit = {
+                  type: dictEntry.type,
+                  start: m.index,
+                  end: m.index + m[0].length,
+                  value: m[0],
+                  risk: dictEntry.risk || 'medium',
+                  // Add metadata for confidence scoring
+                  features: {
+                    pattern: dictEntry.pattern,
+                    source: 'custom_dictionary',
+                    dictionary_priority: dictEntry.priority,
+                  },
                 }
+                
+                // Basic confidence scoring for dictionary matches
+                if (options.enableConfidenceScoring !== false) {
+                  hit.confidence = calculateDictionaryConfidence(hit, m[0], dictEntry)
+                  hit.reasons = [`Dictionary pattern match: ${dictEntry.pattern}`]
+                }
+                
+                push(hit)
+                
+                // Respect match limits for performance
+                if (!canPush?.()) break
               }
-            } catch (error) {
-              console.warn(`  ⚠️  Invalid pattern: ${entry.pattern}`, error.message)
             }
           },
         })
@@ -154,6 +198,24 @@ function compile(policy, dicts) {
   }
 
   return registry
+}
+
+// Helper function for basic dictionary confidence scoring
+function calculateDictionaryConfidence(hit, matchedText, dictEntry) {
+  let confidence = 0.8 // Base confidence for dictionary matches
+  
+  // Adjust based on pattern complexity
+  if (dictEntry.pattern.length > 20) confidence += 0.1
+  if (dictEntry.pattern.includes('\\d{') || dictEntry.pattern.includes('\\w{')) confidence += 0.05
+  
+  // Adjust based on match length
+  if (matchedText.length >= 8) confidence += 0.05
+  
+  // Risk level adjustments
+  if (dictEntry.risk === 'high') confidence += 0.1
+  else if (dictEntry.risk === 'low') confidence -= 0.1
+  
+  return Math.min(1.0, Math.max(0.0, confidence))
 }
 
 async function main() {

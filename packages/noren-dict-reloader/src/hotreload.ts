@@ -14,7 +14,7 @@ export type ReloaderOptions<TCompiled> = {
   jitter?: number
   onSwap?: (compiled: TCompiled, changed: string[]) => void
   onError?: (err: unknown) => void
-  compile: (policy: unknown, dicts: unknown[]) => TCompiled
+  compile: (policy: unknown, dicts: unknown[], options?: CompileOptions) => TCompiled
   /**
    * Optional custom loader. If provided, it overrides the default HTTP(S) loader.
    * This enables loading from file://, in-memory stores, or custom transports.
@@ -32,6 +32,23 @@ export type ReloaderOptions<TCompiled> = {
    * Maximum number of concurrent dictionary downloads
    */
   maxConcurrent?: number
+  /**
+   * Additional options for Registry compilation
+   */
+  compileOptions?: CompileOptions
+}
+
+export type CompileOptions = {
+  environment?: 'production' | 'test' | 'development'
+  enableConfidenceScoring?: boolean
+  enableContextualConfidence?: boolean
+  contextualSuppressionEnabled?: boolean
+  contextualBoostEnabled?: boolean
+  allowDenyConfig?: {
+    customAllowlist?: Record<string, Set<string>>
+    customDenylist?: Record<string, Set<string>>
+    disableDefaults?: boolean
+  }
 }
 
 export type LoaderResult = { status: 200 | 304; meta: SourceMeta }
@@ -53,11 +70,18 @@ export class PolicyDictReloader<TCompiled> {
       | 'requestTimeoutMs'
       | 'validateUrl'
       | 'maxConcurrent'
+      | 'compileOptions'
     >
   > &
     Pick<
       ReloaderOptions<TCompiled>,
-      'onSwap' | 'onError' | 'compile' | 'requestTimeoutMs' | 'validateUrl' | 'maxConcurrent'
+      | 'onSwap'
+      | 'onError'
+      | 'compile'
+      | 'requestTimeoutMs'
+      | 'validateUrl'
+      | 'maxConcurrent'
+      | 'compileOptions'
     >
   private timer: ReturnType<typeof setTimeout> | null = null
   private running = false
@@ -83,6 +107,7 @@ export class PolicyDictReloader<TCompiled> {
       requestTimeoutMs: opts.requestTimeoutMs,
       validateUrl: opts.validateUrl,
       maxConcurrent: opts.maxConcurrent,
+      compileOptions: opts.compileOptions,
     }
 
     // Create enhanced loader with timeout and validation
@@ -202,7 +227,7 @@ export class PolicyDictReloader<TCompiled> {
       // Compile with available data (may include partial failures)
       const policyRaw = this.policy.json ?? {}
       const dictsRaw = Array.from(this.dicts.values()).map((v) => v.json ?? {})
-      const compiled = this.opts.compile(policyRaw, dictsRaw)
+      const compiled = this.opts.compile(policyRaw, dictsRaw, this.opts.compileOptions)
 
       this.compiled = compiled
       this.opts.onSwap?.(compiled, changed)
