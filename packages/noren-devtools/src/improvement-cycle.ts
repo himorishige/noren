@@ -3,7 +3,7 @@
  * Integrates A/B testing results into systematic configuration improvements
  */
 
-import { Registry } from '@himorishige/noren-core'
+import { type Hit, Registry, type RegistryOptions } from '@himorishige/noren-core'
 import {
   type ABTestConfig,
   ABTestEngine,
@@ -189,7 +189,7 @@ export class VariantGenerator {
             defaultAction: 'mask',
             enableContextualConfidence: false,
             contextHints: ['email'], // Only most essential hint
-          }),
+          } as RegistryOptions),
       },
       {
         id: 'balanced-tuned',
@@ -302,7 +302,7 @@ export class ImprovementCycleEngine {
       const detectionResults: Record<string, DetectionResult[]> = {}
       for (const entry of entries.slice(0, 10)) {
         const result = await registry.detect(entry.text)
-        detectionResults[entry.id] = result.hits.map((hit) => ({
+        detectionResults[entry.id] = result.hits.map((hit: Hit) => ({
           start: hit.start,
           end: hit.end,
           type: hit.type,

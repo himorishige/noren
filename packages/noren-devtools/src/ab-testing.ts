@@ -3,7 +3,7 @@
  * Enables systematic comparison of different PII detection configurations
  */
 
-import { Registry } from '@himorishige/noren-core'
+import { type Hit, Registry, type RegistryOptions } from '@himorishige/noren-core'
 import { type BenchmarkConfig, BenchmarkRunner } from './benchmark.js'
 import {
   type AggregateMetrics,
@@ -851,7 +851,7 @@ export class ABTestEngine {
     for (const entry of entries.slice(0, 10)) {
       // Limit for performance
       const result = await registry.detect(entry.text)
-      detectionResults[entry.id] = result.hits.map((hit) => ({
+      detectionResults[entry.id] = result.hits.map((hit: Hit) => ({
         start: hit.start,
         end: hit.end,
         type: hit.type,
@@ -1083,7 +1083,7 @@ export const AB_TEST_SCENARIOS = {
           new Registry({
             defaultAction: 'mask',
             enableContextualConfidence: false,
-          }),
+          } as RegistryOptions),
       },
       {
         id: 'conservative',
@@ -1095,7 +1095,7 @@ export const AB_TEST_SCENARIOS = {
             enableContextualConfidence: true,
             contextualSuppressionEnabled: true,
             contextualBoostEnabled: false,
-          }),
+          } as RegistryOptions),
       },
       {
         id: 'full',
@@ -1107,7 +1107,7 @@ export const AB_TEST_SCENARIOS = {
             enableContextualConfidence: true,
             contextualSuppressionEnabled: true,
             contextualBoostEnabled: true,
-          }),
+          } as RegistryOptions),
       },
     ],
   },
@@ -1127,7 +1127,7 @@ export const AB_TEST_SCENARIOS = {
             defaultAction: 'mask',
             confidenceThreshold: 0.3,
             enableContextualConfidence: true,
-          }),
+          } as RegistryOptions),
       },
       {
         id: 'medium-threshold',
@@ -1138,7 +1138,7 @@ export const AB_TEST_SCENARIOS = {
             defaultAction: 'mask',
             confidenceThreshold: 0.5,
             enableContextualConfidence: true,
-          }),
+          } as RegistryOptions),
       },
       {
         id: 'high-threshold',
@@ -1149,7 +1149,7 @@ export const AB_TEST_SCENARIOS = {
             defaultAction: 'mask',
             confidenceThreshold: 0.7,
             enableContextualConfidence: true,
-          }),
+          } as RegistryOptions),
       },
     ],
   },
