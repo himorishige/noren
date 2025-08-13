@@ -1,9 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
+    "outDir": "dist"
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "test"]
+  "exclude": ["dist", "test"],
+  "references": [
+    {
+      "path": "../noren-core"
+    }
+  ]
 }

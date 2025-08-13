@@ -3,6 +3,7 @@
  * Enables systematic comparison of different PII detection configurations
  */
 
+import { Registry } from '@himorishige/noren-core'
 import { type BenchmarkConfig, BenchmarkRunner } from './benchmark.js'
 import {
   type AggregateMetrics,
@@ -10,7 +11,6 @@ import {
   EvaluationEngine,
   type GroundTruthManager,
 } from './evaluation.js'
-import { Registry } from './index.js'
 
 /**
  * Configuration variant for A/B testing

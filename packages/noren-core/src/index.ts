@@ -9,10 +9,16 @@ export {
   filterByConfidence,
   meetsConfidenceThreshold,
 } from './confidence.js'
-export { type IPv6ParseResult, parseIPv6 } from './ipv6-parser.js'
+export { extractIPv6Candidates, type IPv6ParseResult, parseIPv6 } from './ipv6-parser.js'
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
-export { HitPool } from './pool.js'
+export {
+  DETECTION_PATTERNS,
+  NORMALIZE_PATTERNS,
+  PATTERN_TYPES,
+  UNIFIED_PATTERN,
+} from './patterns.js'
+export { HitPool, hitPool } from './pool.js'
 export { createRedactionTransform } from './stream-utils.js'
 export type {
   Action,
@@ -24,7 +30,14 @@ export type {
   PiiType,
   Policy,
 } from './types.js'
-export { hmacToken, importHmacKey, isBinaryChunk, normalize } from './utils.js'
+export {
+  hmacToken,
+  importHmacKey,
+  isBinaryChunk,
+  luhn,
+  normalize,
+  SECURITY_LIMITS,
+} from './utils.js'
 
 import { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'
 import { calculateConfidence, filterByConfidence } from './confidence.js'
