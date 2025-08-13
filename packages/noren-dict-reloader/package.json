@@ -1,6 +1,6 @@
 {
   "name": "@himorishige/noren-dict-reloader",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Dynamic dictionary and policy hot-reloading for Noren using ETag-based updates",
   "keywords": [
     "pii",

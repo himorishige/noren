@@ -1,5 +1,16 @@
 # @himorishige/noren-plugin-security
 
+## 0.4.1
+
+### Patch Changes
+
+- [#28](https://github.com/himorishige/noren/pull/28) [`ff172d5`](https://github.com/himorishige/noren/commit/ff172d56bafae63d16b3f6be56b9d1aca6c539c9) Thanks [@himorishige](https://github.com/himorishige)! - enchancement package
+
+- [#29](https://github.com/himorishige/noren/pull/29) [`7f20301`](https://github.com/himorishige/noren/commit/7f203015e8d09d5f9b08a3cabe6eda739295c3a0) Thanks [@himorishige](https://github.com/himorishige)! - release version
+
+- Updated dependencies [[`46420eb`](https://github.com/himorishige/noren/commit/46420eb4a4461a863415a91b8d6289fff2a0b3fb), [`7f20301`](https://github.com/himorishige/noren/commit/7f203015e8d09d5f9b08a3cabe6eda739295c3a0)]:
+  - @himorishige/noren-core@0.4.1
+
 ## 0.3.0
 
 ### Minor Changes
