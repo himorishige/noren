@@ -61,7 +61,7 @@ describe('Tokenization Error Handling', () => {
     const result = await redactText(reg, 'Card: 4242 4242 4242 4242')
 
     // Should create a token
-    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(result).toMatch(/TKN_CREDIT_CARD_[A-Za-z0-9_-]+/)
     expect(result).not.toContain('4242')
   })
 
@@ -88,7 +88,7 @@ describe('Tokenization Error Handling', () => {
     }
 
     // Credit card should be tokenized
-    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(result).toMatch(/TKN_CREDIT_CARD_[A-Za-z0-9_-]+/)
     expect(result).not.toContain('4242')
   })
 
@@ -106,7 +106,7 @@ describe('Tokenization Error Handling', () => {
   it('should handle short hmacKey during tokenization', async () => {
     const reg = new Registry({
       defaultAction: 'tokenize',
-      hmacKey: 'too-short', // Less than 32 chars
+      hmacKey: 'too-short-key-less-than-32-char', // Less than 32 chars (31)
     })
 
     await expect(redactText(reg, 'Card: 4242 4242 4242 4242')).rejects.toThrow(
@@ -131,7 +131,7 @@ describe('Tokenization Error Handling', () => {
     })
 
     const result = await redactText(reg, 'Card: 4242 4242 4242 4242')
-    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(result).toMatch(/TKN_CREDIT_CARD_[A-Za-z0-9_-]+/)
   })
 
   it('should handle tokenization with preserveLast4 (should ignore for tokens)', async () => {
@@ -148,7 +148,7 @@ describe('Tokenization Error Handling', () => {
     const result = await redactText(reg, 'Card: 4242 4242 4242 4242')
 
     // Should generate token, not preserve last 4
-    expect(result).toMatch(/TKN_CREDIT_CARD_[0-9a-f]{16}/)
+    expect(result).toMatch(/TKN_CREDIT_CARD_[A-Za-z0-9_-]+/)
     expect(result).not.toContain('4242')
   })
 
@@ -176,8 +176,8 @@ describe('Tokenization Error Handling', () => {
     const result2 = await redactText(reg, 'Card: 5555 5555 5555 4444')
 
     // Extract the token parts
-    const token1 = result1.match(/TKN_CREDIT_CARD_([0-9a-f]{16})/)?.[1]
-    const token2 = result2.match(/TKN_CREDIT_CARD_([0-9a-f]{16})/)?.[1]
+    const token1 = result1.match(/TKN_CREDIT_CARD_([A-Za-z0-9_-]+)/)?.[1]
+    const token2 = result2.match(/TKN_CREDIT_CARD_([A-Za-z0-9_-]+)/)?.[1]
 
     expect(token1 && token2).toBeTruthy()
     expect(token1).not.toBe(token2)

@@ -13,7 +13,7 @@ describe('HMAC Key Validation', () => {
       '',
       'a',
       'short-key',
-      'this-is-only-31-chars-long-key!', // exactly 31 chars
+      'exactly-31-chars-but-still-shor', // exactly 31 chars
     ]
 
     for (const shortKey of shortKeys) {
@@ -37,6 +37,7 @@ describe('HMAC Key Validation', () => {
     const longKeys = [
       'a'.repeat(33), // 33 chars
       'a'.repeat(64), // 64 chars
+      'a'.repeat(128), // 128 chars
       'this-is-a-very-long-secret-key-with-more-than-32-characters-for-testing', // 73 chars
     ]
 
@@ -75,14 +76,14 @@ describe('HMAC Key Validation', () => {
   })
 
   it('should handle special characters and spaces', async () => {
-    const specialKey = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`' + 'abc!' // 32 chars with special chars
+    const specialKey = '!@#$%^&*()_+-=[]{}|;:,.<>?/12345' // 32 chars with special chars
     const key = await importHmacKey(specialKey)
 
     expect(key instanceof CryptoKey).toBeTruthy()
   })
 
   it('should be consistent with key generation', async () => {
-    const keyString = 'consistent-test-key-for-hmac-generation-32chars'
+    const keyString = 'consistent-test-key-32-characters'
     const key1 = await importHmacKey(keyString)
     const key2 = await importHmacKey(keyString)
 
