@@ -270,7 +270,7 @@ Email: {{user.email}} = user@example.com
           {
             id: 'custom-suppression',
             priority: 100,
-            condition: (features) => features.markers.example_marker_nearby,
+            condition: (features) => features.markers.exampleNearby,
             multiplier: 0.2,
             description: 'Custom strong suppression for examples',
           },

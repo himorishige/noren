@@ -16,9 +16,9 @@ describe('P2 Context Detection', () => {
       }`
 
       const structure = detectDocumentStructure(jsonText)
-      expect(structure.json_like).toBe(true)
-      expect(structure.xml_like).toBe(false)
-      expect(structure.csv_like).toBe(false)
+      expect(structure.jsonLike).toBe(true)
+      expect(structure.xmlLike).toBe(false)
+      expect(structure.csvLike).toBe(false)
     })
 
     it('should detect XML-like structure', () => {
@@ -28,9 +28,9 @@ describe('P2 Context Detection', () => {
       </user>`
 
       const structure = detectDocumentStructure(xmlText)
-      expect(structure.xml_like).toBe(true)
-      expect(structure.json_like).toBe(false)
-      expect(structure.csv_like).toBe(false)
+      expect(structure.xmlLike).toBe(true)
+      expect(structure.jsonLike).toBe(false)
+      expect(structure.csvLike).toBe(false)
     })
 
     it('should detect CSV-like structure', () => {
@@ -39,8 +39,8 @@ John Doe,john@example.com,555-1234
 Jane Smith,jane@example.com,555-5678`
 
       const structure = detectDocumentStructure(csvText)
-      expect(structure.csv_like).toBe(true)
-      expect(structure.header_row).toBe(true)
+      expect(structure.csvLike).toBe(true)
+      expect(structure.headerRow).toBe(true)
     })
 
     it('should detect Markdown-like structure', () => {
@@ -53,8 +53,8 @@ code block here
 \`\`\``
 
       const structure = detectDocumentStructure(markdownText)
-      expect(structure.md_like).toBe(true)
-      expect(structure.code_block).toBe(true)
+      expect(structure.markdownLike).toBe(true)
+      expect(structure.codeBlock).toBe(true)
     })
 
     it('should detect template sections', () => {
@@ -64,7 +64,7 @@ Your email is: {email}
 Visit: \${website}`
 
       const structure = detectDocumentStructure(templateText)
-      expect(structure.template_section).toBe(true)
+      expect(structure.templateSection).toBe(true)
     })
 
     it('should detect log-like structure', () => {
@@ -73,7 +73,7 @@ Visit: \${website}`
 2024-01-15 10:31:15 DEBUG Processing request from 192.168.1.1`
 
       const structure = detectDocumentStructure(logText)
-      expect(structure.log_like).toBe(true)
+      expect(structure.logLike).toBe(true)
     })
   })
 
@@ -83,10 +83,10 @@ Visit: \${website}`
       const position = text.indexOf('user@example.com')
 
       const markers = detectContextMarkers(text, position)
-      expect(markers.example_marker_nearby).toBe(true)
-      expect(markers.test_marker_nearby).toBe(true)
-      expect(markers.marker_language).toBe('en')
-      expect(markers.distance_to_nearest_marker).toBeLessThan(20)
+      expect(markers.exampleNearby).toBe(true)
+      expect(markers.testNearby).toBe(true)
+      expect(markers.markerLanguage).toBe('en')
+      expect(markers.distanceToNearestMarker).toBeLessThan(20)
     })
 
     it('should detect Japanese example markers', () => {
@@ -94,9 +94,9 @@ Visit: \${website}`
       const position = text.indexOf('user@example.com')
 
       const markers = detectContextMarkers(text, position)
-      expect(markers.example_marker_nearby).toBe(true)
-      expect(markers.test_marker_nearby).toBe(true)
-      expect(markers.marker_language).toBe('mixed') // Japanese markers + ASCII email = mixed
+      expect(markers.exampleNearby).toBe(true)
+      expect(markers.testNearby).toBe(true)
+      expect(markers.markerLanguage).toBe('mixed') // Japanese markers + ASCII email = mixed
     })
 
     it('should detect mixed language markers', () => {
@@ -104,10 +104,10 @@ Visit: \${website}`
       const position = text.indexOf('user@example.com')
 
       const markers = detectContextMarkers(text, position)
-      expect(markers.example_marker_nearby).toBe(true)
-      expect(markers.test_marker_nearby).toBe(true)
-      expect(markers.sample_marker_nearby).toBe(true)
-      expect(markers.marker_language).toBe('mixed')
+      expect(markers.exampleNearby).toBe(true)
+      expect(markers.testNearby).toBe(true)
+      expect(markers.sampleNearby).toBe(true)
+      expect(markers.markerLanguage).toBe('mixed')
     })
 
     it('should detect dummy/placeholder markers', () => {
@@ -115,8 +115,8 @@ Visit: \${website}`
       const position = text.indexOf('dummy@fake.com')
 
       const markers = detectContextMarkers(text, position)
-      expect(markers.dummy_marker_nearby).toBe(true)
-      expect(markers.placeholder_marker_nearby).toBe(true)
+      expect(markers.dummyNearby).toBe(true)
+      expect(markers.placeholderNearby).toBe(true)
     })
 
     it('should calculate distance to nearest marker across lines', () => {
@@ -124,8 +124,8 @@ Visit: \${website}`
       const position = text.indexOf('user@company.com')
 
       const markers = detectContextMarkers(text, position)
-      expect(markers.test_marker_nearby).toBe(true)
-      expect(markers.distance_to_nearest_marker).toBeGreaterThan(15)
+      expect(markers.testNearby).toBe(true)
+      expect(markers.distanceToNearestMarker).toBeGreaterThan(15)
     })
 
     it('should detect same-line markers with zero distance', () => {
@@ -133,8 +133,8 @@ Visit: \${website}`
       const position = text.indexOf('user@example.com')
 
       const markers = detectContextMarkers(text, position)
-      expect(markers.example_marker_nearby).toBe(true)
-      expect(markers.distance_to_nearest_marker).toBe(0)
+      expect(markers.exampleNearby).toBe(true)
+      expect(markers.distanceToNearestMarker).toBe(0)
     })
   })
 
@@ -150,9 +150,9 @@ Visit: \${website}`
 
       const features = extractContextFeatures(text, position)
 
-      expect(features.structure.json_like).toBe(true)
-      expect(features.markers.example_marker_nearby).toBe(true)
-      expect(features.markers.test_marker_nearby).toBe(true)
+      expect(features.structure.jsonLike).toBe(true)
+      expect(features.markers.exampleNearby).toBe(true)
+      expect(features.markers.testNearby).toBe(true)
       expect(features.language).toBe('en')
     })
 
@@ -161,7 +161,7 @@ Visit: \${website}`
       const position = text.indexOf('user@example.com')
 
       const features = extractContextFeatures(text, position)
-      expect(features.high_entropy_nearby).toBe(true)
+      expect(features.highEntropyNearby).toBe(true)
     })
 
     it('should detect repetitive patterns', () => {
@@ -169,7 +169,7 @@ Visit: \${website}`
       const position = text.indexOf('user@example.com')
 
       const features = extractContextFeatures(text, position)
-      expect(features.repetition_detected).toBe(true)
+      expect(features.repetitionDetected).toBe(true)
     })
 
     it('should detect Japanese language context', () => {
@@ -188,9 +188,9 @@ const email = 'user@example.com'
       const position = text.indexOf('user@example.com')
 
       const features = extractContextFeatures(text, position)
-      expect(features.structure.code_block).toBe(true)
-      expect(features.structure.md_like).toBe(true)
-      expect(features.markers.example_marker_nearby).toBe(true)
+      expect(features.structure.codeBlock).toBe(true)
+      expect(features.structure.markdownLike).toBe(true)
+      expect(features.markers.exampleNearby).toBe(true)
     })
   })
 
@@ -198,8 +198,8 @@ const email = 'user@example.com'
     it('should handle empty text gracefully', () => {
       const features = extractContextFeatures('', 0)
       expect(features).toBeDefined()
-      expect(features.structure.json_like).toBe(false)
-      expect(features.markers.example_marker_nearby).toBe(false)
+      expect(features.structure.jsonLike).toBe(false)
+      expect(features.markers.exampleNearby).toBe(false)
     })
 
     it('should handle very short text', () => {
@@ -214,10 +214,10 @@ const email = 'user@example.com'
       const position = text.indexOf('user@example.com')
 
       const features = extractContextFeatures(text, position)
-      expect(features.structure.json_like).toBe(false)
-      expect(features.structure.xml_like).toBe(false)
-      expect(features.structure.csv_like).toBe(false)
-      expect(features.structure.md_like).toBe(false)
+      expect(features.structure.jsonLike).toBe(false)
+      expect(features.structure.xmlLike).toBe(false)
+      expect(features.structure.csvLike).toBe(false)
+      expect(features.structure.markdownLike).toBe(false)
     })
 
     it('should be performant with large text samples', () => {
@@ -229,7 +229,7 @@ const email = 'user@example.com'
       const duration = performance.now() - start
 
       expect(features).toBeDefined()
-      expect(features.markers.example_marker_nearby).toBe(true)
+      expect(features.markers.exampleNearby).toBe(true)
       expect(duration).toBeLessThan(50) // Should complete within 50ms
     })
   })

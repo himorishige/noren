@@ -1,4 +1,5 @@
 // Noren DevTools - Development and testing tools for PII detection
+// v0.5.0 Optimized with unified statistical analysis and reporting
 
 export {
   AB_TEST_SCENARIOS,
@@ -9,7 +10,6 @@ export {
   type Recommendation,
   type VariantResult,
 } from './ab-testing.js'
-
 export {
   BENCHMARK_CONFIGS,
   type BenchmarkConfig,
@@ -20,7 +20,6 @@ export {
   type PerformanceResult,
   PrecisionTimer,
 } from './benchmark.js'
-
 export {
   type ContextFeatures,
   type ContextMarkers,
@@ -32,7 +31,6 @@ export {
   type ValidatedDocumentStructure,
   validateDocumentStructure,
 } from './context-detection.js'
-
 export {
   applyContextualConfidence,
   CONSERVATIVE_CONTEXTUAL_CONFIG,
@@ -47,9 +45,10 @@ export {
   DISABLED_CONTEXTUAL_CONFIG,
   visualizeRules,
 } from './contextual-confidence.js'
-
 export {
   type AggregateMetrics,
+  createEmailTestDataset,
+  createSyntheticEntry,
   type DetectionResult as EvaluationDetectionResult,
   type EvaluationConfig,
   EvaluationEngine,
@@ -57,9 +56,7 @@ export {
   type GroundTruthAnnotation,
   type GroundTruthEntry,
   GroundTruthManager,
-  TestDatasetBuilder,
 } from './evaluation.js'
-
 export {
   type ActionableRecommendation,
   type CycleState,
@@ -67,7 +64,6 @@ export {
   ImprovementCycleEngine,
   VariantGenerator,
 } from './improvement-cycle.js'
-
 export {
   type AccuracyMetric,
   type ContextualMetric,
@@ -81,3 +77,6 @@ export {
   type PerformanceMetric,
   setMetricsCollector,
 } from './metrics.js'
+export * from './report-common.js'
+// Common utilities (new in v0.5.0)
+export * from './stats-common.js'
