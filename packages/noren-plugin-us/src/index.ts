@@ -8,22 +8,24 @@ const US_PATTERNS = {
   ssn: /\b(?!000|666|9\d{2})\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b/g,
 }
 
-// Context hints as constants for better performance
+// Context hints as Sets for better performance (O(1) lookup)
 const US_CONTEXTS = {
-  zip: ['Zip', 'ZIP', 'Postal', 'Address'],
-  ssn: ['SSN', 'Social Security'],
+  zip: new Set(['zip', 'ZIP', 'postal', 'address']),
+  ssn: new Set(['SSN', 'social', 'security']),
+  phone: new Set(['phone', 'tel', 'call', 'contact']),
 }
 
 export const detectors: Detector[] = [
   {
     id: 'us.phone',
     match: ({ src, push, hasCtx }: DetectUtils) => {
-      const hasContext = hasCtx(['phone', 'tel', 'call', 'contact'])
+      const hasContext = hasCtx(Array.from(US_CONTEXTS.phone))
 
       for (const m of src.matchAll(US_PATTERNS.phone)) {
-        const confidence = hasContext ? 0.8 : 0.65 // US phones are fairly recognizable
+        if (m.index == null) continue
+        const confidence = hasContext ? 0.8 : 0.65
         push({
-          type: 'us_phone',
+          type: 'phone_us',
           start: m.index,
           end: m.index + m[0].length,
           value: m[0],
@@ -42,15 +44,16 @@ export const detectors: Detector[] = [
   {
     id: 'us.zip',
     match: ({ src, push, hasCtx }: DetectUtils) => {
-      const hasContext = hasCtx(US_CONTEXTS.zip)
+      const hasContext = hasCtx(Array.from(US_CONTEXTS.zip))
       if (!hasContext) return
 
       for (const m of src.matchAll(US_PATTERNS.zip)) {
+        if (m.index == null) continue
         const isExtended = m[0].includes('-')
         const confidence = hasContext ? (isExtended ? 0.85 : 0.75) : 0.5
 
         push({
-          type: 'us_zip',
+          type: 'zip_us',
           start: m.index,
           end: m.index + m[0].length,
           value: m[0],
@@ -70,7 +73,7 @@ export const detectors: Detector[] = [
     id: 'us.ssn',
     priority: -10,
     match: ({ src, push, hasCtx }: DetectUtils) => {
-      const hasContext = hasCtx(US_CONTEXTS.ssn)
+      const hasContext = hasCtx(Array.from(US_CONTEXTS.ssn))
       if (!hasContext) return
 
       for (const m of src.matchAll(US_PATTERNS.ssn)) {
@@ -78,8 +81,9 @@ export const detectors: Detector[] = [
 
         // Only push if basic validation passes or context is very strong
         if (validation.basic || hasContext) {
+          if (m.index == null) continue
           push({
-            type: 'us_ssn',
+            type: 'ssn_us',
             start: m.index,
             end: m.index + m[0].length,
             value: m[0],
@@ -105,7 +109,7 @@ export const detectors: Detector[] = [
 ]
 
 export const maskers: Record<string, Masker> = {
-  us_phone: (h: Hit) => h.value.replace(/\d/g, '•'),
-  us_zip: (h: Hit) => (h.value.length > 5 ? '•••••-••••' : '•••••'),
-  us_ssn: (h: Hit) => `***-**-${h.value.replace(/\D/g, '').slice(-4)}`,
+  phone_us: (h: Hit) => h.value.replace(/\d/g, '•'),
+  zip_us: (h: Hit) => (h.value.length > 5 ? '•••••-••••' : '•••••'),
+  ssn_us: (h: Hit) => `***-**-${h.value.replace(/\D/g, '').slice(-4)}`,
 }

@@ -15,7 +15,6 @@ export type ValidationResult = {
  * @returns Validation result with basic and strict validation levels
  */
 export function validateSSN(input: string): ValidationResult {
-  // Extract only digits
   const digits = input.replace(/[^\d]/g, '')
 
   if (digits.length !== 9) {
@@ -39,33 +38,30 @@ export function validateSSN(input: string): ValidationResult {
   const isValidArea = area !== '000' && area !== '666' && Number(area) < 900
   const isValidGroup = group !== '00'
   const isValidSerial = serial !== '0000'
-
   const basicValid = isValidArea && isValidGroup && isValidSerial
 
-  if (!isValidArea) reasons.push('invalid_area')
-  if (!isValidGroup) reasons.push('invalid_group')
-  if (!isValidSerial) reasons.push('invalid_serial')
-  if (basicValid) reasons.push('basic_rules_valid')
+  if (!basicValid) {
+    if (!isValidArea) reasons.push('invalid_area')
+    if (!isValidGroup) reasons.push('invalid_group')
+    if (!isValidSerial) reasons.push('invalid_serial')
+  } else {
+    reasons.push('basic_rules_valid')
+  }
 
   // Strict validation (additional checks)
   const isNotRepeating = !/^(\d)\1{8}$/.test(digits)
   const isNotSequential = !isSequentialPattern(digits)
-
   const strictValid = basicValid && isNotRepeating && isNotSequential
 
-  if (!isNotRepeating) reasons.push('repeating_digits')
-  if (!isNotSequential) reasons.push('sequential_pattern')
-  if (strictValid) reasons.push('strict_rules_valid')
-
-  // Calculate confidence based on validation level
-  let confidence = 0.0
-  if (basicValid && strictValid) {
-    confidence = 0.9
-  } else if (basicValid) {
-    confidence = 0.75
-  } else {
-    confidence = 0.3
+  if (basicValid && !strictValid) {
+    if (!isNotRepeating) reasons.push('repeating_digits')
+    if (!isNotSequential) reasons.push('sequential_pattern')
+  } else if (strictValid) {
+    reasons.push('strict_rules_valid')
   }
+
+  // Calculate confidence
+  const confidence = strictValid ? 0.9 : basicValid ? 0.75 : 0.3
 
   return {
     valid: basicValid,
@@ -81,21 +77,16 @@ export function validateSSN(input: string): ValidationResult {
  * Check if digits form a sequential pattern (e.g., 123456789, 987654321)
  */
 function isSequentialPattern(digits: string): boolean {
-  // Check ascending sequence
   let isAscending = true
   let isDescending = true
 
-  // 早期終了最適化（PRレビュー指摘事項対応）
+  // Early termination optimization
   for (let i = 1; i < digits.length && (isAscending || isDescending); i++) {
     const current = Number(digits[i])
     const previous = Number(digits[i - 1])
 
-    if (current !== previous + 1) {
-      isAscending = false
-    }
-    if (current !== previous - 1) {
-      isDescending = false
-    }
+    if (current !== previous + 1) isAscending = false
+    if (current !== previous - 1) isDescending = false
   }
 
   return isAscending || isDescending
