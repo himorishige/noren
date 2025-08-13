@@ -106,7 +106,7 @@ export function parseIPv6(address: string): IPv6ParseResult {
 
     // Normalize address (canonical form)
     const normalized = expandedParts.map((p) => p.padStart(4, '0').toLowerCase()).join(':')
-    const fullNormalized = hasIPv4 ? `${normalized}:${ipv4Match![1]}` : normalized
+    const fullNormalized = hasIPv4 && ipv4Match ? `${normalized}:${ipv4Match[1]}` : normalized
 
     // Classify the address
     const classification = classifyIPv6(expandedParts)
@@ -191,22 +191,24 @@ export function extractIPv6Candidates(text: string): string[] {
   const candidates = new Set<string>()
 
   for (const pattern of patterns) {
-    let match: RegExpExecArray | null
     pattern.lastIndex = 0
-    while ((match = pattern.exec(text)) !== null) {
+    let match = pattern.exec(text)
+    while (match !== null) {
       // Remove any leading non-IPv6 characters that were matched for boundary detection
       const candidate = match[0].replace(/^[^0-9a-fA-F:]/, '')
       if (candidate.length > 0) {
         candidates.add(candidate)
       }
+      match = pattern.exec(text)
     }
   }
 
   // Also check for bracketed IPv6 (from URLs)
   const bracketPattern = /\[([0-9a-fA-F:]+)\]/g
-  let match: RegExpExecArray | null
-  while ((match = bracketPattern.exec(text)) !== null) {
-    candidates.add(match[1])
+  let bracketMatch = bracketPattern.exec(text)
+  while (bracketMatch !== null) {
+    candidates.add(bracketMatch[1])
+    bracketMatch = bracketPattern.exec(text)
   }
 
   return Array.from(candidates)

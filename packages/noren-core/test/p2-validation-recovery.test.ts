@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
-  validateDocumentStructure,
   extractValidatedContextFeatures,
-  type ValidatedDocumentStructure
+  validateDocumentStructure,
 } from '../src/context-detection.js'
 import {
   calculateContextualConfidence,
-  DEFAULT_CONTEXTUAL_CONFIG
+  DEFAULT_CONTEXTUAL_CONFIG,
 } from '../src/contextual-confidence.js'
 import type { Hit } from '../src/types.js'
 
@@ -27,9 +26,9 @@ describe('P2-Sprint2: Format Validation and Recovery', () => {
         "email": "user@company.com",
         "active": true
       }`
-      
+
       const result = validateDocumentStructure(validJSON)
-      
+
       expect(result.json_like).toBe(true)
       expect(result.validation.json_confidence).toBeGreaterThan(0.8)
       expect(result.validation.format_errors).toHaveLength(0)
@@ -41,14 +40,16 @@ describe('P2-Sprint2: Format Validation and Recovery', () => {
         "email": 'user@company.com',  // Single quotes
         "active": true,  // Trailing comma
       }`
-      
+
       const result = validateDocumentStructure(malformedJSON)
-      
+
       expect(result.json_like).toBe(true)
       expect(result.validation.json_confidence).toBeLessThan(0.5)
       expect(result.validation.format_errors.length).toBeGreaterThan(0)
       expect(result.validation.recovery_suggestions).toContain('Add quotes around unquoted keys')
-      expect(result.validation.recovery_suggestions).toContain('Replace single quotes with double quotes')
+      expect(result.validation.recovery_suggestions).toContain(
+        'Replace single quotes with double quotes',
+      )
     })
 
     it('should handle mixed content with embedded JSON', () => {
@@ -58,13 +59,15 @@ describe('P2-Sprint2: Format Validation and Recovery', () => {
         And here's malformed JSON:
         {name: "Invalid", 'email': 'bad@format'}
       `
-      
+
       const result = validateDocumentStructure(mixedContent)
-      
+
       expect(result.json_like).toBe(true)
       expect(result.validation.json_confidence).toBeGreaterThan(0.3)
       expect(result.validation.json_confidence).toBeLessThan(0.8)
-      expect(result.validation.recovery_suggestions).toContain('Treat as mixed content with embedded JSON')
+      expect(result.validation.recovery_suggestions).toContain(
+        'Treat as mixed content with embedded JSON',
+      )
     })
   })
 
@@ -76,9 +79,9 @@ describe('P2-Sprint2: Format Validation and Recovery', () => {
           <email>user@company.com</email>
         </user>
       `
-      
+
       const result = validateDocumentStructure(validXML)
-      
+
       expect(result.xml_like).toBe(true)
       expect(result.validation.xml_confidence).toBeGreaterThan(0.8)
       expect(result.validation.format_errors).toHaveLength(0)
@@ -91,13 +94,17 @@ describe('P2-Sprint2: Format Validation and Recovery', () => {
           <email>user@company.com</email>
         <!-- Missing closing </user> tag -->
       `
-      
+
       const result = validateDocumentStructure(malformedXML)
-      
+
       expect(result.xml_like).toBe(true)
       expect(result.validation.xml_confidence).toBeLessThan(0.8)
-      expect(result.validation.format_errors.some(error => error.includes('Unclosed tags'))).toBe(true)
-      expect(result.validation.recovery_suggestions).toContain('Add missing closing tags or treat as HTML fragment')
+      expect(result.validation.format_errors.some((error) => error.includes('Unclosed tags'))).toBe(
+        true,
+      )
+      expect(result.validation.recovery_suggestions).toContain(
+        'Add missing closing tags or treat as HTML fragment',
+      )
     })
 
     it('should handle self-closing tags', () => {
@@ -108,9 +115,9 @@ describe('P2-Sprint2: Format Validation and Recovery', () => {
           <active />
         </user>
       `
-      
+
       const result = validateDocumentStructure(selfClosingXML)
-      
+
       expect(result.xml_like).toBe(true)
       expect(result.validation.xml_confidence).toBeGreaterThan(0.8)
     })
@@ -121,9 +128,9 @@ describe('P2-Sprint2: Format Validation and Recovery', () => {
       const validCSV = `name,email,active
 John Doe,user@company.com,true
 Jane Smith,jane@company.com,false`
-      
+
       const result = validateDocumentStructure(validCSV)
-      
+
       expect(result.csv_like).toBe(true)
       expect(result.validation.csv_confidence).toBeGreaterThan(0.7)
       expect(result.validation.format_errors).toHaveLength(0)
@@ -133,21 +140,23 @@ Jane Smith,jane@company.com,false`
       const inconsistentCSV = `name,email,active
 John Doe;user@company.com,true
 Jane Smith,jane@company.com;false`
-      
+
       const result = validateDocumentStructure(inconsistentCSV)
-      
+
       expect(result.csv_like).toBe(true)
       expect(result.validation.csv_confidence).toBeLessThan(0.7)
-      expect(result.validation.format_errors.some(error => error.includes('Inconsistent delimiter'))).toBe(true)
+      expect(
+        result.validation.format_errors.some((error) => error.includes('Inconsistent delimiter')),
+      ).toBe(true)
     })
 
     it('should handle quoted fields properly', () => {
       const quotedCSV = `name,email,description
 "John Doe",user@company.com,"Software Engineer, Senior Level"
 "Jane Smith","jane@company.com","Product Manager"`
-      
+
       const result = validateDocumentStructure(quotedCSV)
-      
+
       expect(result.csv_like).toBe(true)
       expect(result.validation.csv_confidence).toBeGreaterThan(0.7)
     })
@@ -159,16 +168,21 @@ Jane Smith,jane@company.com;false`
         name: "Example User",  // This triggers example marker
         "email": "user@company.com"
       }`
-      
+
       const position = malformedJSON.indexOf('user@company.com')
       const hit = { ...sampleHit, start: position, end: position + 17 }
-      
-      const result = calculateContextualConfidence(hit, malformedJSON, 0.8, DEFAULT_CONTEXTUAL_CONFIG)
-      
+
+      const result = calculateContextualConfidence(
+        hit,
+        malformedJSON,
+        0.8,
+        DEFAULT_CONTEXTUAL_CONFIG,
+      )
+
       // Should have both JSON-based and recovery-based rules
-      const ruleIds = result.explanations.map(exp => exp.ruleId)
-      expect(ruleIds.some(id => id.includes('json'))).toBe(true)
-      
+      const ruleIds = result.explanations.map((exp) => exp.ruleId)
+      expect(ruleIds.some((id) => id.includes('json'))).toBe(true)
+
       // Recovery rule should provide lighter suppression than normal JSON rule
       expect(result.contextualConfidence).toBeGreaterThan(0.1)
       expect(result.contextualConfidence).toBeLessThan(0.8)
@@ -181,29 +195,29 @@ Jane Smith,jane@company.com;false`
           <email>user@company.com</email>
         </config>
       `
-      
+
       const position = templateXML.indexOf('user@company.com')
       const hit = { ...sampleHit, start: position, end: position + 17 }
-      
+
       const result = calculateContextualConfidence(hit, templateXML, 0.8, DEFAULT_CONTEXTUAL_CONFIG)
-      
+
       // Should detect template section and apply recovery rules
-      const ruleIds = result.explanations.map(exp => exp.ruleId)
-      expect(ruleIds.some(id => id.includes('xml') || id.includes('template'))).toBe(true)
+      const ruleIds = result.explanations.map((exp) => exp.ruleId)
+      expect(ruleIds.some((id) => id.includes('xml') || id.includes('template'))).toBe(true)
     })
 
     it('should handle CSV without proper headers', () => {
       const noHeaderCSV = `Example Data,user@company.com,sample
 Test User,test@company.com,demo`
-      
+
       const position = noHeaderCSV.indexOf('user@company.com')
       const hit = { ...sampleHit, start: position, end: position + 17 }
-      
+
       const result = calculateContextualConfidence(hit, noHeaderCSV, 0.8, DEFAULT_CONTEXTUAL_CONFIG)
-      
+
       // Should apply recovery rules due to no header + example marker
-      const ruleIds = result.explanations.map(exp => exp.ruleId)
-      expect(ruleIds.some(id => id.includes('csv') || id.includes('recovery'))).toBe(true)
+      const ruleIds = result.explanations.map((exp) => exp.ruleId)
+      expect(ruleIds.some((id) => id.includes('csv') || id.includes('recovery'))).toBe(true)
     })
   })
 
@@ -213,9 +227,9 @@ Test User,test@company.com,demo`
         "user": "test@example.com",
         "config": {"enabled": true}
       }`
-      
+
       const features = extractValidatedContextFeatures(jsonContent, 10)
-      
+
       expect(features.structure.json_like).toBe(true)
       expect(features.validatedStructure).toBeDefined()
       expect(features.validatedStructure.validation).toBeDefined()
@@ -226,14 +240,15 @@ Test User,test@company.com,demo`
   describe('Performance with large documents', () => {
     it('should handle large documents efficiently', () => {
       // Create a large document with mixed formats
-      const largeDoc = Array.from({ length: 100 }, (_, i) => 
-        `{"id": ${i}, "email": "user${i}@company.com", "data": "sample"}`
+      const largeDoc = Array.from(
+        { length: 100 },
+        (_, i) => `{"id": ${i}, "email": "user${i}@company.com", "data": "sample"}`,
       ).join('\n')
-      
+
       const start = performance.now()
       const result = validateDocumentStructure(largeDoc)
       const duration = performance.now() - start
-      
+
       expect(result.json_like).toBe(true)
       expect(duration).toBeLessThan(100) // Should complete within 100ms
       expect(result.validation.json_confidence).toBeGreaterThan(0.5)
@@ -243,7 +258,7 @@ Test User,test@company.com,demo`
   describe('Edge cases', () => {
     it('should handle empty documents', () => {
       const result = validateDocumentStructure('')
-      
+
       expect(result.json_like).toBe(false)
       expect(result.xml_like).toBe(false)
       expect(result.csv_like).toBe(false)
@@ -252,7 +267,7 @@ Test User,test@company.com,demo`
 
     it('should handle documents with only whitespace', () => {
       const result = validateDocumentStructure('   \n\t   \n   ')
-      
+
       expect(result.json_like).toBe(false)
       expect(result.xml_like).toBe(false)
       expect(result.csv_like).toBe(false)
@@ -267,13 +282,13 @@ Test User,test@company.com,demo`
         Valid XML: <user><email>xml@company.com</email></user>
         Invalid XML: <unclosed><email>broken@company.com</email>
       `
-      
+
       const result = validateDocumentStructure(mixedDoc)
-      
+
       // Should detect multiple formats
       expect(result.json_like).toBe(true)
       expect(result.xml_like).toBe(true)
-      
+
       // Should have confidence between 0 and 1 for both
       expect(result.validation.json_confidence).toBeGreaterThan(0)
       expect(result.validation.json_confidence).toBeLessThan(1)

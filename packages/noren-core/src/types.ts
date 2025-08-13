@@ -18,7 +18,7 @@ export type Hit = {
   priority?: number
   confidence?: number // 0.0-1.0, added in v0.3.0
   reasons?: string[] // Detection reasoning, added in v0.3.0
-  features?: Record<string, any> // Additional metadata, added in v0.3.0
+  features?: Record<string, unknown> // Additional metadata, added in v0.3.0
 }
 
 export type Action = 'mask' | 'remove' | 'tokenize' | 'ignore'

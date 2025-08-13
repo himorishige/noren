@@ -1,6 +1,25 @@
 // Noren Core - Global PII detection and masking (Web Standards only)
 
+export {
+  AB_TEST_SCENARIOS,
+  type ABTestConfig,
+  ABTestEngine,
+  type ABTestResult,
+  type ConfigurationVariant,
+  type Recommendation,
+  type VariantResult,
+} from './ab-testing.js'
 export { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'
+export {
+  BENCHMARK_CONFIGS,
+  type BenchmarkConfig,
+  BenchmarkRunner,
+  type BenchmarkSummary,
+  BenchmarkTextGenerator,
+  MemoryMonitor,
+  type PerformanceResult,
+  PrecisionTimer,
+} from './benchmark.js'
 export {
   CONFIDENCE_THRESHOLDS,
   type ConfidenceFeatures,
@@ -12,28 +31,59 @@ export {
   type ContextFeatures,
   type ContextMarkers,
   type DocumentStructure,
-  type ValidatedDocumentStructure,
   detectContextMarkers,
   detectDocumentStructure,
   extractContextFeatures,
-  validateDocumentStructure,
   extractValidatedContextFeatures,
+  type ValidatedDocumentStructure,
+  validateDocumentStructure,
 } from './context-detection.js'
 export {
+  applyContextualConfidence,
   CONSERVATIVE_CONTEXTUAL_CONFIG,
-  DEFAULT_CONTEXTUAL_CONFIG,
-  DISABLED_CONTEXTUAL_CONFIG,
-  type ContextualConfig,
   type ContextualConfidenceResult,
+  type ContextualConfig,
   type ContextualExplanation,
   type ContextualRule,
-  applyContextualConfidence,
   calculateContextualConfidence,
   createContextualConfig,
+  DEFAULT_CONTEXTUAL_CONFIG,
+  DISABLED_CONTEXTUAL_CONFIG,
 } from './contextual-confidence.js'
+export {
+  type AggregateMetrics,
+  type DetectionResult as EvaluationDetectionResult,
+  type EvaluationConfig,
+  EvaluationEngine,
+  type EvaluationResult,
+  type GroundTruthAnnotation,
+  type GroundTruthEntry,
+  GroundTruthManager,
+  TestDatasetBuilder,
+} from './evaluation.js'
+export {
+  type ActionableRecommendation,
+  type CycleState,
+  type ImprovementCycleConfig,
+  ImprovementCycleEngine,
+  VariantGenerator,
+} from './improvement-cycle.js'
 export { type IPv6ParseResult, parseIPv6 } from './ipv6-parser.js'
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
+export {
+  type AccuracyMetric,
+  type ContextualMetric,
+  getMetricsCollector,
+  InMemoryMetricsCollector,
+  type MetricEntry,
+  type MetricsCollector,
+  measurePerformance,
+  NOREN_METRICS,
+  NoOpMetricsCollector,
+  type PerformanceMetric,
+  setMetricsCollector,
+} from './metrics.js'
 export { HitPool } from './pool.js'
 export { createRedactionTransform } from './stream-utils.js'
 export type {
@@ -49,32 +99,18 @@ export type {
 export { hmacToken, importHmacKey, isBinaryChunk, normalize } from './utils.js'
 
 import { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'
+import { calculateConfidence, filterByConfidence } from './confidence.js'
 import {
-  CONFIDENCE_THRESHOLDS,
-  type ConfidenceFeatures,
-  calculateConfidence,
-  filterByConfidence,
-} from './confidence.js'
-import { 
-  applyContextualConfidence, 
-  createContextualConfig, 
-  DEFAULT_CONTEXTUAL_CONFIG,
-  DISABLED_CONTEXTUAL_CONFIG,
-  type ContextualConfig 
+  applyContextualConfidence,
+  type ContextualConfig,
+  createContextualConfig,
 } from './contextual-confidence.js'
 import { builtinDetect } from './detection.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'
 import { defaultMask } from './masking.js'
+import { type AccuracyMetric, getMetricsCollector, measurePerformance } from './metrics.js'
 import { hitPool } from './pool.js'
-import type {
-  DetectionSensitivity,
-  Detector,
-  DetectUtils,
-  Hit,
-  Masker,
-  PiiType,
-  Policy,
-} from './types.js'
+import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy } from './types.js'
 import { hmacToken, importHmacKey, normalize, SECURITY_LIMITS } from './utils.js'
 
 // Risk level weights for tiebreaker comparison
@@ -128,7 +164,8 @@ export class Registry {
   private contextualConfig: ContextualConfig
 
   constructor(options: RegistryOptions) {
-    const { environment, allowDenyConfig, enableConfidenceScoring, contextualConfig, ...policy } = options
+    const { environment, allowDenyConfig, enableConfidenceScoring, contextualConfig, ...policy } =
+      options
     this.base = policy
     this.contextHintsSet = new Set(policy.contextHints ?? [])
     this.enableConfidenceScoring = enableConfidenceScoring ?? true
@@ -145,9 +182,9 @@ export class Registry {
       this.contextualConfig = contextualConfig
     } else {
       // Create config from policy flags (backward compatibility)
-      const enabled = policy.enableContextualConfidence ?? false  // Default disabled for safety
+      const enabled = policy.enableContextualConfidence ?? false // Default disabled for safety
       const suppressionEnabled = policy.contextualSuppressionEnabled ?? true
-      const boostEnabled = policy.contextualBoostEnabled ?? false  // Conservative default
+      const boostEnabled = policy.contextualBoostEnabled ?? false // Conservative default
 
       this.contextualConfig = createContextualConfig({
         enabled,
@@ -188,166 +225,197 @@ export class Registry {
     return this.maskers.get(t)
   }
 
-  async detect(raw: string, ctxHints = this.base.contextHints ?? []) {
-    const src = normalize(raw)
-    const hits: Hit[] = []
+  async detect(
+    raw: string,
+    ctxHints = this.base.contextHints ?? [],
+  ): Promise<{ src: string; hits: Hit[] }> {
+    return measurePerformance('detect', async () => {
+      const src = normalize(raw)
+      const hits: Hit[] = []
 
-    // Lazily compute lowercase and hints only when needed to reduce overhead on hot path
-    let srcLower: string | null = null
-    const getSrcLower = () => {
-      if (srcLower === null) {
-        srcLower = src.toLowerCase()
+      // Lazily compute lowercase and hints only when needed to reduce overhead on hot path
+      let srcLower: string | null = null
+      const getSrcLower = () => {
+        if (srcLower === null) {
+          srcLower = src.toLowerCase()
+        }
+        return srcLower
       }
-      return srcLower
-    }
-    let contextCheckCache: boolean | null = null
+      let contextCheckCache: boolean | null = null
 
-    const u: DetectUtils = {
-      src,
-      hasCtx: (ws) => {
-        const hay = getSrcLower()
-        if (!ws) {
-          if (contextCheckCache === null) {
-            const hints = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
-            contextCheckCache = hints.some((w) => hay.includes(w.toLowerCase()))
+      const u: DetectUtils = {
+        src,
+        hasCtx: (ws) => {
+          const hay = getSrcLower()
+          if (!ws) {
+            if (contextCheckCache === null) {
+              const hints = ctxHints.length > 0 ? ctxHints : Array.from(this.contextHintsSet)
+              contextCheckCache = hints.some((w) => hay.includes(w.toLowerCase()))
+            }
+            return contextCheckCache
           }
-          return contextCheckCache
-        }
-        return ws.some((w) => hay.includes(w.toLowerCase()))
-      },
-      push: (h) => {
-        if (hits.length >= SECURITY_LIMITS.maxPatternMatches) return
-        hits.push(h)
-      },
-      canPush: () => hits.length < SECURITY_LIMITS.maxPatternMatches,
-    }
-
-    builtinDetect(u)
-    // Assign default priority for builtin hits that didn't set one
-    for (let i = 0; i < hits.length; i++) {
-      if (hits[i].priority === undefined) hits[i].priority = DEFAULT_BUILTIN_PRIORITY
-    }
-    for (const d of this.detectors) {
-      const originalPush = u.push
-      // Override push to set detector priority if not already set
-      u.push = (hit: Hit) => {
-        if (hit.priority === undefined) {
-          hit.priority = d.priority ?? 0
-        }
-        originalPush(hit)
+          return ws.some((w) => hay.includes(w.toLowerCase()))
+        },
+        push: (h) => {
+          if (hits.length >= SECURITY_LIMITS.maxPatternMatches) return
+          hits.push(h)
+        },
+        canPush: () => hits.length < SECURITY_LIMITS.maxPatternMatches,
       }
-      await d.match(u)
-      // Restore original push
-      u.push = originalPush
-    }
 
-    if (hits.length === 0) return { src, hits: [] }
+      builtinDetect(u)
+      // Assign default priority for builtin hits that didn't set one
+      for (let i = 0; i < hits.length; i++) {
+        if (hits[i].priority === undefined) hits[i].priority = DEFAULT_BUILTIN_PRIORITY
+      }
+      for (const d of this.detectors) {
+        const originalPush = u.push
+        // Override push to set detector priority if not already set
+        u.push = (hit: Hit) => {
+          if (hit.priority === undefined) {
+            hit.priority = d.priority ?? 0
+          }
+          originalPush(hit)
+        }
+        await d.match(u)
+        // Restore original push
+        u.push = originalPush
+      }
 
-    hits.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start))
+      if (hits.length === 0) return { src, hits: [] }
 
-    let writeIndex = 0
-    let currentEnd = -1
+      hits.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start))
 
-    for (let readIndex = 0; readIndex < hits.length; readIndex++) {
-      const currentHit = hits[readIndex]
+      let writeIndex = 0
+      let currentEnd = -1
 
-      if (currentHit.start >= currentEnd) {
-        // No overlap, keep this hit
-        hits[writeIndex] = currentHit
-        currentEnd = currentHit.end
-        writeIndex++
-      } else {
-        // Overlap detected - check if current hit has higher priority
-        const lastAcceptedHit = hits[writeIndex - 1]
-        const currentPriority = currentHit.priority ?? 0
-        const lastPriority = lastAcceptedHit.priority ?? 0
+      for (let readIndex = 0; readIndex < hits.length; readIndex++) {
+        const currentHit = hits[readIndex]
 
-        if (isHigherPriority(currentPriority, lastPriority)) {
-          // Current hit has higher priority, replace the last one
-          const toRelease = lastAcceptedHit
-          hits[writeIndex - 1] = currentHit
+        if (currentHit.start >= currentEnd) {
+          // No overlap, keep this hit
+          hits[writeIndex] = currentHit
           currentEnd = currentHit.end
-          hitPool.releaseOne(toRelease)
-        } else if (currentPriority === lastPriority) {
-          // Same priority - use tiebreaker rules
-          const shouldReplace = resolveSamePriorityConflict(currentHit, lastAcceptedHit)
-          if (shouldReplace) {
+          writeIndex++
+        } else {
+          // Overlap detected - check if current hit has higher priority
+          const lastAcceptedHit = hits[writeIndex - 1]
+          const currentPriority = currentHit.priority ?? 0
+          const lastPriority = lastAcceptedHit.priority ?? 0
+
+          if (isHigherPriority(currentPriority, lastPriority)) {
+            // Current hit has higher priority, replace the last one
             const toRelease = lastAcceptedHit
             hits[writeIndex - 1] = currentHit
             currentEnd = currentHit.end
             hitPool.releaseOne(toRelease)
+          } else if (currentPriority === lastPriority) {
+            // Same priority - use tiebreaker rules
+            const shouldReplace = resolveSamePriorityConflict(currentHit, lastAcceptedHit)
+            if (shouldReplace) {
+              const toRelease = lastAcceptedHit
+              hits[writeIndex - 1] = currentHit
+              currentEnd = currentHit.end
+              hitPool.releaseOne(toRelease)
+            } else {
+              hitPool.releaseOne(currentHit)
+            }
           } else {
+            // Keep the existing hit, discard current one
             hitPool.releaseOne(currentHit)
           }
+        }
+      }
+
+      // Filter hits through allowlist/denylist
+      const filteredHits: Hit[] = []
+      for (let i = 0; i < writeIndex; i++) {
+        const hit = hits[i]
+        // Check if this value should be allowed (not treated as PII)
+        if (!this.allowDenyManager.isAllowed(hit.value, hit.type)) {
+          filteredHits.push(hit)
+        }
+      }
+
+      // Apply confidence scoring if enabled
+      const scoredHits: Hit[] = []
+      for (const hit of filteredHits) {
+        if (this.enableConfidenceScoring) {
+          const confidenceResult = calculateConfidence(hit, src)
+          const scoredHit: Hit = {
+            ...hit,
+            confidence: confidenceResult.confidence,
+            reasons: confidenceResult.reasons,
+            features: confidenceResult.features,
+          }
+
+          // Apply P2 contextual confidence if enabled
+          if (this.contextualConfig.enabled) {
+            applyContextualConfidence(scoredHit, src, this.contextualConfig)
+          }
+
+          scoredHits.push(scoredHit)
         } else {
-          // Keep the existing hit, discard current one
-          hitPool.releaseOne(currentHit)
+          scoredHits.push(hit)
         }
       }
-    }
 
-    // Filter hits through allowlist/denylist
-    const filteredHits: Hit[] = []
-    for (let i = 0; i < writeIndex; i++) {
-      const hit = hits[i]
-      // Check if this value should be allowed (not treated as PII)
-      if (!this.allowDenyManager.isAllowed(hit.value, hit.type)) {
-        filteredHits.push(hit)
-      }
-    }
+      // Apply confidence-based filtering
+      const finalFilteredHits =
+        this.enableConfidenceScoring && this.base.sensitivity
+          ? filterByConfidence(scoredHits, this.base.sensitivity, this.base.confidenceThreshold)
+          : scoredHits
 
-    // Apply confidence scoring if enabled
-    const scoredHits: Hit[] = []
-    for (const hit of filteredHits) {
-      if (this.enableConfidenceScoring) {
-        const confidenceResult = calculateConfidence(hit, src)
-        const scoredHit: Hit = {
-          ...hit,
-          confidence: confidenceResult.confidence,
-          reasons: confidenceResult.reasons,
-          features: confidenceResult.features,
+      // Create clean copies of final hits to avoid pool reference issues
+      const finalHits: Hit[] = new Array(finalFilteredHits.length)
+      for (let i = 0; i < finalFilteredHits.length; i++) {
+        const hit = finalFilteredHits[i]
+        finalHits[i] = {
+          type: hit.type,
+          start: hit.start,
+          end: hit.end,
+          value: hit.value,
+          risk: hit.risk,
+          priority: hit.priority,
+          confidence: hit.confidence,
+          reasons: hit.reasons,
+          features: hit.features,
         }
-        
-        // Apply P2 contextual confidence if enabled
-        if (this.contextualConfig.enabled) {
-          applyContextualConfidence(scoredHit, src, this.contextualConfig)
-        }
-        
-        scoredHits.push(scoredHit)
-      } else {
-        scoredHits.push(hit)
       }
-    }
 
-    // Apply confidence-based filtering
-    const finalFilteredHits =
-      this.enableConfidenceScoring && this.base.sensitivity
-        ? filterByConfidence(scoredHits, this.base.sensitivity, this.base.confidenceThreshold)
-        : scoredHits
-
-    // Create clean copies of final hits to avoid pool reference issues
-    const finalHits: Hit[] = new Array(finalFilteredHits.length)
-    for (let i = 0; i < finalFilteredHits.length; i++) {
-      const hit = finalFilteredHits[i]
-      finalHits[i] = {
-        type: hit.type,
-        start: hit.start,
-        end: hit.end,
-        value: hit.value,
-        risk: hit.risk,
-        priority: hit.priority,
-        confidence: hit.confidence,
-        reasons: hit.reasons,
-        features: hit.features,
+      // Return accepted hit objects to the pool; rejected ones were already released
+      if (writeIndex > 0) {
+        hitPool.releaseRange(hits, writeIndex)
       }
-    }
 
-    // Return accepted hit objects to the pool; rejected ones were already released
-    if (writeIndex > 0) {
-      hitPool.releaseRange(hits, writeIndex)
-    }
+      // Record accuracy metrics
+      const metricsCollector = getMetricsCollector()
+      const accuracyMetric: AccuracyMetric = {
+        hits_detected: finalHits.length,
+      }
+      metricsCollector.recordAccuracy('detect', accuracyMetric, {
+        text_length: src.length.toString(),
+        context_hints_count: ctxHints.length.toString(),
+        detectors_count: this.detectors.length.toString(),
+      })
 
-    return { src, hits: finalHits }
+      // Record PII type breakdown
+      const typeBreakdown = new Map<string, number>()
+      for (const hit of finalHits) {
+        typeBreakdown.set(hit.type, (typeBreakdown.get(hit.type) || 0) + 1)
+      }
+
+      for (const [piiType, count] of typeBreakdown) {
+        metricsCollector.recordMetric({
+          timestamp: Date.now(),
+          name: 'noren.pii_types.detected',
+          value: count,
+          labels: { pii_type: piiType },
+        })
+      }
+
+      return { src, hits: finalHits }
+    })
   }
 }
 

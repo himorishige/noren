@@ -204,7 +204,7 @@ export class AllowDenyManager {
       }
       if (pattern.includes('.') && !pattern.includes('@')) {
         // Domain pattern without @
-        return value.endsWith('@' + pattern) || value.endsWith('.' + pattern)
+        return value.endsWith(`@${pattern}`) || value.endsWith(`.${pattern}`)
       }
       // Full email pattern
       return value === pattern.toLowerCase()

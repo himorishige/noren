@@ -32,7 +32,7 @@ export interface ConfidenceFeatures {
   hasValidFormat: boolean
 
   // Type-specific features
-  typeSpecific: Record<string, any>
+  typeSpecific: Record<string, unknown>
 }
 
 /**
@@ -111,7 +111,7 @@ function extractFeatures(
 /**
  * Get base confidence score for pattern type
  */
-function getBasePatternScore(type: PiiType, value: string): number {
+function getBasePatternScore(type: PiiType, _value: string): number {
   switch (type) {
     case 'email':
       return 0.6 // Email patterns are generally reliable
@@ -178,7 +178,7 @@ function getContextAdjustment(features: ConfidenceFeatures): {
 function getTypeSpecificAdjustment(
   type: PiiType,
   value: string,
-  features: ConfidenceFeatures,
+  _features: ConfidenceFeatures,
 ): {
   adjustment: number
   reasons: string[]
@@ -188,13 +188,13 @@ function getTypeSpecificAdjustment(
 
   switch (type) {
     case 'email':
-      return getEmailConfidenceAdjustment(value, features)
+      return getEmailConfidenceAdjustment(value, _features)
     case 'ipv4':
-      return getIPv4ConfidenceAdjustment(value, features)
+      return getIPv4ConfidenceAdjustment(value, _features)
     case 'ipv6':
-      return getIPv6ConfidenceAdjustment(value, features)
+      return getIPv6ConfidenceAdjustment(value, _features)
     case 'phone_e164':
-      return getPhoneConfidenceAdjustment(value, features)
+      return getPhoneConfidenceAdjustment(value, _features)
     default:
       return { adjustment, reasons }
   }
@@ -205,7 +205,7 @@ function getTypeSpecificAdjustment(
  */
 function getEmailConfidenceAdjustment(
   value: string,
-  features: ConfidenceFeatures,
+  _features: ConfidenceFeatures,
 ): {
   adjustment: number
   reasons: string[]
@@ -249,7 +249,7 @@ function getEmailConfidenceAdjustment(
  */
 function getIPv4ConfidenceAdjustment(
   value: string,
-  features: ConfidenceFeatures,
+  _features: ConfidenceFeatures,
 ): {
   adjustment: number
   reasons: string[]
@@ -292,7 +292,7 @@ function getIPv4ConfidenceAdjustment(
  */
 function getPhoneConfidenceAdjustment(
   value: string,
-  features: ConfidenceFeatures,
+  _features: ConfidenceFeatures,
 ): {
   adjustment: number
   reasons: string[]
@@ -328,7 +328,7 @@ function getPhoneConfidenceAdjustment(
  */
 function getIPv6ConfidenceAdjustment(
   value: string,
-  features: ConfidenceFeatures,
+  _features: ConfidenceFeatures,
 ): {
   adjustment: number
   reasons: string[]
