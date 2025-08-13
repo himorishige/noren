@@ -70,6 +70,11 @@ node examples/dictionary-demo.mjs
 
 # Web server example (requires hono installation)
 node examples/hono-server.mjs
+
+# Development tools examples (requires noren-devtools)
+node examples/benchmark-demo.mjs
+node examples/ab-test-demo.mjs
+node examples/evaluation-demo.mjs
 ```
 
 ### Release Management (Changesets)
@@ -113,28 +118,35 @@ PR Canary releases allow testing specific PR changes before merging, enabling th
 
 ### Monorepo Structure (pnpm workspaces)
 
-The project uses pnpm workspaces with five main packages:
+The project uses pnpm workspaces with six main packages:
 
 1. **@himorishige/noren-core** (`packages/noren-core/`)
    - Core detection logic for global PII types (email, IP, credit card)
    - Registry system for managing detectors and maskers
    - Streaming capabilities using WHATWG Streams
    - HMAC-based tokenization using WebCrypto API
+   - Confidence scoring system for detection accuracy
 
-2. **@himorishige/noren-plugin-jp** (`packages/noren-plugin-jp/`)
+2. **@himorishige/noren-devtools** (`packages/noren-devtools/`)
+   - Advanced development and testing tools
+   - A/B testing, benchmarking, and accuracy evaluation
+   - Performance monitoring and memory analysis
+   - Configuration optimization tools
+
+3. **@himorishige/noren-plugin-jp** (`packages/noren-plugin-jp/`)
    - Japan-specific detectors: phone numbers, postal codes, MyNumber
    - Japanese context hints and masking patterns
 
-3. **@himorishige/noren-plugin-us** (`packages/noren-plugin-us/`)
+4. **@himorishige/noren-plugin-us** (`packages/noren-plugin-us/`)
    - US-specific detectors: phone numbers, ZIP codes, SSN
    - US context hints and masking patterns
 
-4. **@himorishige/noren-plugin-security** (`packages/noren-plugin-security/`)
+5. **@himorishige/noren-plugin-security** (`packages/noren-plugin-security/`)
    - Security-focused detectors: JWT tokens, API keys, HTTP headers, cookies
    - Technical credential detection and masking
    - Cookie allowlist functionality for selective masking
 
-5. **@himorishige/noren-dict-reloader** (`packages/noren-dict-reloader/`)
+6. **@himorishige/noren-dict-reloader** (`packages/noren-dict-reloader/`)
    - ETag-based policy and dictionary hot-reloading
    - Fetch API integration for dynamic updates
 
@@ -166,7 +178,9 @@ The codebase has been optimized for better performance:
 - **Context Hints Set Optimization**: Context hints are managed using `Set` for O(1) lookup performance
 - **Detector Pre-sorting**: Detectors are sorted once during registration instead of on every detection
 - **Type Safety Improvements**: Reduced unsafe type assertions with null-safe helper functions
-- **Security Enhancements**: HMAC keys now require minimum 16-character length
+- **Security Enhancements**: HMAC keys now require minimum 32-character length
+- **Bundle Size Optimization**: 65% smaller bundle size (360KB → 124KB)
+- **Codebase Simplification**: 77% code reduction (8,153 → 1,894 lines)
 
 ### Benchmark Results
 - **Large text processing**: ~1.5ms for 100 PII elements
@@ -188,7 +202,21 @@ Enhanced IPv6 detection using two-phase parser approach:
 - **Address Classification**: Automatic detection of private, loopback, link-local addresses
 - **Performance**: ~0.1ms per candidate with reduced regex complexity
 
-## New Features (v0.3.0)
+## New Features (v0.4.0)
+
+### Development Tools Package (NEW)
+- **@himorishige/noren-devtools**: Professional-grade development and testing tools
+- **A/B Testing**: Scientific configuration comparison
+- **Advanced Benchmarking**: Performance analysis with memory monitoring
+- **Accuracy Evaluation**: Precision/recall metrics with ground truth datasets
+- **Improvement Cycles**: Automated configuration optimization
+
+### Enhanced Core Features
+- **Confidence Scoring System**: Rule-based confidence calculation (0.0-1.0)
+- **Detection Sensitivity Levels**: Preset thresholds (strict/balanced/relaxed)
+- **Simplified API**: Streamlined configuration options
+- **Token Format Upgrade**: Base64URL format for better security
+- **Enhanced HMAC Security**: Increased minimum key length to 32 characters
 
 ### Advanced False Positive Reduction
 - **Environment-aware Configuration**: Automatic exclusion of test patterns in development/test environments
@@ -202,11 +230,6 @@ Enhanced IPv6 detection using two-phase parser approach:
 - **Boundary Detection**: Improved accuracy with proper IPv6 boundary checking
 - **Memory Optimization**: Reduced memory growth in repeated IPv6 operations
 - **Classification Support**: Detect private, documentation, link-local, and unique local addresses
-
-### API Improvements
-- **RegistryOptions Interface**: Extended constructor with environment and allowDenyConfig
-- **Backward Compatibility**: Gradual migration path with deprecation warnings
-- **Type Safety**: Enhanced TypeScript definitions for new features
 
 ## Examples and Use Cases
 
@@ -222,12 +245,14 @@ The `examples/` directory contains comprehensive samples demonstrating various u
 
 ## Development Notes
 
-- The project is in **alpha** status - interfaces may change
+- The project is in **beta** status with stable v0.4.0 release
 - Focus on maintaining Web Standards compatibility
 - Prioritize stream processing capabilities for edge deployment
-- Keep core lightweight, push complexity to plugins when possible
+- Keep core lightweight, push complexity to plugins and devtools when possible
 - All optimizations maintain backward compatibility
-- Benchmark tests are available in `packages/noren-core/test/benchmark.test.ts`
+- Advanced features moved to @himorishige/noren-devtools package
 - Security plugin enables protection of technical credentials (JWT, API keys, cookies)
 - Custom dictionary support allows for company-specific PII patterns
 - ETag-based hot-reloading enables runtime policy updates
+- Confidence scoring provides fine-grained detection control
+- Development tools enable scientific testing and optimization

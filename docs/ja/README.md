@@ -1,13 +1,19 @@
 # Noren (暖簾)
 
-`Noren`は、**Web標準技術をベースに構築された、高速・軽量な個人情報(PII)マスキング＆トークナイズライブラリ**です。
+`Noren`は、**爆速**・**超軽量**・**美しくシンプル**なWeb標準ベースの個人情報(PII)マスキング＆トークナイズライブラリです。
 
-「Noren (暖簾)」は、アプリケーションの入口（エッジ）で個人情報を保護する、高速・軽量なPIIマスキングライブラリです。店の入口にかかる「暖簾」が中の様子を適度に隠すように、Norenはシステム内部にデータが到達する前に、個人情報やAPIキーといった機密情報をストリーム上で瞬時にマスクします。Web標準技術ベースで、あらゆるJS環境で軽快に動作します。
+「Noren (暖簾)」は、アプリケーションのエッジで個人情報を無駄な複雑さなしに保護します。日本の「暖簾」がエレガントなままプライバシーを守るように、Norenは125KB以下のサイズでシステムにデータが到達する前にPIIや機密情報を瞬時にマスクします。
 
 サーバーサイドNode.jsはもちろん、Cloudflare Workersのようなエッジコンピューティング環境や、Deno、Bunなど、Web標準APIをサポートする様々なJavaScriptランタイムで動作するように設計されています。
 
-> **ステータス: アルファ版**
-> 現在開発中のため、APIなどの仕様は将来的に変更される可能性があります。
+> **ステータス: v0.4.0 ベータ版**
+> このリリースはシンプルさとパフォーマンスに焦点を当てています。高度な機能は`@himorishige/noren-devtools`で利用できます。
+
+## 🚀 3つの核心理念
+
+- **⚡ 高速 (FAST)**: 事前コンパイルパターン、最適化アルゴリズム、サブミリ秒検出
+- **🪶 軽量 (LIGHTWEIGHT)**: < 125KBバンドル (v0.3.xから65%小型化)、依存関係なし
+- **✨ シンプル (SIMPLE)**: 一行セットアップ、合理的デフォルト、最小限の設定
 
 ## 主な特長
 
@@ -30,7 +36,8 @@
 
 | パッケージ名                             | 説明                                                               |
 | :--------------------------------------- | :----------------------------------------------------------------- |
-| `@himorishige/noren-core`                | コアAPI。共通のPII（メールアドレス、IPアドレス等）検出、マスキング、トークナイズ機能を提供します。 |
+| `@himorishige/noren-core`                | コアAPI。共通のPII（メールアドレス、IPアドレス等）検出、マスキング、トークナイズ機能、信頼度スコアリングを提供します。 |
+| `@himorishige/noren-devtools`            | 開発ツール。ベンチマーク、A/Bテスト、精度評価、パフォーマンスモニタリング機能を提供します。 |
 | `@himorishige/noren-plugin-jp`           | 日本向けプラグイン。電話番号、郵便番号、マイナンバー等を検出・マスクします。 |
 | `@himorishige/noren-plugin-us`           | 米国向けプラグイン。電話番号、ZIPコード、SSN等を検出・マスクします。 |
 | `@himorishige/noren-plugin-security`     | セキュリティプラグイン。HTTPヘッダー、APIトークン、Cookie等を秘匿化します。 |
@@ -40,36 +47,52 @@
 
 *   Node.js **20.10以上**
 
+## ⚡ まずは試してみよう (30秒セットアップ)
+
+**高速・軽量・シンプル** — すぐに動作確認できます：
+
+```bash
+npm install @himorishige/noren-core
+```
+
+```typescript
+import { Registry, redactText } from '@himorishige/noren-core'
+
+// ⚡ 高速: 一行セットアップ、設定不要
+const registry = new Registry({ defaultAction: 'mask' })
+
+// 🪶 軽量: 瞬時検出、重い処理なし
+const result = await redactText(registry, 'Email: test@example.com, Card: 4242-4242-4242-4242')
+
+// ✨ シンプル: クリーンな出力、期待通りの結果
+console.log(result)
+// 出力: Email: [REDACTED:email], Card: [REDACTED:credit_card]
+```
+
+**これだけ！** 高速検出、軽量フットプリント、シンプルAPI。🚀
+
 ## クイックスタート
 
-1.  **インストール**
-    ```sh
-    pnpm i
-    ```
+### **基本的な使い方**
+```typescript
+import { Registry, redactText } from '@himorishige/noren-core'
+import * as jp from '@himorishige/noren-plugin-jp'
+import * as security from '@himorishige/noren-plugin-security'
+import * as us from '@himorishige/noren-plugin-us'
 
-2.  **ビルド**
-    ```sh
-    pnpm build
-    ```
-
-3.  **基本的な使い方**
-    ```ts
-    import { Registry, redactText } from '@himorishige/noren-core';
-    import * as jp from '@himorishige/noren-plugin-jp';
-    import * as security from '@himorishige/noren-plugin-security';
-    import * as us from '@himorishige/noren-plugin-us';
-
-    // 検出・マスク処理のルールを定義するRegistryを作成
-    const reg = new Registry({
-      defaultAction: 'mask', // デフォルトのアクションはマスク
-      // 特定のPIIタイプに対するルールを個別に設定
-      rules: {
-        credit_card: { action: 'mask', preserveLast4: true }, // クレカは末尾4桁を保持
-        jp_my_number: { action: 'remove' }, // マイナンバーは完全に除去
-      },
-      // 検出精度を上げるためのヒントとなるキーワード
-      contextHints: ['TEL','電話','〒','住所','Zip','Address','SSN','Authorization','Bearer','Cookie']
-    });
+// 検出・マスク処理のルールを定義するRegistryを作成
+const reg = new Registry({
+  defaultAction: 'mask', // デフォルトのアクションはマスク
+  enableConfidenceScoring: true, // v0.4.0: 精度向上の新機能
+  environment: 'production', // 環境に応じた自動調整
+  // 特定のPIIタイプに対するルールを個別に設定
+  rules: {
+    credit_card: { action: 'mask', preserveLast4: true }, // クレカは末尾4桁を保持
+    jp_my_number: { action: 'remove' }, // マイナンバーは完全に除去
+  },
+  // 検出精度を上げるためのヒントとなるキーワード
+  contextHints: ['TEL','電話','〒','住所','Zip','Address','SSN','Authorization','Bearer','Cookie']
+})
 
     // 各国・用途別のプラグインを登録
     reg.use(jp.detectors, jp.maskers);
@@ -79,12 +102,12 @@
     // 処理対象のテキスト
     const input = '〒150-0001 TEL 090-1234-5678 / SSN 123-45-6789 / Card: 4242 4242 4242 4242 / Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature';
 
-    // PIIをマスク・除去（トークナイズする場合はhmacKeyを指定）
-    const out = await redactText(reg, input, { hmacKey: 'this-is-a-secure-key-16plus-chars' });
+// PIIをマスク・除去（トークナイズする場合はhmacKeyを指定）
+const out = await redactText(reg, input)
 
-    console.log(out);
-    // 出力: 〒•••-•••• TEL •••-••••-•••• / SSN •••-••-•••• / Card: **** **** **** 4242 / [REDACTED:AUTH]
-    ```
+console.log(out)
+// 出力: 〒•••-•••• TEL •••-••••-•••• / SSN •••-••-•••• / Card: **** **** **** 4242 / [REDACTED:AUTH]
+```
 
 4.  **本番環境での環境変数利用**
 
@@ -94,10 +117,10 @@
     // .env ファイル:
     // NOREN_HMAC_KEY=your-32-character-or-longer-secret-key-here-for-production
 
-    const reg = new Registry({
-      defaultAction: 'tokenize',
-      hmacKey: process.env.NOREN_HMAC_KEY, // 環境変数から読み込み
-    });
+const reg = new Registry({
+  defaultAction: 'tokenize',
+  hmacKey: process.env.NOREN_HMAC_KEY, // 環境変数から読み込み（最低32文字必要）
+})
 
     const input = 'Email: user@example.com, Card: 4242 4242 4242 4242';
     const out = await redactText(reg, input);

@@ -17,11 +17,12 @@ new Registry(options: RegistryOptions)
 | Property | Type | Description |
 |----------|------|-------------|
 | `defaultAction` | `'mask' \| 'remove' \| 'tokenize'` | Default action for detected PII |
-| `environment` | `'production' \| 'test' \| 'development'` | **New in v0.3.0** - Environment-specific behavior |
-| `allowDenyConfig` | `AllowDenyConfig` | **New in v0.3.0** - Allowlist/denylist configuration |
+| `environment` | `'production' \| 'test' \| 'development'` | Environment-specific behavior |
+| `allowDenyConfig` | `AllowDenyConfig` | Allowlist/denylist configuration |
+| `enableConfidenceScoring` | `boolean` | **New in v0.4.0** - Enable confidence-based filtering |
 | `rules` | `Record<PiiType, Rule>` | Type-specific detection rules |
 | `contextHints` | `string[]` | Keywords for context-aware detection |
-| `hmacKey` | `string` | HMAC key for tokenization (min 16 chars) |
+| `hmacKey` | `string` | HMAC key for tokenization (min 32 chars) |
 
 **AllowDenyConfig**:
 

@@ -9,12 +9,13 @@ The core library of the Noren PII protection suite - designed for **simplicity**
 
 ## ✨ Key Features
 
-- 🚀 **Ultra-lightweight**: < 100KB bundled size
-- ⚡ **High performance**: Optimized patterns and algorithms
+- 🚀 **Ultra-lightweight**: < 125KB bundled size (65% smaller than v0.3.x)
+- ⚡ **High performance**: Pre-compiled patterns and optimized algorithms
 - 🌐 **Web Standards**: Works everywhere (Node.js, Edge, Browsers)
-- 🎯 **Smart detection**: Built-in patterns for common PII types
-- 🔒 **Secure tokenization**: HMAC-based with Web Crypto API
+- 🎯 **Smart detection**: Built-in patterns with confidence scoring
+- 🔒 **Enhanced security**: HMAC-based tokenization with 32-char key requirement
 - 📦 **Zero dependencies**: Pure JavaScript, no external deps
+- 🎚️ **Confidence scoring**: Rule-based detection accuracy control
 
 ## 🚀 Installation
 
@@ -47,6 +48,8 @@ console.log(result)
 ```typescript
 const registry = new Registry({
   defaultAction: 'mask',
+  enableConfidenceScoring: true, // New in v0.4.0
+  environment: 'production',       // Automatic smart defaults
   rules: {
     email: { action: 'mask' },
     credit_card: { action: 'mask', preserveLast4: true },
@@ -64,7 +67,7 @@ const result = await redactText(registry, input)
 ```typescript
 const registry = new Registry({
   defaultAction: 'tokenize',
-  hmacKey: 'your-secure-32-character-key-here-123'
+  hmacKey: 'your-secure-32-character-key-here-123456' // Min 32 chars in v0.4.0
 })
 
 const input = 'User: alice@company.com'

@@ -40,6 +40,8 @@ import * as jpPlugin from '@himorishige/noren-plugin-jp';
 // Initialize the Registry
 const registry = new Registry({
   defaultAction: 'mask',
+  enableConfidenceScoring: true, // v0.4.0: Improved accuracy
+  environment: 'production',
   // Set relevant keywords as hints to improve detection accuracy
   contextHints: ['電話', '住所', '〒', 'マイナンバー'],
 });
