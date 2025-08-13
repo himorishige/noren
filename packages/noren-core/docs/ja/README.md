@@ -6,7 +6,7 @@ Noren PIIマスキングライブラリのコアパッケージです。
 
 ## 主な機能
 
-- **プラグインアーキテクチャ**: `Registry`クラスを通じて、検出器（Detector）とマスカー（Masker）を柔軟に追加・管理できます。
+- **プラグインアーキテクチャ**: `Registry`クラスを通じて、ディテクター（Detector）とマスカー（Masker）を柔軟に追加・管理できます。
 - **豊富なアクション**: 検出されたPIIに対して、`mask`（マスク）、`remove`（除去）、`tokenize`（トークン化）のアクションをルールベースで指定できます。
 - **共通PII検出**: メールアドレス、IPv4/IPv6アドレス、MACアドレス、クレジットカード番号（Luhnアルゴリズムチェック付き）など、世界共通で利用される基本的なPIIを標準で検出します。
 - **Web標準準拠**: WHATWG StreamsやWeb Crypto APIなど、特定のランタイムに依存しないWeb標準技術をベースに構築されています。
@@ -101,7 +101,7 @@ export default async function handler(request) {
 
 ## API概要
 
-- `Registry`: 検出器、マスカー、マスキングポリシーを一元管理する中央クラス。
+- `Registry`: ディテクター、マスカー、マスキングポリシーを一元管理する中央クラス。
 - `redactText(registry, text, policy)`: 指定されたテキストに対して、Registryに登録されたルールに基づき秘匿化処理を実行します。
 - `normalize(text)`: テキストを正規化（NFKC、空白文字の統一など）します。
 - **型定義**: `PiiType`, `Hit`, `Action`, `Policy`, `Detector`, `Masker`など、プラグイン開発に必要な型を提供します。
