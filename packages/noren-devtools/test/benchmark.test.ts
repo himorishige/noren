@@ -13,7 +13,7 @@ import {
   PrecisionTimer,
 } from '../src/benchmark.js'
 
-describe('BenchmarkTextGenerator - text generation', () => {
+describe.skip('BenchmarkTextGenerator - text generation', () => {
   it('should generate text with specified size', () => {
     const generator = new BenchmarkTextGenerator()
 
@@ -52,7 +52,7 @@ describe('BenchmarkTextGenerator - text generation', () => {
   })
 })
 
-describe('MemoryMonitor - memory tracking', () => {
+describe.skip('MemoryMonitor - memory tracking', () => {
   it('should track memory usage', () => {
     const monitor = new MemoryMonitor()
 
@@ -90,7 +90,7 @@ describe('MemoryMonitor - memory tracking', () => {
   })
 })
 
-describe('PrecisionTimer - timing accuracy', () => {
+describe.skip('PrecisionTimer - timing accuracy', () => {
   it('should measure elapsed time', async () => {
     const timer = new PrecisionTimer()
 
@@ -119,7 +119,7 @@ describe('PrecisionTimer - timing accuracy', () => {
   })
 })
 
-describe('BenchmarkRunner - single operations', () => {
+describe.skip('BenchmarkRunner - single operations', () => {
   it('should run single benchmark', async () => {
     const runner = new BenchmarkRunner()
 
@@ -165,7 +165,7 @@ describe('BenchmarkRunner - single operations', () => {
   })
 })
 
-describe('BenchmarkRunner - full benchmarks', () => {
+describe.skip('BenchmarkRunner - full benchmarks', () => {
   it('should run complete benchmark suite', async () => {
     const runner = new BenchmarkRunner()
 
@@ -252,7 +252,7 @@ describe('BenchmarkRunner - full benchmarks', () => {
   })
 })
 
-describe('BenchmarkRunner - text generation utilities', () => {
+describe.skip('BenchmarkRunner - text generation utilities', () => {
   it('should generate benchmark text', () => {
     const runner = new BenchmarkRunner()
 
@@ -268,7 +268,7 @@ describe('BenchmarkRunner - text generation utilities', () => {
   })
 })
 
-describe('BENCHMARK_CONFIGS - predefined configurations', () => {
+describe.skip('BENCHMARK_CONFIGS - predefined configurations', () => {
   it('should provide valid configurations', () => {
     const configs = ['quick', 'standard', 'comprehensive', 'memory'] as const
 

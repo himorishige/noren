@@ -1,45 +1,39 @@
 /**
- * P3-1: Accuracy measurement framework for continuous improvement
- * Provides ground truth management and evaluation metrics
+ * Accuracy measurement framework for PII detection evaluation
+ * Streamlined implementation with unified ground truth management and metrics calculation
  */
 
-/**
- * Ground truth annotation for a piece of text
- */
+import type { Hit, Registry } from '@himorishige/noren-core'
+import { type AccuracyMetrics, createEvaluationReport, printReport } from './report-common.js'
+import { mean } from './stats-common.js'
+
+// ===== Core Interfaces =====
+
 export interface GroundTruthAnnotation {
   start: number
   end: number
   type: string
   value: string
-  confidence?: number // Human annotator confidence (0-1)
+  confidence?: number
   metadata?: {
     annotator?: string
-    timestamp?: number
-    source?: string
     difficulty?: 'easy' | 'medium' | 'hard'
-    context_type?: string
+    source?: string
   }
 }
 
-/**
- * Ground truth dataset entry
- */
 export interface GroundTruthEntry {
   id: string
   text: string
   annotations: GroundTruthAnnotation[]
   metadata?: {
     source?: string
-    domain?: string // email, document, code, etc.
+    domain?: string
     language?: string
     created_at?: number
-    updated_at?: number
   }
 }
 
-/**
- * Detection result for evaluation
- */
 export interface DetectionResult {
   start: number
   end: number
@@ -49,9 +43,6 @@ export interface DetectionResult {
   risk?: string
 }
 
-/**
- * Evaluation result for a single test case
- */
 export interface EvaluationResult {
   entry_id: string
   true_positives: Array<{
@@ -66,25 +57,16 @@ export interface EvaluationResult {
   f1_score: number
 }
 
-/**
- * Aggregate evaluation metrics
- */
 export interface AggregateMetrics {
   total_entries: number
   total_annotations: number
   total_detections: number
-
-  // Counts
   true_positives: number
   false_positives: number
   false_negatives: number
-
-  // Aggregate scores
   precision: number
   recall: number
   f1_score: number
-
-  // Per-type breakdown
   type_metrics: Record<
     string,
     {
@@ -96,8 +78,6 @@ export interface AggregateMetrics {
       f1_score: number
     }
   >
-
-  // Confidence distribution analysis
   confidence_analysis: {
     avg_tp_confidence: number
     avg_fp_confidence: number
@@ -110,135 +90,74 @@ export interface AggregateMetrics {
   }
 }
 
-/**
- * Evaluation configuration
- */
 export interface EvaluationConfig {
-  overlap_threshold: number // Minimum overlap ratio for TP (default: 0.5)
-  type_matching: 'strict' | 'lenient' // Strict: exact match, Lenient: semantic match
-  confidence_threshold?: number // Minimum confidence for detection to count
-  exclude_types?: string[] // Types to exclude from evaluation
+  sample_size?: number
+  overlap_threshold?: number
+  confidence_threshold?: number
+  include_false_positives?: boolean
+  include_false_negatives?: boolean
+  exclude_types?: string[]
 }
 
-/**
- * Ground truth dataset manager
- */
+// ===== Ground Truth Manager =====
+
 export class GroundTruthManager {
-  private entries: Map<string, GroundTruthEntry> = new Map()
+  private entries = new Map<string, GroundTruthEntry>()
 
-  /**
-   * Add a ground truth entry
-   */
   addEntry(entry: GroundTruthEntry): void {
-    // Validate annotations don't overlap
-    const annotations = entry.annotations.sort((a, b) => a.start - b.start)
-    for (let i = 1; i < annotations.length; i++) {
-      if (annotations[i].start < annotations[i - 1].end) {
-        throw new Error(
-          `Overlapping annotations in entry ${entry.id}: positions ${annotations[i - 1].start}-${annotations[i - 1].end} and ${annotations[i].start}-${annotations[i].end}`,
-        )
-      }
-    }
-
     // Validate annotation bounds
-    for (const annotation of annotations) {
+    for (const annotation of entry.annotations) {
       if (
         annotation.start < 0 ||
         annotation.end > entry.text.length ||
         annotation.start >= annotation.end
       ) {
-        throw new Error(
-          `Invalid annotation bounds in entry ${entry.id}: ${annotation.start}-${annotation.end} for text length ${entry.text.length}`,
-        )
+        throw new Error(`Invalid annotation bounds in entry ${entry.id}`)
       }
+    }
 
-      // Validate annotation value matches text
+    // Check for overlapping annotations
+    for (let i = 0; i < entry.annotations.length; i++) {
+      for (let j = i + 1; j < entry.annotations.length; j++) {
+        const annotation1 = entry.annotations[i]
+        const annotation2 = entry.annotations[j]
+
+        if (
+          (annotation1.start < annotation2.end && annotation1.end > annotation2.start) ||
+          (annotation2.start < annotation1.end && annotation2.end > annotation1.start)
+        ) {
+          throw new Error(`Overlapping annotations in entry ${entry.id}`)
+        }
+      }
+    }
+
+    // Validate annotation values
+    for (const annotation of entry.annotations) {
       const actualValue = entry.text.slice(annotation.start, annotation.end)
       if (actualValue !== annotation.value) {
-        throw new Error(
-          `Annotation value mismatch in entry ${entry.id}: expected "${annotation.value}", got "${actualValue}"`,
-        )
+        throw new Error(`Annotation value mismatch in entry ${entry.id}`)
       }
     }
 
     this.entries.set(entry.id, entry)
   }
 
-  /**
-   * Get a ground truth entry by ID
-   */
   getEntry(id: string): GroundTruthEntry | undefined {
     return this.entries.get(id)
   }
 
-  /**
-   * Get all entries
-   */
   getAllEntries(): GroundTruthEntry[] {
     return Array.from(this.entries.values())
   }
 
-  /**
-   * Get entries by metadata filter
-   */
   getEntriesByFilter(filter: (entry: GroundTruthEntry) => boolean): GroundTruthEntry[] {
     return this.getAllEntries().filter(filter)
   }
 
-  /**
-   * Remove an entry
-   */
-  removeEntry(id: string): boolean {
-    return this.entries.delete(id)
+  clear(): void {
+    this.entries.clear()
   }
 
-  /**
-   * Get statistics about the dataset
-   */
-  getDatasetStats(): {
-    total_entries: number
-    total_annotations: number
-    avg_annotations_per_entry: number
-    type_distribution: Record<string, number>
-    domain_distribution: Record<string, number>
-    difficulty_distribution: Record<string, number>
-  } {
-    const entries = this.getAllEntries()
-    const stats = {
-      total_entries: entries.length,
-      total_annotations: 0,
-      avg_annotations_per_entry: 0,
-      type_distribution: {} as Record<string, number>,
-      domain_distribution: {} as Record<string, number>,
-      difficulty_distribution: {} as Record<string, number>,
-    }
-
-    for (const entry of entries) {
-      stats.total_annotations += entry.annotations.length
-
-      // Count domains
-      const domain = entry.metadata?.domain || 'unknown'
-      stats.domain_distribution[domain] = (stats.domain_distribution[domain] || 0) + 1
-
-      // Count types and difficulties
-      for (const annotation of entry.annotations) {
-        stats.type_distribution[annotation.type] =
-          (stats.type_distribution[annotation.type] || 0) + 1
-
-        const difficulty = annotation.metadata?.difficulty || 'unknown'
-        stats.difficulty_distribution[difficulty] =
-          (stats.difficulty_distribution[difficulty] || 0) + 1
-      }
-    }
-
-    stats.avg_annotations_per_entry = stats.total_annotations / Math.max(stats.total_entries, 1)
-
-    return stats
-  }
-
-  /**
-   * Export dataset to JSON
-   */
   exportToJson(): string {
     return JSON.stringify(
       {
@@ -251,66 +170,105 @@ export class GroundTruthManager {
     )
   }
 
-  /**
-   * Import dataset from JSON
-   */
   importFromJson(jsonData: string): void {
     const data = JSON.parse(jsonData)
-
     if (!data.entries || !Array.isArray(data.entries)) {
-      throw new Error('Invalid JSON format: missing or invalid entries array')
+      throw new Error('Invalid JSON format: missing entries array')
     }
 
     for (const entry of data.entries) {
       this.addEntry(entry)
     }
   }
-
-  /**
-   * Clear all entries
-   */
-  clear(): void {
-    this.entries.clear()
-  }
 }
 
-/**
- * Evaluation engine for measuring detection accuracy
- */
+// ===== Evaluation Engine =====
+
 export class EvaluationEngine {
-  private groundTruthManager: GroundTruthManager
-  private config: EvaluationConfig
+  constructor(
+    private groundTruthManager?: GroundTruthManager,
+    private config?: EvaluationConfig,
+  ) {}
 
-  constructor(groundTruthManager: GroundTruthManager, config: Partial<EvaluationConfig> = {}) {
-    this.groundTruthManager = groundTruthManager
-    this.config = {
-      overlap_threshold: 0.5,
-      type_matching: 'strict',
-      ...config,
+  evaluateEntry(
+    entryId: string,
+    detections: DetectionResult[],
+    config?: EvaluationConfig,
+  ): EvaluationResult {
+    if (!this.groundTruthManager) {
+      throw new Error('GroundTruthManager not provided to constructor')
     }
-  }
-
-  /**
-   * Evaluate detection results against ground truth
-   */
-  evaluateEntry(entryId: string, detections: DetectionResult[]): EvaluationResult {
     const entry = this.groundTruthManager.getEntry(entryId)
     if (!entry) {
       throw new Error(`Ground truth entry not found: ${entryId}`)
     }
+    return this.evaluateEntry_internal(entry, detections, { ...this.config, ...config })
+  }
 
-    // Filter detections by confidence threshold if specified
-    const filteredDetections = this.config.confidence_threshold
-      ? detections.filter((d) => d.confidence >= (this.config.confidence_threshold || 0))
+  async evaluateAgainstGroundTruth(
+    registry: Registry,
+    groundTruthManager: GroundTruthManager,
+    config: EvaluationConfig = {},
+  ): Promise<{ aggregate: AggregateMetrics; results: EvaluationResult[] }> {
+    const entries = groundTruthManager.getAllEntries()
+    const sampleSize = Math.min(config.sample_size || entries.length, entries.length)
+    const sampledEntries = entries.slice(0, sampleSize)
+
+    console.log(`🔍 Evaluating ${sampledEntries.length} entries against ground truth...`)
+
+    const results: EvaluationResult[] = []
+
+    for (let i = 0; i < sampledEntries.length; i++) {
+      const entry = sampledEntries[i]
+      console.log(
+        `  Progress: ${(((i + 1) / sampledEntries.length) * 100).toFixed(1)}% (${i + 1}/${sampledEntries.length})`,
+      )
+
+      try {
+        const detections = await registry.detect(entry.text)
+        const detectionResults: DetectionResult[] = detections.hits.map((hit: Hit) => ({
+          start: hit.start,
+          end: hit.end,
+          type: hit.type,
+          value: hit.value,
+          confidence: hit.confidence || 0.5,
+          risk: hit.risk,
+        }))
+
+        const result = this.evaluateEntry_internal(entry, detectionResults, config)
+        results.push(result)
+      } catch (error) {
+        console.warn(`Skipping entry ${entry.id}: ${error}`)
+      }
+    }
+
+    const aggregate = this.aggregateResults(results)
+
+    // Generate report
+    this.printEvaluationReport(aggregate)
+
+    return { aggregate, results }
+  }
+
+  private evaluateEntry_internal(
+    entry: GroundTruthEntry,
+    detections: DetectionResult[],
+    config: EvaluationConfig,
+  ): EvaluationResult {
+    const overlapThreshold = config.overlap_threshold || 0.5
+
+    // Filter detections by confidence threshold
+    const filteredDetections = config.confidence_threshold
+      ? detections.filter((d) => (d.confidence ?? 0) >= (config.confidence_threshold ?? 0))
       : detections
 
     // Filter by excluded types
-    const finalDetections = this.config.exclude_types
-      ? filteredDetections.filter((d) => !this.config.exclude_types?.includes(d.type))
+    const finalDetections = config.exclude_types
+      ? filteredDetections.filter((d) => !config.exclude_types?.includes(d.type))
       : filteredDetections
 
-    const annotations = this.config.exclude_types
-      ? entry.annotations.filter((a) => !this.config.exclude_types?.includes(a.type))
+    const annotations = config.exclude_types
+      ? entry.annotations.filter((a) => !config.exclude_types?.includes(a.type))
       : entry.annotations
 
     const truePositives: EvaluationResult['true_positives'] = []
@@ -327,10 +285,7 @@ export class EvaluationEngine {
         if (matchedAnnotations.has(i)) continue
 
         const overlap = this.calculateOverlap(detection, annotation)
-        if (
-          overlap >= this.config.overlap_threshold &&
-          this.typesMatch(detection.type, annotation.type)
-        ) {
+        if (overlap >= overlapThreshold && detection.type === annotation.type) {
           if (!bestMatch || overlap > bestMatch.overlap) {
             bestMatch = { annotation, index: i, overlap }
           }
@@ -362,7 +317,7 @@ export class EvaluationEngine {
     const f1_score = (2 * (precision * recall)) / Math.max(precision + recall, 1)
 
     return {
-      entry_id: entryId,
+      entry_id: entry.id,
       true_positives: truePositives,
       false_positives: falsePositives,
       false_negatives: falseNegatives,
@@ -372,74 +327,37 @@ export class EvaluationEngine {
     }
   }
 
-  /**
-   * Evaluate multiple entries and return aggregate metrics
-   */
-  evaluateDataset(detectionResults: Record<string, DetectionResult[]>): AggregateMetrics {
-    const results: EvaluationResult[] = []
-
-    for (const [entryId, detections] of Object.entries(detectionResults)) {
-      try {
-        const result = this.evaluateEntry(entryId, detections)
-        results.push(result)
-      } catch (error) {
-        console.warn(`Skipping entry ${entryId}: ${error}`)
-      }
-    }
-
-    return this.aggregateResults(results)
-  }
-
-  /**
-   * Aggregate individual evaluation results
-   */
   private aggregateResults(results: EvaluationResult[]): AggregateMetrics {
     let totalTP = 0
     let totalFP = 0
     let totalFN = 0
-    let totalDetections = 0
-    let totalAnnotations = 0
 
     const typeMetrics: Record<string, { tp: number; fp: number; fn: number }> = {}
-    const confidenceData: { tp_confidences: number[]; fp_confidences: number[] } = {
-      tp_confidences: [],
-      fp_confidences: [],
-    }
+    const tpConfidences: number[] = []
+    const fpConfidences: number[] = []
 
     for (const result of results) {
-      const tp = result.true_positives.length
-      const fp = result.false_positives.length
-      const fn = result.false_negatives.length
+      totalTP += result.true_positives.length
+      totalFP += result.false_positives.length
+      totalFN += result.false_negatives.length
 
-      totalTP += tp
-      totalFP += fp
-      totalFN += fn
-      totalDetections += tp + fp
-      totalAnnotations += tp + fn
-
-      // Collect confidence data
-      for (const tpResult of result.true_positives) {
-        confidenceData.tp_confidences.push(tpResult.detected.confidence)
-      }
-      for (const fpResult of result.false_positives) {
-        confidenceData.fp_confidences.push(fpResult.confidence)
-      }
-
-      // Per-type metrics
-      for (const tpResult of result.true_positives) {
-        const type = tpResult.ground_truth.type
+      // Collect confidence data and per-type metrics
+      for (const tp of result.true_positives) {
+        tpConfidences.push(tp.detected.confidence)
+        const type = tp.ground_truth.type
         if (!typeMetrics[type]) typeMetrics[type] = { tp: 0, fp: 0, fn: 0 }
         typeMetrics[type].tp++
       }
 
-      for (const fpResult of result.false_positives) {
-        const type = fpResult.type
+      for (const fp of result.false_positives) {
+        fpConfidences.push(fp.confidence)
+        const type = fp.type
         if (!typeMetrics[type]) typeMetrics[type] = { tp: 0, fp: 0, fn: 0 }
         typeMetrics[type].fp++
       }
 
-      for (const fnResult of result.false_negatives) {
-        const type = fnResult.type
+      for (const fn of result.false_negatives) {
+        const type = fn.type
         if (!typeMetrics[type]) typeMetrics[type] = { tp: 0, fp: 0, fn: 0 }
         typeMetrics[type].fn++
       }
@@ -467,20 +385,11 @@ export class EvaluationEngine {
       }
     }
 
-    // Confidence analysis
-    const avgTPConfidence =
-      confidenceData.tp_confidences.length > 0
-        ? confidenceData.tp_confidences.reduce((a, b) => a + b, 0) /
-          confidenceData.tp_confidences.length
-        : 0
+    // Confidence analysis using mean from stats-common
+    const avgTPConfidence = tpConfidences.length > 0 ? mean(tpConfidences) : 0
+    const avgFPConfidence = fpConfidences.length > 0 ? mean(fpConfidences) : 0
 
-    const avgFPConfidence =
-      confidenceData.fp_confidences.length > 0
-        ? confidenceData.fp_confidences.reduce((a, b) => a + b, 0) /
-          confidenceData.fp_confidences.length
-        : 0
-
-    // Confidence buckets (0-0.5, 0.5-0.7, 0.7-0.9, 0.9-1.0)
+    // Confidence buckets
     const buckets = [
       { range: '0.0-0.5', tp: 0, fp: 0, precision: 0 },
       { range: '0.5-0.7', tp: 0, fp: 0, precision: 0 },
@@ -488,12 +397,12 @@ export class EvaluationEngine {
       { range: '0.9-1.0', tp: 0, fp: 0, precision: 0 },
     ]
 
-    for (const conf of confidenceData.tp_confidences) {
+    for (const conf of tpConfidences) {
       const bucketIndex = conf < 0.5 ? 0 : conf < 0.7 ? 1 : conf < 0.9 ? 2 : 3
       buckets[bucketIndex].tp++
     }
 
-    for (const conf of confidenceData.fp_confidences) {
+    for (const conf of fpConfidences) {
       const bucketIndex = conf < 0.5 ? 0 : conf < 0.7 ? 1 : conf < 0.9 ? 2 : 3
       buckets[bucketIndex].fp++
     }
@@ -504,8 +413,8 @@ export class EvaluationEngine {
 
     return {
       total_entries: results.length,
-      total_annotations: totalAnnotations,
-      total_detections: totalDetections,
+      total_annotations: totalTP + totalFN,
+      total_detections: totalTP + totalFP,
       true_positives: totalTP,
       false_positives: totalFP,
       false_negatives: totalFN,
@@ -521,9 +430,6 @@ export class EvaluationEngine {
     }
   }
 
-  /**
-   * Calculate overlap ratio between detection and annotation
-   */
   private calculateOverlap(detection: DetectionResult, annotation: GroundTruthAnnotation): number {
     const overlapStart = Math.max(detection.start, annotation.start)
     const overlapEnd = Math.min(detection.end, annotation.end)
@@ -539,69 +445,122 @@ export class EvaluationEngine {
     return overlapLength / unionLength
   }
 
-  /**
-   * Check if detection type matches annotation type
-   */
-  private typesMatch(detectionType: string, annotationType: string): boolean {
-    if (this.config.type_matching === 'strict') {
-      return detectionType === annotationType
-    } else {
-      // Lenient matching - could implement semantic matching logic here
-      // For now, just do exact matching
-      return detectionType === annotationType
+  private printEvaluationReport(metrics: AggregateMetrics): void {
+    const accuracyMetrics: AccuracyMetrics = {
+      precision: metrics.precision,
+      recall: metrics.recall,
+      f1Score: metrics.f1_score,
+      truePositives: metrics.true_positives,
+      falsePositives: metrics.false_positives,
+      falseNegatives: metrics.false_negatives,
     }
+
+    const report = createEvaluationReport('PII Detection Evaluation', accuracyMetrics)
+    printReport(report)
   }
 }
 
-/**
- * Utility functions for creating test datasets
- * @note Using class with static methods for logical grouping of dataset creation utilities
- */
-// biome-ignore lint/complexity/noStaticOnlyClass: Logical grouping of dataset builder utilities
-export class TestDatasetBuilder {
-  static createSyntheticEntry(
-    id: string,
-    patterns: Array<{ type: string; pattern: string }>,
-  ): GroundTruthEntry {
-    let text = `This is a test document (ID: ${id}) with various PII patterns: `
-    const annotations: GroundTruthAnnotation[] = []
+// ===== Test Dataset Builder =====
 
-    for (let i = 0; i < patterns.length; i++) {
-      const { type, pattern } = patterns[i]
-      const start = text.length
-      text += pattern
-      const end = text.length
+export function createSyntheticEntry(
+  id: string,
+  patterns: Array<{ type: string; pattern: string }>,
+): GroundTruthEntry {
+  let text = `This is a test document (ID: ${id}) with PII patterns: `
+  const annotations: GroundTruthAnnotation[] = []
 
-      annotations.push({
-        start,
-        end,
-        type,
-        value: pattern,
-        confidence: 1.0,
-        metadata: {
-          annotator: 'synthetic',
-          timestamp: Date.now(),
-          difficulty: 'medium',
-        },
-      })
+  for (let i = 0; i < patterns.length; i++) {
+    const { type, pattern } = patterns[i]
+    const start = text.length
+    text += pattern
+    const end = text.length
 
-      if (i < patterns.length - 1) {
-        text += ', '
-      }
-    }
-
-    text += '. End of test document.'
-
-    return {
-      id,
-      text,
-      annotations,
+    annotations.push({
+      start,
+      end,
+      type,
+      value: pattern,
+      confidence: 1.0,
       metadata: {
-        source: 'synthetic',
-        domain: 'test',
+        annotator: 'synthetic',
+        difficulty: 'medium',
+      },
+    })
+
+    if (i < patterns.length - 1) {
+      text += ', '
+    }
+  }
+
+  text += '. End of test document.'
+
+  return {
+    id,
+    text,
+    annotations,
+    metadata: {
+      source: 'synthetic',
+      domain: 'test',
+      language: 'en',
+      created_at: Date.now(),
+    },
+  }
+}
+
+export function createEmailTestDataset(): GroundTruthManager {
+  const manager = new GroundTruthManager()
+
+  const testEntries = [
+    {
+      id: 'email_test_1',
+      text: 'Please contact john.doe@company.com for more information.',
+      annotations: [
+        {
+          start: 15,
+          end: 37,
+          type: 'email',
+          value: 'john.doe@company.com',
+          confidence: 1.0,
+        },
+      ],
+    },
+    {
+      id: 'email_test_2',
+      text: 'Send reports to admin@example.org and backup@test.co.jp',
+      annotations: [
+        {
+          start: 16,
+          end: 33,
+          type: 'email',
+          value: 'admin@example.org',
+          confidence: 1.0,
+        },
+        {
+          start: 38,
+          end: 56,
+          type: 'email',
+          value: 'backup@test.co.jp',
+          confidence: 1.0,
+        },
+      ],
+    },
+  ]
+
+  for (const entry of testEntries) {
+    manager.addEntry({
+      ...entry,
+      annotations: entry.annotations.map((a) => ({
+        ...a,
+        metadata: { annotator: 'test', difficulty: 'easy' as const },
+      })),
+      metadata: {
+        source: 'test',
+        domain: 'email',
         language: 'en',
         created_at: Date.now(),
       },
-    }
+    })
   }
+
+  return manager
 }

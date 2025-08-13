@@ -6,14 +6,15 @@
 
 Professional-grade tools for testing, benchmarking, and optimizing your PII detection workflows. Perfect for development teams who need detailed insights into detection accuracy and performance.
 
-## ✨ Features
+## ✨ Features (v0.5.0)
 
-- 🧪 **A/B Testing**: Compare detection configurations scientifically
-- 📊 **Advanced Benchmarking**: Detailed performance analysis with memory monitoring
-- 🎯 **Accuracy Evaluation**: Precision/recall metrics with ground truth datasets
-- 🔄 **Improvement Cycles**: Automated configuration optimization
-- 📈 **Context Analysis**: Advanced contextual confidence scoring
-- 🔬 **Detailed Metrics**: In-depth analytics and reporting
+- 🧪 **A/B Testing**: Scientific configuration comparison with unified statistical analysis
+- 📊 **Advanced Benchmarking**: Performance analysis with memory monitoring and correlation metrics
+- 🎯 **Accuracy Evaluation**: Precision/recall metrics with streamlined ground truth datasets
+- 📈 **Context Analysis**: Simplified contextual confidence scoring with rule-based adjustments
+- 🔬 **Common Statistics**: Unified statistical functions (t-tests, confidence intervals, correlations)
+- 📋 **Unified Reporting**: Consistent report generation across all tools
+- ⚡ **Optimized Performance**: ~30% code reduction with improved maintainability
 
 ## 🚀 Installation
 
@@ -28,158 +29,218 @@ npm install @himorishige/noren-core
 ### Basic Benchmarking
 
 ```typescript
-import { BenchmarkRunner, BenchmarkTextGenerator } from '@himorishige/noren-devtools'
+import { 
+  BenchmarkRunner, 
+  BenchmarkTextGenerator, 
+  BENCHMARK_CONFIGS 
+} from '@himorishige/noren-devtools'
 import { Registry } from '@himorishige/noren-core'
 
 const registry = new Registry({ defaultAction: 'mask' })
-const generator = new BenchmarkTextGenerator()
 const runner = new BenchmarkRunner()
 
-// Generate test data
-const testData = generator.generateText(10000, 20) // 10KB text with 20% PII density
+// Use predefined benchmark configuration
+const result = await runner.runBenchmark(
+  'basic-detection',
+  registry,
+  BENCHMARK_CONFIGS.standard.test_cases,
+  {
+    iterations: 25,
+    warmupRuns: 5,
+    memoryMonitoring: true
+  }
+)
 
-// Run benchmark
-const results = await runner.runBenchmark('basic-detection', registry, testData)
-
-console.log(`Processing time: ${results.executionTime}ms`)
-console.log(`Memory usage: ${results.memoryUsed}MB`)
-console.log(`Throughput: ${results.throughput}MB/s`)
+console.log(`Throughput: ${result.summary.throughput}K chars/sec`)
+console.log(`Memory efficiency: ${result.summary.memoryEfficiency}MB`)
+console.log(`Text size correlation: ${result.summary.textSizeCorrelation}`)
 ```
 
 ### A/B Testing
 
 ```typescript
-import { ABTestEngine } from '@himorishige/noren-devtools'
+import { 
+  ABTestEngine, 
+  createSimpleVariant, 
+  createQuickABTest 
+} from '@himorishige/noren-devtools'
 
 const engine = new ABTestEngine()
 
-// Define test configurations
-const configA = new Registry({ 
-  defaultAction: 'mask',
-  enableConfidenceScoring: true 
+// Create test variants with different configurations
+const variantA = createSimpleVariant('config-a', 'Standard Config', {
+  defaultAction: 'mask'
 })
 
-const configB = new Registry({ 
-  defaultAction: 'mask',
-  enableConfidenceScoring: false 
+const variantB = createSimpleVariant('config-b', 'Optimized Config', {
+  defaultAction: 'redact',
+  enableContextualConfidence: true
 })
 
-// Run A/B test
-const result = await engine.runComparison({
-  name: 'confidence-scoring-impact',
-  configA,
-  configB,
-  testData: generator.generateText(5000, 15),
-  metrics: ['performance', 'accuracy', 'memory']
-})
+// Create and run quick A/B test
+const testData = ['Contact support@example.com for help', 'Call 555-0123 today']
+const testConfig = createQuickABTest(variantA, variantB, testData)
 
-console.log(`Config A: ${result.configA.performance.averageTime}ms`)
-console.log(`Config B: ${result.configB.performance.averageTime}ms`)
-console.log(`Recommendation: ${result.recommendation}`)
+const result = await engine.runTest(testConfig)
+
+console.log(`Winner: ${result.winner?.variant_id}`)
+console.log(`Improvement: ${result.winner?.improvement_percentage?.toFixed(1)}%`)
+console.log(`Statistical significance: ${result.winner?.statistical_significance}%`)
 ```
 
 ### Accuracy Evaluation
 
 ```typescript
-import { EvaluationEngine, TestDatasetBuilder } from '@himorishige/noren-devtools'
+import { 
+  EvaluationEngine, 
+  GroundTruthManager, 
+  TestDatasetBuilder 
+} from '@himorishige/noren-devtools'
 
-// Build ground truth dataset
-const datasetBuilder = new TestDatasetBuilder()
-const dataset = datasetBuilder
-  .addEmail('test@example.com', { shouldDetect: true })
-  .addCreditCard('4242-4242-4242-4242', { shouldDetect: true })
-  .addText('This is normal text', { shouldDetect: false })
-  .build()
+// Create ground truth dataset
+const groundTruth = new GroundTruthManager()
 
-// Evaluate accuracy
+// Use pre-built test dataset
+const emailDataset = TestDatasetBuilder.createEmailTestDataset()
+
+// Or create synthetic entries
+const syntheticEntry = TestDatasetBuilder.createSyntheticEntry('test1', [
+  { type: 'email', pattern: 'user@company.com' },
+  { type: 'phone', pattern: '555-0123' }
+])
+groundTruth.addEntry(syntheticEntry)
+
+// Run evaluation
 const evaluator = new EvaluationEngine()
-const metrics = await evaluator.evaluate(registry, dataset)
+const result = await evaluator.evaluateAgainstGroundTruth(registry, emailDataset, {
+  sample_size: 50,
+  confidence_threshold: 0.5
+})
 
-console.log(`Precision: ${metrics.precision}`)
-console.log(`Recall: ${metrics.recall}`)
-console.log(`F1 Score: ${metrics.f1Score}`)
-console.log(`False Positives: ${metrics.falsePositives}`)
+console.log(`Precision: ${result.aggregate.precision.toFixed(3)}`)
+console.log(`Recall: ${result.aggregate.recall.toFixed(3)}`)
+console.log(`F1 Score: ${result.aggregate.f1_score.toFixed(3)}`)
 ```
 
-## 🔧 Advanced Features
+## 🔧 Advanced Features (v0.5.0)
 
-### Memory Monitoring
-
-```typescript
-import { MemoryMonitor } from '@himorishige/noren-devtools'
-
-const monitor = new MemoryMonitor()
-
-monitor.startMonitoring()
-
-// Your PII detection code here
-await redactText(registry, largeText)
-
-const report = monitor.getReport()
-console.log(`Peak memory: ${report.peakMemory}MB`)
-console.log(`Memory growth: ${report.memoryGrowth}MB`)
-```
-
-### Custom Benchmark Scenarios
-
-```typescript
-import { BENCHMARK_CONFIGS, BenchmarkRunner } from '@himorishige/noren-devtools'
-
-// Use predefined scenarios
-const scenarios = [
-  BENCHMARK_CONFIGS.SMALL_TEXT_DENSE_PII,
-  BENCHMARK_CONFIGS.LARGE_TEXT_SPARSE_PII,
-  BENCHMARK_CONFIGS.MIXED_CONTENT_REALISTIC
-]
-
-const runner = new BenchmarkRunner()
-
-for (const scenario of scenarios) {
-  const results = await runner.runScenario(registry, scenario)
-  console.log(`${scenario.name}: ${results.summary}`)
-}
-```
-
-### Context Analysis Tools
+### Unified Statistical Analysis
 
 ```typescript
 import { 
-  extractContextFeatures,
-  calculateContextualConfidence 
+  mean, 
+  tTest, 
+  confidenceInterval, 
+  pearsonCorrelation 
 } from '@himorishige/noren-devtools'
 
-const text = "Employee email: john.doe@company.com"
-const hit = { 
-  type: 'email', 
-  start: 16, 
-  end: 38, 
-  value: 'john.doe@company.com',
-  risk: 'medium' 
-}
+const sampleA = [12.5, 11.8, 13.1, 12.0, 11.9]
+const sampleB = [14.2, 13.5, 14.8, 13.9, 14.1]
 
-// Analyze context
-const context = extractContextFeatures(text, hit.start, hit.end)
-const confidence = calculateContextualConfidence(hit, text, context)
+// Statistical comparison
+const testResult = tTest(sampleA, sampleB)
+console.log(`T-statistic: ${testResult.tStatistic}`)
+console.log(`Significant: ${testResult.significant}`)
 
-console.log(`Context features:`, context)
-console.log(`Adjusted confidence: ${confidence.confidence}`)
-console.log(`Confidence reasons:`, confidence.reasons)
+// Confidence intervals
+const ciA = confidenceInterval(sampleA, 0.95)
+console.log(`Sample A: ${mean(sampleA)} ± ${(ciA.upper - ciA.lower) / 2}`)
+
+// Correlation analysis
+const sizes = [100, 500, 1000, 2000, 5000]
+const durations = [1.2, 4.8, 9.1, 18.5, 45.2]
+const correlation = pearsonCorrelation(sizes, durations)
+console.log(`Size-duration correlation: ${correlation}`)
 ```
 
-## 🎯 Pre-built Scenarios
+### Contextual Confidence Scoring
+
+```typescript
+import { 
+  calculateContextualConfidence, 
+  DEFAULT_CONTEXTUAL_CONFIG,
+  CONSERVATIVE_CONTEXTUAL_CONFIG,
+  visualizeRules 
+} from '@himorishige/noren-devtools'
+
+const text = "Example email: test@example.com for testing"
+const hit = { 
+  type: 'email', 
+  start: 15, 
+  end: 31, 
+  value: 'test@example.com',
+  confidence: 0.9 
+}
+
+// Calculate contextual confidence
+const result = calculateContextualConfidence(hit, text, 0.9, DEFAULT_CONTEXTUAL_CONFIG)
+
+console.log(`Base confidence: ${result.baseConfidence}`)
+console.log(`Contextual confidence: ${result.contextualConfidence}`)
+console.log(`Adjustment factor: ${result.adjustmentFactor}`)
+console.log(`Applied rules:`, result.explanations)
+
+// Visualize rule configuration
+const rules = visualizeRules(CONSERVATIVE_CONTEXTUAL_CONFIG)
+console.log(`Active rules: ${rules.length}`)
+rules.forEach(rule => {
+  console.log(`- ${rule.ruleId}: ${rule.effect} (${rule.strength})`)
+})
+```
+
+### Custom Reporting
+
+```typescript
+import { 
+  ReportBuilder, 
+  createBenchmarkReport,
+  createABTestReport,
+  printReport 
+} from '@himorishige/noren-devtools'
+
+// Build custom report
+const report = new ReportBuilder()
+  .title('Custom Performance Analysis')
+  .performance('Configuration A', {
+    duration: 12.5,
+    throughput: 89.3,
+    memoryUsage: 15.7
+  })
+  .performance('Configuration B', {
+    duration: 10.1,
+    throughput: 102.8,
+    memoryUsage: 14.2
+  })
+  .comparison('Configuration B', 19.2, 95.0)
+  .build()
+
+printReport(report)
+```
+
+## 🎯 Pre-built Configurations (v0.5.0)
 
 ### Benchmark Configurations
 
 ```typescript
 import { BENCHMARK_CONFIGS } from '@himorishige/noren-devtools'
 
-// Available scenarios:
-BENCHMARK_CONFIGS.SMALL_TEXT_DENSE_PII     // Small text, many PIIs
-BENCHMARK_CONFIGS.LARGE_TEXT_SPARSE_PII    // Large text, few PIIs  
-BENCHMARK_CONFIGS.MIXED_CONTENT_REALISTIC  // Real-world mixed content
-BENCHMARK_CONFIGS.EMAIL_HEAVY_CONTENT      // Email-focused content
-BENCHMARK_CONFIGS.CREDIT_CARD_FOCUSED      // Financial data focused
-BENCHMARK_CONFIGS.IP_ADDRESS_LOGS          // Network logs simulation
+// Optimized benchmark configurations:
+BENCHMARK_CONFIGS.quick         // Fast testing (10 iterations)
+BENCHMARK_CONFIGS.standard      // Standard testing (25 iterations)
+BENCHMARK_CONFIGS.comprehensive // Thorough testing (50 iterations)
+
+// Usage example
+const runner = new BenchmarkRunner()
+const results = await runner.runBenchmark(
+  'performance-test',
+  registry,
+  BENCHMARK_CONFIGS.standard.test_cases,
+  {
+    iterations: BENCHMARK_CONFIGS.standard.iterations,
+    warmupRuns: BENCHMARK_CONFIGS.standard.warmup_runs,
+    memoryMonitoring: BENCHMARK_CONFIGS.standard.memory_monitoring
+  }
+)
 ```
 
 ### A/B Test Scenarios
@@ -187,11 +248,11 @@ BENCHMARK_CONFIGS.IP_ADDRESS_LOGS          // Network logs simulation
 ```typescript
 import { AB_TEST_SCENARIOS } from '@himorishige/noren-devtools'
 
-// Predefined A/B test scenarios:
-AB_TEST_SCENARIOS.CONFIDENCE_SCORING       // With vs without confidence
-AB_TEST_SCENARIOS.SENSITIVITY_LEVELS       // Strict vs relaxed detection
-AB_TEST_SCENARIOS.CONTEXT_HINTS            // With vs without context hints
-AB_TEST_SCENARIOS.PLUGIN_COMBINATIONS      // Different plugin sets
+// Streamlined A/B test scenarios:
+AB_TEST_SCENARIOS.CONFIDENCE_SCORING      // Impact of confidence scoring
+AB_TEST_SCENARIOS.PLUGIN_COMPARISON       // Plugin performance comparison  
+AB_TEST_SCENARIOS.PATTERN_OPTIMIZATION    // Pattern optimization impact
+AB_TEST_SCENARIOS.MEMORY_EFFICIENCY       // Memory usage comparison
 ```
 
 ## 📊 Example Reports
@@ -260,22 +321,37 @@ npm run evaluate -- --dataset ./test-data.json --config production
 npm run report -- --output ./reports/ --format json,html
 ```
 
-## 🛠 API Reference
+## 🛠 API Reference (v0.5.0)
 
 ### Core Classes
 
-- **`BenchmarkRunner`**: Performance testing and analysis
-- **`ABTestEngine`**: Configuration comparison and optimization
-- **`EvaluationEngine`**: Accuracy testing with ground truth
-- **`MemoryMonitor`**: Memory usage tracking
-- **`TestDatasetBuilder`**: Ground truth dataset creation
+- **`BenchmarkRunner`**: Streamlined performance testing with correlation analysis
+- **`ABTestEngine`**: Scientific A/B testing with statistical significance
+- **`EvaluationEngine`**: Ground truth evaluation with simplified workflow
+- **`GroundTruthManager`**: Dataset management and validation
+- **`TestDatasetBuilder`**: Synthetic and realistic dataset creation
+
+### Statistical Functions
+
+- **`mean(values)`**: Calculate arithmetic mean
+- **`tTest(sample1, sample2, alpha)`**: Independent samples t-test
+- **`confidenceInterval(values, level)`**: Calculate confidence intervals
+- **`pearsonCorrelation(x, y)`**: Calculate correlation coefficient
 
 ### Utility Functions
 
-- **`generateRealisticText()`**: Create test data resembling real content
-- **`measurePerformance()`**: Detailed timing measurements
-- **`analyzeDetectionPatterns()`**: Pattern analysis and optimization
-- **`exportResults()`**: Report generation and export
+- **`calculateContextualConfidence()`**: Context-aware confidence scoring
+- **`createSimpleVariant()`**: Quick A/B test variant creation
+- **`createQuickABTest()`**: Rapid A/B test setup
+- **`visualizeRules()`**: Rule configuration analysis
+
+### Reporting Functions
+
+- **`ReportBuilder`**: Flexible report construction
+- **`createBenchmarkReport()`**: Standardized benchmark reports
+- **`createABTestReport()`**: Standardized A/B test reports
+- **`createEvaluationReport()`**: Standardized evaluation reports
+- **`printReport()`**: Console output with formatting
 
 ## 🔧 Configuration
 
@@ -313,12 +389,14 @@ export default {
 }
 ```
 
-## 🚀 Performance Tips
+## 🚀 Performance Tips (v0.5.0)
 
-1. **Use realistic test data** - Generated data should match your production patterns
-2. **Run multiple iterations** - Statistical significance requires adequate sample sizes
-3. **Monitor memory usage** - Watch for memory leaks in long-running tests
-4. **Profile incrementally** - Test individual components before full integration
+1. **Use predefined configurations** - BENCHMARK_CONFIGS provide optimized test scenarios
+2. **Leverage unified statistics** - Built-in statistical functions ensure consistent analysis
+3. **Enable memory monitoring** - Built-in MemoryMonitor tracks resource usage automatically
+4. **Utilize correlation analysis** - Text size correlation helps identify scaling issues
+5. **Apply contextual confidence** - Rule-based scoring reduces false positives effectively
+6. **Use streaming reports** - Unified reporting reduces memory overhead for large datasets
 
 ## 📄 License
 

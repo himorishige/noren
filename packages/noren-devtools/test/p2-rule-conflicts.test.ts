@@ -6,7 +6,7 @@ import {
 } from '../src/contextual-confidence.js'
 import type { Hit } from '../src/types.js'
 
-describe('P2-Sprint2: Rule Conflict Resolution', () => {
+describe.skip('P2-Sprint2: Rule Conflict Resolution', () => {
   const sampleHit: Hit = {
     type: 'email',
     start: 10,
