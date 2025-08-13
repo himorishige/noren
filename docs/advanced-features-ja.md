@@ -266,7 +266,117 @@ if (result.winner) {
 }
 ```
 
-#### 4. 継続的改善サイクル
+#### 4. ルール可視化・デバッグ機能
+
+```javascript
+import { 
+  calculateContextualConfidenceWithDebug,
+  visualizeRules,
+  DEFAULT_CONTEXTUAL_CONFIG 
+} from '@himorishige/noren-core'
+
+// ルール設定の可視化
+const ruleVisualization = visualizeRules(DEFAULT_CONTEXTUAL_CONFIG)
+console.log(ruleVisualization)
+/*
+[
+  {
+    rule_id: 'example-marker-strong',
+    category: 'marker-based',
+    priority: 100,
+    conditions: ['Marker proximity check'],
+    effect: {
+      type: 'suppress',
+      strength: 'strong',
+      multiplier: 0.4
+    },
+    dependencies: ['markers'],
+    estimated_frequency: 'common'
+  },
+  // ... その他のルール
+]
+*/
+
+// デバッグモードでコンテキスト信頼度計算
+const debugResult = calculateContextualConfidenceWithDebug(
+  hit,
+  text,
+  baseConfidence,
+  config
+)
+
+console.log('デバッグ情報:', debugResult.debug)
+/*
+{
+  rules_evaluated: [
+    {
+      rule: { id: 'example-marker-strong', ... },
+      evaluated: true,
+      condition_result: true,
+      applied: true,
+      execution_time_ms: 0.2,
+      features_used: ['markers', 'structure']
+    }
+  ],
+  total_execution_time_ms: 2.5,
+  feature_extraction_time_ms: 1.2,
+  rule_resolution_time_ms: 0.8,
+  performance_warnings: [],
+  rule_conflicts: {
+    detected: false,
+    resolved_by: [],
+    details: []
+  }
+}
+*/
+```
+
+#### 5. メトリクス収集システム
+
+```javascript
+import { 
+  InMemoryMetricsCollector,
+  setMetricsCollector,
+  measurePerformance 
+} from '@himorishige/noren-core'
+
+// メトリクス収集の設定
+const metricsCollector = new InMemoryMetricsCollector(50000)
+setMetricsCollector(metricsCollector)
+
+// 自動的にパフォーマンスを測定
+const result = await measurePerformance(
+  'pii-detection',
+  async () => await registry.detect(text),
+  { text_size: text.length.toString() }
+)
+
+// メトリクスサマリーの取得
+const summary = metricsCollector.getMetricsSummary()
+console.log('メトリクス集計:', summary)
+/*
+{
+  'noren.performance.duration_ms': {
+    count: 1000,
+    avg: 2.5,
+    min: 0.8,
+    max: 15.2
+  },
+  'noren.contextual.rules_evaluated': {
+    count: 1000,
+    avg: 12.3,
+    min: 8,
+    max: 20
+  }
+}
+*/
+
+// 特定の操作のメトリクス取得
+const operationMetrics = metricsCollector.getMetricsByOperation('pii-detection')
+console.log('PII検出のメトリクス:', operationMetrics)
+```
+
+#### 6. 継続的改善サイクル
 
 ```javascript
 import { ImprovementCycleEngine } from '@himorishige/noren-core'
@@ -316,7 +426,87 @@ async function weeklyOptimization() {
 }
 ```
 
-#### ケース2: データ量に応じた動的調整
+#### ケース2: デバッグとトラブルシューティング
+
+```javascript
+// ルール適用状況の詳細分析
+async function debugPIIDetection(text, expectedHits) {
+  const registry = new Registry({
+    enableContextualConfidence: true,
+    contextualSuppressionEnabled: true
+  })
+  
+  const result = await registry.detect(text)
+  
+  // 期待する検出結果と実際の結果を比較
+  for (const expected of expectedHits) {
+    const found = result.hits.find(hit => 
+      hit.start === expected.start && hit.type === expected.type
+    )
+    
+    if (!found) {
+      console.log(`❌ 検出漏れ: ${expected.type} at ${expected.start}`)
+      
+      // デバッグモードで原因を調査
+      const debugResult = calculateContextualConfidenceWithDebug(
+        expected, text, 0.8, DEFAULT_CONTEXTUAL_CONFIG
+      )
+      
+      console.log('適用されたルール:', debugResult.explanations)
+      console.log('パフォーマンス警告:', debugResult.debug.performance_warnings)
+      
+      // ルール衝突の確認
+      if (debugResult.debug.rule_conflicts.detected) {
+        console.log('ルール衝突:', debugResult.debug.rule_conflicts.details)
+      }
+    }
+  }
+}
+
+// 使用例
+await debugPIIDetection(
+  'Example: john@test.com',
+  [{ start: 9, end: 21, type: 'email' }]
+)
+```
+
+#### ケース3: カスタムルール開発
+
+```javascript
+import { createContextualConfig } from '@himorishige/noren-core'
+
+// 業界固有のカスタムルールを作成
+const healthcareConfig = createContextualConfig({
+  rules: [
+    ...DEFAULT_CONTEXTUAL_CONFIG.rules,
+    {
+      id: 'hipaa-test-data',
+      priority: 105,
+      condition: (features) => 
+        features.markers.test_marker_nearby && 
+        (features.language === 'en' || features.language === 'mixed'),
+      multiplier: 0.1, // 強力に抑制
+      description: 'HIPAA test data marker detected'
+    },
+    {
+      id: 'medical-record-boost',
+      priority: 42,
+      condition: (features, hit) => 
+        hit.type === 'ssn' && 
+        features.structure.csv_like &&
+        !features.markers.example_marker_nearby,
+      multiplier: 1.3, // 医療記録のSSNを強化
+      description: 'Medical record SSN boost'
+    }
+  ]
+})
+
+const registry = new Registry({
+  contextualConfig: healthcareConfig
+})
+```
+
+#### ケース4: データ量に応じた動的調整
 
 ```javascript
 // データ量に応じて設定を自動調整
@@ -354,12 +544,57 @@ function adaptiveConfiguration(dataSize) {
 | バランス型 | ~1.5ms/KB | 0.3MB/MB | 0.85 |
 | 最大精度 | ~3.0ms/KB | 0.5MB/MB | 0.92 |
 
+### 統計精度に関する注意事項
+
+現在のA/Bテスト機能は、Abramowitz & Stegun法を使用した統計計算を採用しており、「reasonable accuracy for typical A/B testing scenarios」レベルの精度を提供します。
+
+#### 現在の実装の制限
+
+```javascript
+// 現在の統計実装で十分なケース
+const typicalABTest = {
+  sample_size_per_variant: 1000,  // 中〜大サンプル (df ≥ 30)
+  confidence_level: 0.95,         // 標準的な有意水準 (α = 0.05)
+  minimum_effect_size: 0.1        // 10%以上の改善を検出
+}
+
+// より高精度が必要なケース
+const preciseABTest = {
+  sample_size_per_variant: 50,    // 小サンプル (df ≤ 10)
+  confidence_level: 0.999,        // 極端な有意水準 (α = 0.001)
+  minimum_effect_size: 0.02       // 2%の微小改善を検出
+}
+```
+
+#### 統計ライブラリアップグレード計画
+
+将来のアップデートでは、より高精度な統計計算のため以下の選択肢を検討しています：
+
+1. **@stdlib/stats-base-dists-t-*** (推奨)
+   - Web Standards準拠
+   - 最小依存
+   - ツリーシェイク対応
+
+2. **libRmath.js** (高精度モード)
+   - R言語と同等の精度
+   - WASM加速対応
+   - 遅延ロード
+
+```javascript
+// 将来のAPI (予定)
+const engine = new ABTestEngine({
+  statisticsBackend: 'stdlib', // 'native' | 'stdlib' | 'rmath'
+  precisionMode: 'standard'    // 'fast' | 'standard' | 'high'
+})
+```
+
 ### メリット
 
 - **科学的最適化**: 統計的に有効な設定改善
 - **自動化**: 人手を介さない継続的な性能向上
 - **リスク管理**: 安全制約による自動ロールバック
 - **可視化**: 詳細なメトリクスとレポート
+- **デバッグ支援**: ルール適用の透明性とトラブルシューティング
 
 ---
 

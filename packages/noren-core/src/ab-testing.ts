@@ -136,13 +136,154 @@ export interface ABTestConfig {
 }
 
 /**
+ * Statistics backend interface for pluggable statistical engines
+ */
+export interface StatisticsBackend {
+  name: string
+  tcdf(t: number, df: number): Promise<number>
+  tquantile(p: number, df: number): Promise<number>
+  normcdf(z: number): Promise<number>
+}
+
+/**
+ * Native implementation using Abramowitz & Stegun approximation
+ */
+export class NativeStatisticsBackend implements StatisticsBackend {
+  name = 'native'
+
+  async tcdf(t: number, df: number): Promise<number> {
+    return StatisticalAnalysis.approximateTDistributionPValue(Math.abs(t), df)
+  }
+
+  async tquantile(p: number, df: number): Promise<number> {
+    return StatisticalAnalysis.calculateTCritical(p, df)
+  }
+
+  async normcdf(z: number): Promise<number> {
+    return StatisticalAnalysis.approximateNormalCDF(z)
+  }
+}
+
+/**
+ * Stdlib implementation (requires @stdlib/stats-base-dists-t-* packages)
+ */
+export class StdlibStatisticsBackend implements StatisticsBackend {
+  name = 'stdlib'
+  private tcdfModule?: { default?: unknown } | unknown
+  private tquantileModule?: { default?: unknown } | unknown
+
+  async tcdf(t: number, df: number): Promise<number> {
+    try {
+      if (!this.tcdfModule) {
+        // Dynamic import to avoid bundling if not used
+        // Note: This will fail if @stdlib/stats-base-dists-t-cdf is not installed
+        // Using template literal to avoid TypeScript module resolution at compile time
+        const moduleName = '@stdlib/stats-base-dists-t-cdf'
+        const module = await import(/* webpackIgnore: true */ moduleName)
+        this.tcdfModule = module.default || module
+      }
+      return typeof this.tcdfModule === 'function'
+        ? this.tcdfModule(t, df)
+        : this.tcdfModule.default(t, df)
+    } catch (error) {
+      throw new Error(
+        `Stdlib tcdf failed: ${error}. Install @stdlib/stats-base-dists-t-cdf package`,
+      )
+    }
+  }
+
+  async tquantile(p: number, df: number): Promise<number> {
+    try {
+      if (!this.tquantileModule) {
+        // Note: This will fail if @stdlib/stats-base-dists-t-quantile is not installed
+        // Using template literal to avoid TypeScript module resolution at compile time
+        const moduleName = '@stdlib/stats-base-dists-t-quantile'
+        const module = await import(/* webpackIgnore: true */ moduleName)
+        this.tquantileModule = module.default || module
+      }
+      return typeof this.tquantileModule === 'function'
+        ? this.tquantileModule(p, df)
+        : this.tquantileModule.default(p, df)
+    } catch (error) {
+      throw new Error(
+        `Stdlib tquantile failed: ${error}. Install @stdlib/stats-base-dists-t-quantile package`,
+      )
+    }
+  }
+
+  async normcdf(z: number): Promise<number> {
+    // For normal CDF, fall back to native implementation for now
+    return StatisticalAnalysis.approximateNormalCDF(z)
+  }
+}
+
+/**
+ * Statistics engine manager with fallback support
+ */
+export class StatisticsEngine {
+  private backend: StatisticsBackend
+  private fallbackBackend: StatisticsBackend
+
+  constructor(
+    backend: StatisticsBackend = new NativeStatisticsBackend(),
+    fallbackBackend: StatisticsBackend = new NativeStatisticsBackend(),
+  ) {
+    this.backend = backend
+    this.fallbackBackend = fallbackBackend
+  }
+
+  async tcdf(t: number, df: number): Promise<number> {
+    try {
+      return await this.backend.tcdf(t, df)
+    } catch (error) {
+      console.warn(
+        `Statistics backend ${this.backend.name} failed, falling back to ${this.fallbackBackend.name}:`,
+        error,
+      )
+      return await this.fallbackBackend.tcdf(t, df)
+    }
+  }
+
+  async tquantile(p: number, df: number): Promise<number> {
+    try {
+      return await this.backend.tquantile(p, df)
+    } catch (error) {
+      console.warn(
+        `Statistics backend ${this.backend.name} failed, falling back to ${this.fallbackBackend.name}:`,
+        error,
+      )
+      return await this.fallbackBackend.tquantile(p, df)
+    }
+  }
+
+  async normcdf(z: number): Promise<number> {
+    try {
+      return await this.backend.normcdf(z)
+    } catch (error) {
+      console.warn(
+        `Statistics backend ${this.backend.name} failed, falling back to ${this.fallbackBackend.name}:`,
+        error,
+      )
+      return await this.fallbackBackend.normcdf(z)
+    }
+  }
+
+  getBackendInfo() {
+    return {
+      primary: this.backend.name,
+      fallback: this.fallbackBackend.name,
+    }
+  }
+}
+
+/**
  * Statistical utilities for A/B testing
  * @note Using class with static methods for logical grouping of statistical functions
  */
 // biome-ignore lint/complexity/noStaticOnlyClass: Logical grouping of statistical utility functions
 class StatisticalAnalysis {
   /**
-   * Welch's t-test for comparing two samples with unequal variances
+   * Welch's t-test for comparing two samples with unequal variances (legacy version)
    */
   static welchTTest(
     sample1: number[],
@@ -184,13 +325,56 @@ class StatisticalAnalysis {
   }
 
   /**
+   * Welch's t-test with configurable statistics backend
+   */
+  static async welchTTestWithEngine(
+    sample1: number[],
+    sample2: number[],
+    statisticsEngine: StatisticsEngine,
+  ): Promise<{
+    tStatistic: number
+    pValue: number
+    degreesOfFreedom: number
+  }> {
+    const n1 = sample1.length
+    const n2 = sample2.length
+
+    if (n1 < 2 || n2 < 2) {
+      return { tStatistic: 0, pValue: 1, degreesOfFreedom: 0 }
+    }
+
+    const mean1 = sample1.reduce((a, b) => a + b, 0) / n1
+    const mean2 = sample2.reduce((a, b) => a + b, 0) / n2
+
+    const variance1 = sample1.reduce((acc, x) => acc + (x - mean1) ** 2, 0) / (n1 - 1)
+    const variance2 = sample2.reduce((acc, x) => acc + (x - mean2) ** 2, 0) / (n2 - 1)
+
+    const standardError = Math.sqrt(variance1 / n1 + variance2 / n2)
+    const tStatistic = (mean1 - mean2) / standardError
+
+    // Welch–Satterthwaite equation for degrees of freedom
+    const df =
+      (variance1 / n1 + variance2 / n2) ** 2 /
+      ((variance1 / n1) ** 2 / (n1 - 1) + (variance2 / n2) ** 2 / (n2 - 1))
+
+    // Calculate p-value using the statistics engine
+    const pValue = await statisticsEngine.tcdf(Math.abs(tStatistic), df)
+
+    return {
+      tStatistic,
+      pValue: pValue * 2, // Two-tailed test
+      degreesOfFreedom: df,
+    }
+  }
+
+  /**
    * Calculate p-value for t-distribution using improved approximation
    *
    * @warning This is still an approximation. For critical applications,
    * consider using a proper statistics library like jStat or similar.
    * The current implementation provides reasonable accuracy for typical A/B testing scenarios.
    */
-  private static approximateTDistributionPValue(t: number, df: number): number {
+  static approximateTDistributionPValue(t: number, df: number): number {
     const absT = Math.abs(t)
 
     // For very large degrees of freedom (>100), approximate as normal distribution
@@ -217,7 +401,7 @@ class StatisticalAnalysis {
   /**
    * Approximate normal cumulative distribution function
    */
-  private static approximateNormalCDF(z: number): number {
+  static approximateNormalCDF(z: number): number {
     // Abramowitz & Stegun approximation for standard normal CDF
     const a1 = 0.31938153
     const a2 = -0.356563782
@@ -303,7 +487,7 @@ class StatisticalAnalysis {
    * Calculate critical t-value for given alpha and degrees of freedom
    * Uses iterative method to find the inverse of the t-distribution CDF
    */
-  private static calculateTCritical(alpha: number, df: number): number {
+  static calculateTCritical(alpha: number, df: number): number {
     // For large degrees of freedom, approximate with normal distribution
     if (df > 100) {
       return StatisticalAnalysis.calculateZCritical(alpha)
@@ -398,7 +582,7 @@ class StatisticalAnalysis {
   }
 
   /**
-   * Calculate confidence interval for mean
+   * Calculate confidence interval for mean (legacy version)
    */
   static confidenceInterval(
     sample: number[],
@@ -432,6 +616,41 @@ class StatisticalAnalysis {
   }
 
   /**
+   * Calculate confidence interval with configurable statistics backend
+   */
+  static async confidenceIntervalWithEngine(
+    sample: number[],
+    confidenceLevel: number,
+    statisticsEngine: StatisticsEngine,
+  ): Promise<{
+    lower: number
+    upper: number
+    margin: number
+  }> {
+    if (sample.length < 2) {
+      const mean = sample.length > 0 ? sample[0] : 0
+      return { lower: mean, upper: mean, margin: 0 }
+    }
+
+    const mean = sample.reduce((a, b) => a + b, 0) / sample.length
+    const variance = sample.reduce((acc, x) => acc + (x - mean) ** 2, 0) / (sample.length - 1)
+    const standardError = Math.sqrt(variance / sample.length)
+
+    // Calculate critical t-value using statistics engine
+    const alpha = 1 - confidenceLevel
+    const df = sample.length - 1
+    const tCritical = await statisticsEngine.tquantile(1 - alpha / 2, df) // Two-tailed test
+
+    const margin = tCritical * standardError
+
+    return {
+      lower: mean - margin,
+      upper: mean + margin,
+      margin,
+    }
+  }
+
+  /**
    * Effect size calculation (Cohen's d)
    */
   static cohensD(sample1: number[], sample2: number[]): number {
@@ -448,10 +667,48 @@ class StatisticalAnalysis {
 }
 
 /**
+ * A/B testing engine configuration
+ */
+export interface ABTestEngineConfig {
+  statisticsBackend?: 'native' | 'stdlib'
+  statisticsEngine?: StatisticsEngine
+  fallbackToNative?: boolean
+}
+
+/**
  * Main A/B testing engine
  */
 export class ABTestEngine {
   private benchmarkRunner = new BenchmarkRunner()
+  private statisticsEngine: StatisticsEngine
+
+  constructor(config: ABTestEngineConfig = {}) {
+    if (config.statisticsEngine) {
+      this.statisticsEngine = config.statisticsEngine
+    } else {
+      // Create statistics engine based on backend preference
+      const primaryBackend = this.createBackend(config.statisticsBackend || 'native')
+      const fallbackBackend =
+        config.fallbackToNative !== false ? new NativeStatisticsBackend() : primaryBackend
+      this.statisticsEngine = new StatisticsEngine(primaryBackend, fallbackBackend)
+    }
+  }
+
+  private createBackend(type: 'native' | 'stdlib'): StatisticsBackend {
+    switch (type) {
+      case 'stdlib':
+        return new StdlibStatisticsBackend()
+      default:
+        return new NativeStatisticsBackend()
+    }
+  }
+
+  /**
+   * Get information about the current statistics backend
+   */
+  getStatisticsInfo() {
+    return this.statisticsEngine.getBackendInfo()
+  }
 
   /**
    * Run a complete A/B test comparing multiple configuration variants
@@ -536,11 +793,12 @@ export class ABTestEngine {
       accuracyResults = await this.runAccuracyTest(registry, config.ground_truth_manager)
     }
 
-    // Calculate confidence intervals
+    // Calculate confidence intervals using statistics engine
     const performanceData = [perfResults.avg_duration_ms] // In real implementation, use all raw data
-    const confidenceInterval = StatisticalAnalysis.confidenceInterval(
+    const confidenceInterval = await StatisticalAnalysis.confidenceIntervalWithEngine(
       performanceData,
       config.confidence_level,
+      this.statisticsEngine,
     )
 
     const result: VariantResult = {
