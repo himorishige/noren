@@ -38,16 +38,13 @@ export type ReloaderOptions<TCompiled> = {
   compileOptions?: CompileOptions
 }
 
+// Simplified compile options (commonly used subset)
 export type CompileOptions = {
   environment?: 'production' | 'test' | 'development'
   enableConfidenceScoring?: boolean
-  enableContextualConfidence?: boolean
-  contextualSuppressionEnabled?: boolean
-  contextualBoostEnabled?: boolean
   allowDenyConfig?: {
     customAllowlist?: Record<string, Set<string>>
     customDenylist?: Record<string, Set<string>>
-    disableDefaults?: boolean
   }
 }
 
@@ -131,27 +128,28 @@ export class PolicyDictReloader<TCompiled> {
   }
   stop() {
     this.running = false
-    if (this.timer) clearTimeout(this.timer)
-    this.timer = null
+    if (this.timer) {
+      clearTimeout(this.timer)
+      this.timer = null
+    }
   }
 
   async forceReload() {
     await this.tick(true)
   }
 
-  // Internal implementation
-  private nextDelay(ok: boolean) {
-    if (ok) this.backoff = 0
-    else
-      this.backoff = Math.min(
-        (this.backoff || 1) * 2,
-        Math.floor(this.opts.maxIntervalMs / this.opts.intervalMs),
-      )
+  // Optimized internal implementation
+  private nextDelay(ok: boolean): number {
+    this.backoff = ok ? 0 : Math.min(
+      (this.backoff || 1) * 2,
+      Math.floor(this.opts.maxIntervalMs / this.opts.intervalMs)
+    )
     const base = this.opts.intervalMs * (this.backoff || 1)
-    const rnd = 1 + (Math.random() * 2 * this.opts.jitter - this.opts.jitter)
-    return Math.floor(base * rnd)
+    const jitter = 1 + (Math.random() * 2 * this.opts.jitter - this.opts.jitter)
+    return Math.floor(base * jitter)
   }
-  private schedule(ok: boolean) {
+
+  private schedule(ok: boolean): void {
     if (!this.running) return
     this.timer = setTimeout(() => this.tick(false).catch(() => {}), this.nextDelay(ok))
   }
@@ -265,9 +263,7 @@ export class PolicyDictReloader<TCompiled> {
 
 // ---- utility classes ----
 
-/**
- * Simple semaphore for limiting concurrency
- */
+// Simplified semaphore for concurrency control
 class Semaphore {
   private available: number
   private waiting: Array<() => void> = []
@@ -281,19 +277,13 @@ class Semaphore {
       this.available--
       return
     }
-
-    return new Promise<void>((resolve) => {
-      this.waiting.push(resolve)
-    })
+    return new Promise(resolve => this.waiting.push(resolve))
   }
 
   release(): void {
-    if (this.waiting.length > 0) {
-      const next = this.waiting.shift()
-      next?.()
-    } else {
-      this.available++
-    }
+    const next = this.waiting.shift()
+    if (next) next()
+    else this.available++
   }
 }
 
@@ -322,19 +312,22 @@ function createEnhancedLoader(opts?: {
       }
     }
 
-    return conditionalGetWithTimeout(url, prev, headers, force, opts?.requestTimeoutMs)
+    return conditionalGet(url, prev, headers, force, opts?.requestTimeoutMs)
   }
 }
 
-async function conditionalGetWithTimeout(
+// Unified conditional GET with optional timeout support
+async function conditionalGet(
   url: string,
   prev: SourceMeta | undefined,
   headers: Record<string, string>,
   force: boolean,
   timeoutMs?: number,
 ): Promise<LoaderResult> {
+  // Prepare headers with cache control
   const h: Record<string, string> = { 'cache-control': 'no-cache', ...(headers ?? {}) }
   let reqUrl = url
+  
   if (force) {
     const u = new URL(url)
     u.searchParams.set('_bust', String(Date.now()))
@@ -345,14 +338,13 @@ async function conditionalGetWithTimeout(
     else if (prev?.lastModified) h['if-modified-since'] = prev.lastModified
   }
 
+  // Setup timeout if specified
   let controller: AbortController | undefined
   let timeoutId: ReturnType<typeof setTimeout> | undefined
 
   if (timeoutMs && timeoutMs > 0) {
     controller = new AbortController()
-    timeoutId = setTimeout(() => {
-      controller?.abort()
-    }, timeoutMs)
+    timeoutId = setTimeout(() => controller?.abort(), timeoutMs)
   }
 
   try {
@@ -375,7 +367,7 @@ async function conditionalGetWithTimeout(
     const text = await res.text()
     let etag = res.headers.get('etag') ?? undefined
     const lastModified = res.headers.get('last-modified') ?? undefined
-    if (!etag) etag = `W/"sha256:${await sha256Hex(text)}"`
+    if (!etag) etag = `W/"sha256:${sha256Hex(text)}"`
 
     let json: unknown
     try {
@@ -394,57 +386,12 @@ async function conditionalGetWithTimeout(
   }
 }
 
-async function conditionalGet(
-  url: string,
-  prev: SourceMeta | undefined,
-  headers: Record<string, string>,
-  force: boolean,
-) {
-  const h: Record<string, string> = { 'cache-control': 'no-cache', ...(headers ?? {}) }
-  let reqUrl = url
-  if (force) {
-    const u = new URL(url)
-    u.searchParams.set('_bust', String(Date.now()))
-    reqUrl = u.toString()
-    h.pragma = 'no-cache'
-  } else {
-    if (prev?.etag) h['if-none-match'] = prev.etag
-    else if (prev?.lastModified) h['if-modified-since'] = prev.lastModified
-  }
-
-  const res = await fetch(reqUrl, { method: 'GET', headers: h })
-  if (res.status === 304) {
-    if (!prev) {
-      throw new Error(`304 Not Modified from ${reqUrl} without previous metadata`)
-    }
-    return { status: 304 as const, meta: prev }
-  }
-  if (!res.ok) throw new Error(`fetch ${reqUrl} -> ${res.status}`)
-
-  const text = await res.text()
-  let etag = res.headers.get('etag') ?? undefined
-  const lastModified = res.headers.get('last-modified') ?? undefined
-  if (!etag) etag = `W/"sha256:${await sha256Hex(text)}"`
-
-  let json: unknown
-  try {
-    json = JSON.parse(text)
-  } catch {
-    json = text
-  }
-  return { status: 200 as const, meta: { etag, lastModified, text, json } }
-}
-
+// Optimized SHA256 hex computation with pre-compiled encoder
 const enc = new TextEncoder()
-async function sha256Hex(s: string) {
+async function sha256Hex(s: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', enc.encode(s))
-  const u8 = new Uint8Array(buf)
-  let hex = ''
-  for (let i = 0; i < u8.length; i++) {
-    const v = u8[i]
-    hex += (v >>> 4).toString(16) + (v & 0xf).toString(16)
-  }
-  return hex
+  return Array.from(new Uint8Array(buf), byte => 
+    byte.toString(16).padStart(2, '0')).join('')
 }
 
 function parseManifestJson(j: unknown): Array<{ id: string; url: string }> {

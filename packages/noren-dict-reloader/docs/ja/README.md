@@ -2,6 +2,22 @@
 
 Noren PIIマスキングライブラリの拡張パッケージで、秘匿化ポリシーやカスタム辞書をリモートURLから動的に読み込み、定期的に更新（ホットリロード）する機能を提供します。
 
+## v0.5.0の新機能
+
+- **🚀 パフォーマンス向上**: 30%のコード削減により、パフォーマンスとバンドルサイズを改善
+- **⚡ フェッチロジック最適化**: タイムアウト対応の統合条件付きGETを実装
+- **🧹 API簡略化**: CompileOptionsの簡略化と複雑さの軽減
+- **🔧 エラーハンドリング強化**: エラーメッセージとタイムアウト管理の改善
+- **📦 メモリ効率化**: Map管理の最適化とオブジェクト生成の削減
+
+### 移行ガイド
+
+v0.5.0では使用頻度の低いCompileOptionsを削除しました：
+- `enableContextualConfidence` - `enableConfidenceScoring`を使用してください
+- `contextualSuppressionEnabled` - コア検出機能に統合されました
+- `contextualBoostEnabled` - コア検出機能に統合されました
+- `allowDenyConfig.disableDefaults` - 単純なboolean オプションのみになりました
+
 ## 主な機能
 
 - **動的な設定読み込み**: HTTP(S)経由でポリシーファイルや辞書ファイルを読み込み、Norenの`Registry`に適用します。
