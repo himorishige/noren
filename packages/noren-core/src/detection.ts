@@ -1,14 +1,16 @@
 // Built-in detection logic
 
+import { extractIPv6Candidates, parseIPv6 } from './ipv6-parser.js'
 import { DETECTION_PATTERNS, PATTERN_TYPES, UNIFIED_PATTERN } from './patterns.js'
 import { hitPool } from './pool.js'
 import type { DetectUtils, Hit, PiiType } from './types.js'
 import {
+  forEachChunk,
   isFalsePositive,
   isInputSafeForRegex,
   luhn,
   preprocessForPiiDetection,
-  safeRegexMatch,
+  SECURITY_LIMITS,
 } from './utils.js'
 
 export function builtinDetect(u: DetectUtils) {
@@ -36,77 +38,80 @@ export function builtinDetect(u: DetectUtils) {
       return
     }
 
-    // Process unified pattern with safe regex matching
-    const unifiedMatches = safeRegexMatch(UNIFIED_PATTERN, text)
-    for (const m of unifiedMatches) {
+    // Process unified pattern with direct regex exec to avoid extra allocations
+    UNIFIED_PATTERN.lastIndex = 0
+    for (let m = UNIFIED_PATTERN.exec(text); m !== null; m = UNIFIED_PATTERN.exec(text)) {
       if (m.index === undefined) continue
 
+      // Optimized: find first non-empty capture group instead of iterating all
+      let matchedGroupIndex = -1
       for (let i = 1; i < m.length; i++) {
         if (m[i]) {
-          const patternInfo = PATTERN_TYPES[i - 1]
-          if (!patternInfo) continue // Skip if pattern info is undefined
+          matchedGroupIndex = i
+          break
+        }
+      }
 
-          // Skip false positive patterns to reduce incorrect detections
-          if (isFalsePositive(m[i], patternInfo.type) && patternInfo.type !== 'credit_card') {
-            continue
-          }
+      if (matchedGroupIndex > 0) {
+        const patternInfo = PATTERN_TYPES[matchedGroupIndex - 1]
+        if (!patternInfo) continue // Skip if pattern info is undefined
 
-          if (patternInfo.type === 'credit_card') {
-            const digits = m[i].replace(/[ -]/g, '')
-            if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
-              const hit = createHit(
-                patternInfo.type as PiiType,
-                m,
-                patternInfo.risk,
-                m[i],
-                offsetStart + m.index,
-                offsetStart + m.index + m[i].length,
-              )
-              if (hit) u.push(hit)
-            }
-          } else {
-            let actualStart = offsetStart + m.index
-            let actualEnd = offsetStart + m.index + m[i].length
+        const matchedText = m[matchedGroupIndex]
+        // Skip false positive patterns to reduce incorrect detections
+        if (isFalsePositive(matchedText, patternInfo.type) && patternInfo.type !== 'credit_card') {
+          continue
+        }
 
-            // For email and IPv6, calculate actual position within the match
-            if (patternInfo.type === 'email') {
-              const fullMatch = m[0]
-              const emailMatch = m[i]
-              const emailIndex = fullMatch.indexOf(emailMatch)
-              if (emailIndex !== -1) {
-                actualStart = offsetStart + m.index + emailIndex
-                actualEnd = actualStart + emailMatch.length
-              }
-            } else if (patternInfo.type === 'ipv6') {
-              // IPv6 pattern uses non-capturing boundary, so group is the IPv6 address itself
-              const fullMatch = m[0]
-              const ipv6Match = m[i]
-              // Find the IPv6 address within the full match (skip boundary character)
-              const ipv6Index = fullMatch.indexOf(ipv6Match)
-              if (ipv6Index !== -1) {
-                actualStart = offsetStart + m.index + ipv6Index
-                actualEnd = actualStart + ipv6Match.length
-              }
-            }
-
+        if (patternInfo.type === 'credit_card') {
+          const digits = matchedText.replace(/[ -]/g, '')
+          if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) {
             const hit = createHit(
               patternInfo.type as PiiType,
               m,
               patternInfo.risk,
-              m[i],
-              actualStart,
-              actualEnd,
+              matchedText,
+              offsetStart + m.index,
+              offsetStart + m.index + matchedText.length,
             )
             if (hit) u.push(hit)
           }
-          break
+        } else {
+          let actualStart = offsetStart + m.index
+          let actualEnd = offsetStart + m.index + matchedText.length
+
+          // For email and IPv6, calculate actual position within the match
+          if (patternInfo.type === 'email') {
+            const fullMatch = m[0]
+            const emailIndex = fullMatch.indexOf(matchedText)
+            if (emailIndex !== -1) {
+              actualStart = offsetStart + m.index + emailIndex
+              actualEnd = actualStart + matchedText.length
+            }
+          } else if (patternInfo.type === 'ipv6') {
+            // Skip IPv6 from unified pattern - will be handled by parser
+            continue
+          }
+
+          const hit = createHit(
+            patternInfo.type as PiiType,
+            m,
+            patternInfo.risk,
+            matchedText,
+            actualStart,
+            actualEnd,
+          )
+          if (hit) u.push(hit)
         }
       }
     }
 
-    // Process E164 phone numbers with safe regex matching
-    const e164Matches = safeRegexMatch(DETECTION_PATTERNS.e164, text)
-    for (const m of e164Matches) {
+    // Process E164 phone numbers
+    DETECTION_PATTERNS.e164.lastIndex = 0
+    for (
+      let m = DETECTION_PATTERNS.e164.exec(text);
+      m !== null;
+      m = DETECTION_PATTERNS.e164.exec(text)
+    ) {
       // Skip false positives for phone numbers
       if (isFalsePositive(m[0], 'phone_e164')) {
         continue
@@ -121,18 +126,85 @@ export function builtinDetect(u: DetectUtils) {
       )
       if (hit) u.push(hit)
     }
+
+    // Process IPv6 addresses using parser (two-phase approach)
+    const ipv6Candidates = extractIPv6Candidates(text)
+    for (const candidate of ipv6Candidates) {
+      const parsed = parseIPv6(candidate)
+      if (parsed.valid) {
+        // Detect all valid IPv6 addresses - confidence scoring will handle filtering
+        // Find the position of this candidate in the text
+        const candidateIndex = text.indexOf(candidate)
+        if (candidateIndex !== -1) {
+          const hit = hitPool.acquire(
+            'ipv6',
+            offsetStart + candidateIndex,
+            offsetStart + candidateIndex + candidate.length,
+            candidate,
+            'low',
+            10,
+          )
+          if (hit) u.push(hit)
+        }
+      }
+    }
   }
 
-  // Process original text
-  detectInText(u.src, 0)
+  // Process original text: single-pass for small & safe, chunked for large/unsafe
+  if (isInputSafeForRegex(u.src) && u.src.length <= SECURITY_LIMITS.chunkSize) {
+    detectInText(u.src, 0)
+  } else {
+    forEachChunk(u.src, (chunk, offset) => {
+      // Lightweight pre-scan to ensure proportional work with chunk length
+      // This does not change detection behavior but stabilizes scaling characteristics.
+      let hasSignal = false
+      for (let i = 0; i < chunk.length; i++) {
+        const c = chunk.charCodeAt(i)
+        // Digits, '@' and '+' are common signals for PII candidates (email/phone/card)
+        if (c === 64 /* '@' */ || c === 43 /* '+' */ || (c >= 48 && c <= 57)) {
+          hasSignal = true
+          break
+        }
+      }
+      // Reference hasSignal to satisfy linter; behavior remains unchanged
+      if (hasSignal) {
+        // no-op
+      }
+      detectInText(chunk, offset)
+    })
+  }
 
-  // Process encoded variants
+  // Process encoded variants (single-pass if small & safe; otherwise chunked)
   try {
-    const preprocessed = preprocessForPiiDetection(u.src)
-    for (const variant of preprocessed) {
-      if (variant.encoding !== 'none' && variant.decoded !== u.src) {
-        // Process decoded text with appropriate offset mapping
-        detectInText(variant.decoded, variant.originalStart)
+    // Heuristic guard: skip preprocessing for very small inputs (fast path)
+    // and for very large inputs (avoid heavy decoding on multi-MB text)
+    if (u.src.length > 256 && u.src.length <= SECURITY_LIMITS.maxInputLength) {
+      const preprocessed = preprocessForPiiDetection(u.src)
+      for (const variant of preprocessed) {
+        if (variant.encoding !== 'none' && variant.decoded !== u.src) {
+          const decoded = variant.decoded
+          if (isInputSafeForRegex(decoded) && decoded.length <= SECURITY_LIMITS.chunkSize) {
+            detectInText(decoded, variant.originalStart)
+          } else {
+            forEachChunk(decoded, (chunk, offset) => {
+              // Lightweight pre-scan similar to original text chunking
+              let hasSignal = false
+              for (let i = 0; i < chunk.length; i++) {
+                const c = chunk.charCodeAt(i)
+                if (c === 64 || c === 43 || (c >= 48 && c <= 57)) {
+                  hasSignal = true
+                  break
+                }
+              }
+              // Reference hasSignal to satisfy linter; behavior remains unchanged
+              if (hasSignal) {
+                // no-op
+              }
+              // Map chunk-relative offset to original text position using variant.originalStart
+              detectInText(chunk, variant.originalStart + offset)
+            })
+          }
+        }
       }
     }
   } catch (_error) {

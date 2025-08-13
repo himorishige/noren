@@ -2,6 +2,11 @@
 import { NORMALIZE_PATTERNS } from './patterns.js'
 
 export const normalize = (s: string) => {
+  // Fast path: if string is already ASCII-only and doesn't need normalization, return as-is
+  if (s.length > 0 && /^[\x20-\x7E]*$/.test(s) && !/[ \t]{2,}/.test(s)) {
+    return s
+  }
+
   // Don't normalize empty strings or strings with only whitespace
   // to preserve original content when no PII is present
   const normalized = s
@@ -14,6 +19,26 @@ export const normalize = (s: string) => {
   // This preserves single spaces and other whitespace-only inputs
   const trimmed = normalized.trim()
   return trimmed.length > 0 ? trimmed : normalized
+}
+
+/**
+ * Iterate large inputs in safe chunks without collecting results
+ */
+export function forEachChunk(
+  input: string,
+  fn: (chunk: string, offset: number) => void,
+  chunkSize: number = SECURITY_LIMITS.chunkSize,
+): void {
+  if (input.length <= chunkSize) {
+    fn(input, 0)
+    return
+  }
+  let offset = 0
+  while (offset < input.length) {
+    const chunk = input.slice(offset, offset + chunkSize)
+    fn(chunk, offset)
+    offset += chunkSize
+  }
 }
 
 // Luhn algorithm for credit card validation
@@ -370,37 +395,55 @@ export function isFalsePositive(input: string, piiType?: string): boolean {
  * Security limits for ReDoS prevention
  */
 export const SECURITY_LIMITS = {
-  maxInputLength: 100000, // Max chars to process
-  maxRegexComplexity: 5000, // Max complexity score for input (increased)
-  chunkSize: 1000, // Process in chunks for large inputs
+  maxInputLength: 50000, // Reduced for better security (50KB text limit)
+  maxRegexComplexity: 5000, // Relaxed threshold to avoid over-blocking typical inputs
+  // Inputs shorter than this always use single-pass regex to keep small cases fast
+  smallSinglePassThreshold: 128,
+  // Chunk size for large inputs to control scaling and memory
+  chunkSize: 256,
+  maxPatternMatches: 200, // Limit number of regex matches to prevent DoS
 } as const
 
 /**
  * Calculate input complexity to prevent ReDoS attacks
  */
 export function calculateInputComplexity(input: string): number {
-  let complexity = Math.floor(input.length / 10) // Reduce base complexity
+  let complexity = Math.floor(input.length / 10) // Base complexity from length
 
-  // Repeated characters (especially problematic for regex)
-  const repeatedCharMatches = input.match(/(.)\1{5,}/g) || [] // Increase threshold
-  complexity += repeatedCharMatches.reduce((sum, match) => sum + match.length * 5, 0) // Reduce penalty
+  // Repeated characters (especially problematic for regex) - more aggressive detection
+  const repeatedCharMatches = input.match(/(.)\1{3,}/g) || [] // Lower threshold
+  complexity += repeatedCharMatches.reduce((sum, match) => sum + match.length * 8, 0) // Higher penalty
 
   // Nested structures (can cause exponential backtracking)
   const nestedStructures = (input.match(/[([{].*[([{].*[)\]}].*[)\]}]/g) || []).length
-  complexity += nestedStructures * 20 // Reduce penalty
+  complexity += nestedStructures * 30 // Higher penalty
 
-  // Alternation patterns in potential regex input (only if many)
+  // Alternation patterns in potential regex input
   const alternationCount = (input.match(/\|/g) || []).length
-  if (alternationCount > 5) {
-    // Only penalize if many alternations
-    complexity += alternationCount * 10 // Reduce penalty
+  if (alternationCount > 3) {
+    // Lower threshold
+    complexity += alternationCount * 15 // Higher penalty
   }
 
-  // Quantifier patterns (only if many)
+  // Quantifier patterns
   const quantifierCount = (input.match(/[*+?{]/g) || []).length
-  if (quantifierCount > 5) {
-    // Only penalize if many quantifiers
-    complexity += quantifierCount * 15 // Reduce penalty
+  if (quantifierCount > 3) {
+    // Lower threshold
+    complexity += quantifierCount * 20 // Higher penalty
+  }
+
+  // Suspicious regex patterns that could cause backtracking
+  const suspiciousPatterns: Array<{ pattern: RegExp; penalty: number }> = [
+    { pattern: /(\w+\s*){10,}/, penalty: 150 }, // Many word+space repetitions
+    { pattern: /([^\s]+\s+){10,}/, penalty: 150 }, // Many non-space+space repetitions
+    { pattern: /\(a\|a\)\*/, penalty: 700 }, // Classic ReDoS (a|a)*
+    { pattern: /\(\.\+\)\+/, penalty: 700 }, // Nested quantifiers (.+)+
+  ]
+
+  for (const { pattern, penalty } of suspiciousPatterns) {
+    if (pattern.test(input)) {
+      complexity += penalty
+    }
   }
 
   return complexity
@@ -424,7 +467,7 @@ export function isInputSafeForRegex(input: string): boolean {
 export function safeRegexMatch(
   pattern: RegExp,
   input: string,
-  maxMatches: number = 100,
+  maxMatches: number = SECURITY_LIMITS.maxPatternMatches,
 ): RegExpMatchArray[] {
   // Check input safety first
   if (!isInputSafeForRegex(input)) {
