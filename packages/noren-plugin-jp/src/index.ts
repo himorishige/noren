@@ -22,10 +22,14 @@ export const detectors: Detector[] = [
     id: 'jp.postal',
     match: ({ src, push, hasCtx }: DetectUtils) => {
       const hasContext = hasCtx(JP_CONTEXTS.postal)
-      if (!hasContext) return
 
       for (const m of src.matchAll(JP_PATTERNS.postal)) {
+        // 文脈なしでも低信頼度で検出（PRレビュー指摘事項対応）
         const confidence = hasContext ? 0.75 : 0.4
+
+        // 文脈なしの場合は信頼度閾値でフィルタリング可能にする
+        if (!hasContext && confidence < 0.4) continue
+
         push({
           type: 'jp_postal',
           start: m.index,

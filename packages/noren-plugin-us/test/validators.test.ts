@@ -137,4 +137,34 @@ describe('validateSSN', () => {
     expect(result.basic).toBe(true)
     expect(result.normalized).toBe('899-45-6789')
   })
+
+  it('should handle mixed format validation', () => {
+    // PRレビュー指摘事項対応: 混在フォーマットテストケース追加
+    const result = validateSSN('456 78-9123')
+    expect(result.valid).toBe(true)
+    expect(result.basic).toBe(true)
+    expect(result.strict).toBe(true)
+    expect(result.confidence).toBe(0.9)
+    expect(result.normalized).toBe('456-78-9123')
+  })
+
+  it('should handle various separator formats', () => {
+    // 様々な区切り文字形式のテスト
+    const testCases = [
+      '456-78-9123', // ハイフン
+      '456 78 9123', // スペース
+      '456.78.9123', // ドット
+      '456_78_9123', // アンダースコア
+      '456789123', // 区切りなし
+    ]
+
+    testCases.forEach((input) => {
+      const result = validateSSN(input)
+      expect(result.valid).toBe(true)
+      expect(result.basic).toBe(true)
+      expect(result.strict).toBe(true)
+      expect(result.confidence).toBe(0.9)
+      expect(result.normalized).toBe('456-78-9123')
+    })
+  })
 })

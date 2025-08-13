@@ -75,4 +75,31 @@ describe('validateMyNumber', () => {
     expect(result.valid).toBe(true)
     expect(result.reason).toBe('checksum_valid')
   })
+
+  it('should handle mixed format validation', () => {
+    // PRレビュー指摘事項対応: 混在フォーマットテストケース追加
+    const result = validateMyNumber('1234 5678-9018')
+    expect(result.valid).toBe(true)
+    expect(result.confidence).toBe(0.95)
+    expect(result.reason).toBe('checksum_valid')
+    expect(result.normalized).toBe('1234-5678-9018')
+  })
+
+  it('should handle various separator formats', () => {
+    // 様々な区切り文字形式のテスト
+    const testCases = [
+      '1234-5678-9018', // ハイフン
+      '1234 5678 9018', // スペース
+      '1234.5678.9018', // ドット
+      '1234_5678_9018', // アンダースコア
+      '123456789018', // 区切りなし
+    ]
+
+    testCases.forEach((input) => {
+      const result = validateMyNumber(input)
+      expect(result.valid).toBe(true)
+      expect(result.confidence).toBe(0.95)
+      expect(result.normalized).toBe('1234-5678-9018')
+    })
+  })
 })

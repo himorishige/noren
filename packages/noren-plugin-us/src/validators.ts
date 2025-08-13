@@ -85,7 +85,8 @@ function isSequentialPattern(digits: string): boolean {
   let isAscending = true
   let isDescending = true
 
-  for (let i = 1; i < digits.length; i++) {
+  // 早期終了最適化（PRレビュー指摘事項対応）
+  for (let i = 1; i < digits.length && (isAscending || isDescending); i++) {
     const current = Number(digits[i])
     const previous = Number(digits[i - 1])
 
