@@ -28,6 +28,8 @@ import * as usPlugin from '@himorishige/noren-plugin-us';
 // Initialize the Registry
 const registry = new Registry({
   defaultAction: 'mask',
+  enableConfidenceScoring: true, // v0.4.0: Improved accuracy
+  environment: 'production',
   // Set relevant keywords as hints to improve detection accuracy
   contextHints: ['Phone', 'Address', 'ZIP', 'SSN'],
 });
