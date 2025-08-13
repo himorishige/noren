@@ -79,11 +79,13 @@ jobs:
       - name: Biome (lint + format check)
         run: pnpm run check
 
-      - name: Typecheck
-        run: pnpm -r --filter ./packages/** run typecheck
-
-      - name: Build
-        run: pnpm -r --filter ./packages/** run build
+      - name: Build and Typecheck
+        run: |
+          # First build core packages that others depend on
+          pnpm -r --filter ./packages/noren-core run build
+          # Then typecheck and build all packages
+          pnpm -r --filter ./packages/** run typecheck
+          pnpm -r --filter ./packages/** run build
 
       - name: Test
         run: pnpm -r --filter ./packages/** run test
