@@ -3,13 +3,13 @@
  * Shows how to use A/B testing to optimize PII detection configurations
  */
 
+import { Registry } from '../../noren-core/dist/index.js'
 import { 
-  Registry,
   ABTestEngine,
   AB_TEST_SCENARIOS,
   GroundTruthManager,
   BENCHMARK_CONFIGS
-} from '../packages/noren-core/dist/index.js'
+} from '../dist/noren-devtools/src/index.js'
 
 /**
  * Demo 1: Basic A/B test comparing contextual confidence settings

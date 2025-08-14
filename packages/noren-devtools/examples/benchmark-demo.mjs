@@ -3,11 +3,11 @@
  * Shows how to measure PII detection performance across different scenarios
  */
 
+import { Registry } from '../../noren-core/dist/index.js'
 import { 
-  Registry,
   BenchmarkRunner, 
   BENCHMARK_CONFIGS
-} from '../packages/noren-core/dist/index.js'
+} from '../dist/noren-devtools/src/index.js'
 
 /**
  * Demo: Basic performance benchmarking

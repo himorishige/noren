@@ -6,7 +6,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 // Read the compiled JavaScript
-const indexPath = resolve('./packages/noren-core/dist/index.js')
+const indexPath = resolve('./packages/noren-devtools/dist/noren-devtools/src/index.js')
 const indexCode = readFileSync(indexPath, 'utf8')
 
 // Basic eval to test the module
