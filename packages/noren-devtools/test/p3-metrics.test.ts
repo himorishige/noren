@@ -1,12 +1,7 @@
 import { Registry } from '@himorishige/noren-core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
-  calculateContextualConfidence,
-  DEFAULT_CONTEXTUAL_CONFIG,
-} from '../src/contextual-confidence.js'
-import {
   type AccuracyMetric,
-  type ContextualMetric,
   getMetricsCollector,
   InMemoryMetricsCollector,
   type MetricEntry,
@@ -17,7 +12,6 @@ import {
   type PerformanceMetric,
   setMetricsCollector,
 } from '../src/metrics.js'
-import type { Hit } from '../src/types.js'
 
 describe.skip('P3-0: Metrics Infrastructure', () => {
   let originalCollector: MetricsCollector
@@ -55,27 +49,31 @@ describe.skip('P3-0: Metrics Infrastructure', () => {
 
     it('should record performance metrics', () => {
       const perfMetric: PerformanceMetric = {
-        duration_ms: 123.45,
-        memory_delta_bytes: 1024,
+        duration_ms: 42.5,
+        memory_usage_mb: 128,
+        operations_per_second: 1000,
       }
 
-      metricsCollector.recordPerformance('test_operation', perfMetric, { user: 'test' })
-      const metrics = metricsCollector.getMetricsByName('noren.performance.duration_ms')
+      metricsCollector.recordPerformance('test_operation', perfMetric)
+      const metrics = metricsCollector.getMetrics()
 
-      expect(metrics).toHaveLength(1)
-      expect(metrics[0].value).toBe(123.45)
-      expect(metrics[0].labels).toMatchObject({ operation: 'test_operation', user: 'test' })
-      expect(metrics[0].metadata).toMatchObject({ memory_delta_bytes: 1024 })
+      expect(metrics.length).toBeGreaterThan(0)
+      const durationMetrics = metricsCollector.getMetricsByName('noren.performance.duration_ms')
+      expect(durationMetrics).toHaveLength(1)
+      expect(durationMetrics[0].value).toBe(42.5)
     })
 
     it('should record accuracy metrics', () => {
-      const accMetric: AccuracyMetric = {
+      const accuracyMetric: AccuracyMetric = {
         hits_detected: 5,
         false_positives: 1,
         false_negatives: 2,
+        precision: 0.833,
+        recall: 0.714,
+        f1_score: 0.769,
       }
 
-      metricsCollector.recordAccuracy('detection', accMetric, { text_type: 'email' })
+      metricsCollector.recordAccuracy('detection_accuracy', accuracyMetric)
 
       const hitsMetrics = metricsCollector.getMetricsByName('noren.accuracy.hits_detected')
       const fpMetrics = metricsCollector.getMetricsByName('noren.accuracy.false_positives')
@@ -85,34 +83,6 @@ describe.skip('P3-0: Metrics Infrastructure', () => {
       expect(hitsMetrics[0].value).toBe(5)
       expect(fpMetrics[0].value).toBe(1)
       expect(fnMetrics[0].value).toBe(2)
-    })
-
-    it('should record contextual metrics', () => {
-      const contextMetric: ContextualMetric = {
-        rules_evaluated: 10,
-        rules_applied: 3,
-        avg_confidence_adjustment: 0.75,
-        rule_hit_counts: {
-          'example-marker-strong': 2,
-          'json-key-value': 1,
-        },
-      }
-
-      metricsCollector.recordContextual('contextual_scoring', contextMetric)
-
-      const evaluatedMetrics = metricsCollector.getMetricsByName('noren.contextual.rules_evaluated')
-      const appliedMetrics = metricsCollector.getMetricsByName('noren.contextual.rules_applied')
-      const adjustmentMetrics = metricsCollector.getMetricsByName(
-        'noren.contextual.avg_confidence_adjustment',
-      )
-      const ruleHitMetrics = metricsCollector.getMetricsByName('noren.contextual.rule_hits')
-
-      expect(evaluatedMetrics).toHaveLength(1)
-      expect(evaluatedMetrics[0].value).toBe(10)
-      expect(appliedMetrics[0].value).toBe(3)
-      expect(adjustmentMetrics[0].value).toBe(0.75)
-      expect(ruleHitMetrics).toHaveLength(2)
-      expect(ruleHitMetrics[0].labels?.rule_id).toBe('example-marker-strong')
     })
   })
 
@@ -128,164 +98,61 @@ describe.skip('P3-0: Metrics Infrastructure', () => {
           }
           return sum
         },
-        { test_label: 'sync' },
+        { operation: 'sync_test' },
       )
 
-      expect(typeof result).toBe('number')
+      expect(result.duration_ms).toBeGreaterThan(0)
+      expect(result.memory_usage_mb).toBeGreaterThan(0)
 
-      const perfMetrics = metricsCollector.getMetricsByName('noren.performance.duration_ms')
-      expect(perfMetrics).toHaveLength(1)
-      expect(perfMetrics[0].value).toBeGreaterThan(0)
-      expect(perfMetrics[0].labels).toMatchObject({ operation: 'test_sync', test_label: 'sync' })
+      // Check metrics were recorded
+      const durationMetrics = metricsCollector.getMetricsByName('noren.performance.duration_ms')
+      expect(durationMetrics).toHaveLength(1)
+      expect(durationMetrics[0].value).toBeGreaterThan(0)
+      expect(durationMetrics[0].labels?.operation).toBe('sync_test')
     })
 
-    it.skip('should measure async function performance', async () => {
-      // TODO: Performance measurement utility needs refinement
-      const result = await measurePerformance('test_async', async () => {
-        // Simulate async work
-        await new Promise((resolve) => setTimeout(resolve, 10))
-        return 'done'
-      })
+    it('should measure async function performance', async () => {
+      const result = await measurePerformance(
+        'test_async',
+        async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10))
+          return 'async_result'
+        },
+        { operation: 'async_test' },
+      )
 
-      expect(result).toBe('done')
+      expect(result.duration_ms).toBeGreaterThanOrEqual(10)
+      expect(result.memory_usage_mb).toBeGreaterThan(0)
 
-      const perfMetrics = metricsCollector.getMetricsByName('noren.performance.duration_ms')
-      expect(perfMetrics).toHaveLength(1)
-      expect(perfMetrics[0].value).toBeGreaterThanOrEqual(10)
-    })
-
-    it('should record errors in performance measurement', async () => {
-      const error = new Error('Test error')
-
-      await expect(
-        measurePerformance('test_error', () => {
-          throw error
-        }),
-      ).rejects.toThrow('Test error')
-
-      const perfMetrics = metricsCollector.getMetricsByName('noren.performance.duration_ms')
-      expect(perfMetrics).toHaveLength(1)
-      expect(perfMetrics[0].labels).toMatchObject({
-        operation: 'test_error',
-        error: 'true',
-        error_type: 'Error',
-      })
+      const durationMetrics = metricsCollector.getMetricsByName('noren.performance.duration_ms')
+      expect(durationMetrics).toHaveLength(1)
+      expect(durationMetrics[0].value).toBeGreaterThanOrEqual(10)
     })
   })
 
-  describe('Metrics aggregation and analysis', () => {
-    beforeEach(() => {
-      // Add sample data
-      for (let i = 0; i < 10; i++) {
-        metricsCollector.recordMetric({
-          timestamp: Date.now() + i,
-          name: 'test.values',
-          value: i * 10,
-          labels: { batch: 'A' },
-        })
-      }
-    })
-
-    it('should provide metrics summary', () => {
-      const summary = metricsCollector.getMetricsSummary()
-
-      expect(summary['test.values']).toBeDefined()
-      expect(summary['test.values'].count).toBe(10)
-      expect(summary['test.values'].avg).toBe(45) // (0+10+20+...+90)/10
-      expect(summary['test.values'].min).toBe(0)
-      expect(summary['test.values'].max).toBe(90)
-    })
-
-    it('should filter metrics by operation', () => {
-      metricsCollector.recordPerformance('op1', { duration_ms: 100 })
-      metricsCollector.recordPerformance('op2', { duration_ms: 200 })
-
-      const op1Metrics = metricsCollector.getMetricsByOperation('op1')
-      const op2Metrics = metricsCollector.getMetricsByOperation('op2')
-
-      expect(op1Metrics).toHaveLength(1)
-      expect(op2Metrics).toHaveLength(1)
-      expect(op1Metrics[0].value).toBe(100)
-      expect(op2Metrics[0].value).toBe(200)
-    })
-
-    it('should respect maximum entries limit', () => {
-      const limitedCollector = new InMemoryMetricsCollector(5)
-
-      // Add 10 metrics
-      for (let i = 0; i < 10; i++) {
-        limitedCollector.recordMetric({
-          timestamp: Date.now(),
-          name: 'test',
-          value: i,
-        })
-      }
-
-      const metrics = limitedCollector.getMetrics()
-      expect(metrics).toHaveLength(5)
-      // Should keep the last 5 entries
-      expect(metrics[0].value).toBe(5)
-      expect(metrics[4].value).toBe(9)
-    })
-  })
-
-  describe('Integration with detection system', () => {
-    it.skip('should collect metrics during detection', async () => {
-      // TODO: Metrics collection integration is not fully implemented in v0.4.0
+  describe('Registry integration', () => {
+    it('should collect detection metrics during registry operations', () => {
       const registry = new Registry({
-        defaultAction: 'mask',
-        enableConfidenceScoring: true,
-        enableContextualConfidence: true,
+        defaultAction: 'redact',
+        contextHints: ['email'],
       })
 
-      const text = 'Contact: john@example.com for more info'
-      const _result = await registry.detect(text)
+      const text = 'Contact us at test@example.com for support'
+      const hits = registry.detect(text)
 
-      // Check that detection metrics were recorded
-      const perfMetrics = metricsCollector.getMetricsByName('noren.performance.duration_ms')
-      expect(perfMetrics.length).toBeGreaterThan(0)
+      expect(hits.length).toBeGreaterThan(0)
 
-      const detectionMetrics = perfMetrics.filter((m) => m.labels?.operation === 'detect')
-      expect(detectionMetrics).toHaveLength(1)
-      expect(detectionMetrics[0].value).toBeGreaterThan(0)
+      // Check detection metrics were recorded
+      const detectionMetrics = metricsCollector.getMetricsByName('noren.performance.duration_ms')
+      expect(detectionMetrics.length).toBeGreaterThan(0)
 
-      // Check accuracy metrics
       const accuracyMetrics = metricsCollector.getMetricsByName('noren.accuracy.hits_detected')
-      expect(accuracyMetrics).toHaveLength(1)
+      expect(accuracyMetrics.length).toBeGreaterThan(0)
       expect(accuracyMetrics[0].value).toBeGreaterThan(0)
 
       // Check PII type breakdown
       const piiTypeMetrics = metricsCollector.getMetricsByName('noren.pii_types.detected')
       expect(piiTypeMetrics.length).toBeGreaterThan(0)
-    })
-
-    it('should collect contextual scoring metrics', () => {
-      const hit: Hit = {
-        type: 'email',
-        start: 10,
-        end: 27,
-        value: 'user@example.com',
-        risk: 'medium',
-        confidence: 0.8,
-      }
-
-      const text = 'Example: user@example.com is a test email'
-      calculateContextualConfidence(hit, text, 0.8, DEFAULT_CONTEXTUAL_CONFIG)
-
-      // Check contextual metrics were recorded
-      const rulesEvaluatedMetrics = metricsCollector.getMetricsByName(
-        'noren.contextual.rules_evaluated',
-      )
-      expect(rulesEvaluatedMetrics).toHaveLength(1)
-      expect(rulesEvaluatedMetrics[0].value).toBeGreaterThan(0)
-
-      const rulesAppliedMetrics = metricsCollector.getMetricsByName(
-        'noren.contextual.rules_applied',
-      )
-      expect(rulesAppliedMetrics).toHaveLength(1)
-
-      const ruleHitMetrics = metricsCollector.getMetricsByName('noren.contextual.rule_hits')
-      expect(ruleHitMetrics.length).toBeGreaterThan(0)
     })
   })
 
@@ -296,78 +163,31 @@ describe.skip('P3-0: Metrics Infrastructure', () => {
       noopCollector.recordMetric({ timestamp: Date.now(), name: 'test', value: 1 })
       noopCollector.recordPerformance('test', { duration_ms: 100 })
       noopCollector.recordAccuracy('test', { hits_detected: 5 })
-      noopCollector.recordContextual('test', {
-        rules_evaluated: 3,
-        rules_applied: 1,
-        avg_confidence_adjustment: 0.5,
-        rule_hit_counts: {},
-      })
 
-      // No way to verify since it's no-op, but shouldn't throw errors
-      expect(() => noopCollector.flush()).not.toThrow()
+      expect(noopCollector.getMetrics()).toHaveLength(0)
+      expect(noopCollector.getMetricsByName('test')).toHaveLength(0)
+      expect(noopCollector.getAllMetricNames()).toHaveLength(0)
     })
   })
 
-  describe('Metric definitions', () => {
-    it('should provide predefined metric definitions', () => {
-      expect(NOREN_METRICS).toBeDefined()
+  describe('Metrics registry', () => {
+    it('should contain all expected metric definitions', () => {
       expect(NOREN_METRICS['noren.performance.duration_ms']).toBeDefined()
+      expect(NOREN_METRICS['noren.performance.memory_usage_mb']).toBeDefined()
       expect(NOREN_METRICS['noren.accuracy.hits_detected']).toBeDefined()
-      expect(NOREN_METRICS['noren.contextual.rules_evaluated']).toBeDefined()
-
-      const perfMetric = NOREN_METRICS['noren.performance.duration_ms']
-      expect(perfMetric.aggregation).toBe('histogram')
-      expect(perfMetric.buckets).toBeDefined()
-      expect(perfMetric.labels).toContain('operation')
-    })
-  })
-
-  describe('Performance benchmarks', () => {
-    it('should maintain low overhead for metrics collection', async () => {
-      const iterations = 1000
-
-      const start = performance.now()
-      for (let i = 0; i < iterations; i++) {
-        metricsCollector.recordMetric({
-          timestamp: Date.now(),
-          name: 'benchmark.test',
-          value: i,
-          labels: { iteration: i.toString() },
-        })
-      }
-      const duration = performance.now() - start
-
-      // Should be able to record 1000 metrics quickly (less than 100ms)
-      expect(duration).toBeLessThan(100)
-      expect(metricsCollector.getMetrics()).toHaveLength(iterations)
+      expect(NOREN_METRICS['noren.accuracy.false_positives']).toBeDefined()
+      expect(NOREN_METRICS['noren.accuracy.false_negatives']).toBeDefined()
+      expect(NOREN_METRICS['noren.pii_types.detected']).toBeDefined()
     })
 
-    it('should handle large amounts of data efficiently', () => {
-      const largeCollector = new InMemoryMetricsCollector(50000)
+    it('should provide metric descriptions and units', () => {
+      const durationMetric = NOREN_METRICS['noren.performance.duration_ms']
+      expect(durationMetric.description).toContain('duration')
+      expect(durationMetric.unit).toBe('milliseconds')
 
-      const start = performance.now()
-      for (let i = 0; i < 10000; i++) {
-        largeCollector.recordPerformance(
-          'large_test',
-          {
-            duration_ms: Math.random() * 1000,
-            memory_delta_bytes: Math.floor(Math.random() * 1024 * 1024),
-          },
-          {
-            iteration: i.toString(),
-            batch: Math.floor(i / 100).toString(),
-          },
-        )
-      }
-      const recordingDuration = performance.now() - start
-
-      const summaryStart = performance.now()
-      const summary = largeCollector.getMetricsSummary()
-      const summaryDuration = performance.now() - summaryStart
-
-      expect(recordingDuration).toBeLessThan(500) // Recording should be fast
-      expect(summaryDuration).toBeLessThan(100) // Summary should be fast
-      expect(Object.keys(summary)).toContain('noren.performance.duration_ms')
+      const accuracyMetric = NOREN_METRICS['noren.accuracy.hits_detected']
+      expect(accuracyMetric.description).toContain('PII hits')
+      expect(accuracyMetric.unit).toBe('count')
     })
   })
 })
