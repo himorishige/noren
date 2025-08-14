@@ -56,7 +56,7 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 | [`@himorishige/noren-plugin-us`](./packages/noren-plugin-us/README.md)           | 🇺🇸 **US plugin** - Phone numbers, ZIP codes, SSNs |
 | [`@himorishige/noren-plugin-security`](./packages/noren-plugin-security/README.md)     | 🛡️ **Security plugin** - HTTP headers, API tokens, cookies |
 | [`@himorishige/noren-dict-reloader`](./packages/noren-dict-reloader/README.md)       | 🔄 **Dynamic reload** - ETag-based policy hot-reloading |
-| [`@himorishige/noren-devtools`](./packages/noren-devtools/README.md)            | 🔧 **Development tools** - Benchmarking, A/B testing, evaluation |
+| [`@himorishige/noren-devtools`](./packages/noren-devtools/README.md)            | 🔧 **Development tools** - Benchmarking, evaluation, metrics |
 
 ## Requirements
 

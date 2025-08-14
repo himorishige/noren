@@ -2,19 +2,18 @@
 
 [![npm version](https://img.shields.io/npm/v/@himorishige/noren-devtools.svg)](https://www.npmjs.com/package/@himorishige/noren-devtools)
 
-**Advanced development and testing tools for Noren PII detection library**
+**Lightweight development and testing tools for Noren PII detection library**
 
-Professional-grade tools for testing, benchmarking, and optimizing your PII detection workflows. Perfect for development teams who need detailed insights into detection accuracy and performance.
+Essential tools for testing, benchmarking, and evaluating your PII detection workflows. Focused on core functionality with minimal overhead.
 
-## ✨ Features (v0.5.0)
+## ✨ Features (v0.5.0 - Lightweight Edition)
 
-- 🧪 **A/B Testing**: Scientific configuration comparison with unified statistical analysis
-- 📊 **Advanced Benchmarking**: Performance analysis with memory monitoring and correlation metrics
-- 🎯 **Accuracy Evaluation**: Precision/recall metrics with streamlined ground truth datasets
-- 📈 **Context Analysis**: Simplified contextual confidence scoring with rule-based adjustments
-- 🔬 **Common Statistics**: Unified statistical functions (t-tests, confidence intervals, correlations)
-- 📋 **Unified Reporting**: Consistent report generation across all tools
-- ⚡ **Optimized Performance**: ~30% code reduction with improved maintainability
+- 📊 **Performance Benchmarking**: Memory monitoring and throughput analysis
+- 🎯 **Accuracy Evaluation**: Precision/recall metrics with ground truth datasets
+- 📈 **Metrics Collection**: Performance and accuracy tracking
+- 🔬 **Statistical Analysis**: Common statistical functions for data analysis
+- 📋 **Unified Reporting**: Consistent report generation
+- ⚡ **Optimized Performance**: 70% size reduction with streamlined functionality
 
 ## 🚀 Installation
 
@@ -56,55 +55,24 @@ console.log(`Memory efficiency: ${result.summary.memoryEfficiency}MB`)
 console.log(`Text size correlation: ${result.summary.textSizeCorrelation}`)
 ```
 
-### A/B Testing
-
-```typescript
-import { 
-  ABTestEngine, 
-  createSimpleVariant, 
-  createQuickABTest 
-} from '@himorishige/noren-devtools'
-
-const engine = new ABTestEngine()
-
-// Create test variants with different configurations
-const variantA = createSimpleVariant('config-a', 'Standard Config', {
-  defaultAction: 'mask'
-})
-
-const variantB = createSimpleVariant('config-b', 'Optimized Config', {
-  defaultAction: 'redact',
-  enableContextualConfidence: true
-})
-
-// Create and run quick A/B test
-const testData = ['Contact support@example.com for help', 'Call 555-0123 today']
-const testConfig = createQuickABTest(variantA, variantB, testData)
-
-const result = await engine.runTest(testConfig)
-
-console.log(`Winner: ${result.winner?.variant_id}`)
-console.log(`Improvement: ${result.winner?.improvement_percentage?.toFixed(1)}%`)
-console.log(`Statistical significance: ${result.winner?.statistical_significance}%`)
-```
-
 ### Accuracy Evaluation
 
 ```typescript
 import { 
   EvaluationEngine, 
   GroundTruthManager, 
-  TestDatasetBuilder 
+  createEmailTestDataset,
+  createSyntheticEntry
 } from '@himorishige/noren-devtools'
 
 // Create ground truth dataset
 const groundTruth = new GroundTruthManager()
 
 // Use pre-built test dataset
-const emailDataset = TestDatasetBuilder.createEmailTestDataset()
+const emailDataset = createEmailTestDataset()
 
 // Or create synthetic entries
-const syntheticEntry = TestDatasetBuilder.createSyntheticEntry('test1', [
+const syntheticEntry = createSyntheticEntry('test1', [
   { type: 'email', pattern: 'user@company.com' },
   { type: 'phone', pattern: '555-0123' }
 ])
@@ -122,9 +90,38 @@ console.log(`Recall: ${result.aggregate.recall.toFixed(3)}`)
 console.log(`F1 Score: ${result.aggregate.f1_score.toFixed(3)}`)
 ```
 
-## 🔧 Advanced Features (v0.5.0)
+### Performance Metrics Collection
 
-### Unified Statistical Analysis
+```typescript
+import { 
+  measurePerformance,
+  setMetricsCollector,
+  InMemoryMetricsCollector,
+  getMetricsCollector
+} from '@himorishige/noren-devtools'
+
+// Set up metrics collection
+const metricsCollector = new InMemoryMetricsCollector()
+setMetricsCollector(metricsCollector)
+
+// Measure function performance
+const result = await measurePerformance(
+  'detection-test',
+  () => registry.detect(text),
+  { operation: 'basic-detection' }
+)
+
+console.log(`Duration: ${result.duration_ms}ms`)
+console.log(`Memory usage: ${result.memory_usage_mb}MB`)
+
+// Get collected metrics
+const metrics = metricsCollector.getMetrics()
+console.log(`Total metrics collected: ${metrics.length}`)
+```
+
+## 🔧 Core Features
+
+### Statistical Analysis
 
 ```typescript
 import { 
@@ -153,71 +150,25 @@ const correlation = pearsonCorrelation(sizes, durations)
 console.log(`Size-duration correlation: ${correlation}`)
 ```
 
-### Contextual Confidence Scoring
-
-```typescript
-import { 
-  calculateContextualConfidence, 
-  DEFAULT_CONTEXTUAL_CONFIG,
-  CONSERVATIVE_CONTEXTUAL_CONFIG,
-  visualizeRules 
-} from '@himorishige/noren-devtools'
-
-const text = "Example email: test@example.com for testing"
-const hit = { 
-  type: 'email', 
-  start: 15, 
-  end: 31, 
-  value: 'test@example.com',
-  confidence: 0.9 
-}
-
-// Calculate contextual confidence
-const result = calculateContextualConfidence(hit, text, 0.9, DEFAULT_CONTEXTUAL_CONFIG)
-
-console.log(`Base confidence: ${result.baseConfidence}`)
-console.log(`Contextual confidence: ${result.contextualConfidence}`)
-console.log(`Adjustment factor: ${result.adjustmentFactor}`)
-console.log(`Applied rules:`, result.explanations)
-
-// Visualize rule configuration
-const rules = visualizeRules(CONSERVATIVE_CONTEXTUAL_CONFIG)
-console.log(`Active rules: ${rules.length}`)
-rules.forEach(rule => {
-  console.log(`- ${rule.ruleId}: ${rule.effect} (${rule.strength})`)
-})
-```
-
 ### Custom Reporting
 
 ```typescript
 import { 
-  ReportBuilder, 
   createBenchmarkReport,
-  createABTestReport,
+  createEvaluationReport,
   printReport 
 } from '@himorishige/noren-devtools'
 
-// Build custom report
-const report = new ReportBuilder()
-  .title('Custom Performance Analysis')
-  .performance('Configuration A', {
-    duration: 12.5,
-    throughput: 89.3,
-    memoryUsage: 15.7
-  })
-  .performance('Configuration B', {
-    duration: 10.1,
-    throughput: 102.8,
-    memoryUsage: 14.2
-  })
-  .comparison('Configuration B', 19.2, 95.0)
-  .build()
+// Create benchmark report
+const benchmarkReport = createBenchmarkReport(benchmarkResults)
+printReport(benchmarkReport)
 
-printReport(report)
+// Create evaluation report
+const evaluationReport = createEvaluationReport(evaluationResults)
+printReport(evaluationReport)
 ```
 
-## 🎯 Pre-built Configurations (v0.5.0)
+## 🎯 Pre-built Configurations
 
 ### Benchmark Configurations
 
@@ -241,18 +192,6 @@ const results = await runner.runBenchmark(
     memoryMonitoring: BENCHMARK_CONFIGS.standard.memory_monitoring
   }
 )
-```
-
-### A/B Test Scenarios
-
-```typescript
-import { AB_TEST_SCENARIOS } from '@himorishige/noren-devtools'
-
-// Streamlined A/B test scenarios:
-AB_TEST_SCENARIOS.CONFIDENCE_SCORING      // Impact of confidence scoring
-AB_TEST_SCENARIOS.PLUGIN_COMPARISON       // Plugin performance comparison  
-AB_TEST_SCENARIOS.PATTERN_OPTIMIZATION    // Pattern optimization impact
-AB_TEST_SCENARIOS.MEMORY_EFFICIENCY       // Memory usage comparison
 ```
 
 ## 📊 Example Reports
@@ -281,21 +220,26 @@ const results = await runner.runBenchmark('comprehensive', registry, testData)
 }
 ```
 
-### A/B Test Report
+### Evaluation Report
 
 ```typescript
-const comparison = await engine.runComparison(testConfig)
+const evaluation = await evaluator.evaluateAgainstGroundTruth(registry, dataset)
 
-// Comprehensive comparison:
+// Comprehensive evaluation:
 {
-  winner: 'configB',
-  confidence: 0.85,
-  metrics: {
-    performance: { improvement: '+15%', significance: 'high' },
-    accuracy: { improvement: '-2%', significance: 'low' },
-    memory: { improvement: '+8%', significance: 'medium' }
+  aggregate: {
+    precision: 0.94,
+    recall: 0.87,
+    f1_score: 0.90
   },
-  recommendation: 'Use configB for performance-critical applications'
+  by_type: {
+    email: { precision: 0.96, recall: 0.92, f1_score: 0.94 },
+    phone: { precision: 0.91, recall: 0.83, f1_score: 0.87 }
+  },
+  recommendations: [
+    'Consider tuning phone detection patterns',
+    'Email detection performs well'
+  ]
 }
 ```
 
@@ -303,33 +247,41 @@ const comparison = await engine.runComparison(testConfig)
 
 ### 1. **Profile Your Configuration**
 ```bash
-npm run profile -- --config production --samples 1000
+node examples/benchmark-demo.mjs
 ```
 
-### 2. **Compare Alternatives**
+### 2. **Validate Accuracy**
 ```bash
-npm run ab-test -- --configA basic --configB optimized
+node examples/evaluation-demo.mjs
 ```
 
-### 3. **Validate Accuracy**
-```bash
-npm run evaluate -- --dataset ./test-data.json --config production
+### 3. **Monitor Performance**
+```typescript
+// Enable metrics collection in your application
+import { setMetricsCollector, InMemoryMetricsCollector } from '@himorishige/noren-devtools'
+
+setMetricsCollector(new InMemoryMetricsCollector())
+// Your PII detection code runs here
+// Metrics are automatically collected
 ```
 
-### 4. **Generate Reports**
-```bash
-npm run report -- --output ./reports/ --format json,html
-```
-
-## 🛠 API Reference (v0.5.0)
+## 🛠 API Reference
 
 ### Core Classes
 
-- **`BenchmarkRunner`**: Streamlined performance testing with correlation analysis
-- **`ABTestEngine`**: Scientific A/B testing with statistical significance
-- **`EvaluationEngine`**: Ground truth evaluation with simplified workflow
+- **`BenchmarkRunner`**: Performance testing with correlation analysis
+- **`EvaluationEngine`**: Ground truth evaluation with detailed metrics
 - **`GroundTruthManager`**: Dataset management and validation
-- **`TestDatasetBuilder`**: Synthetic and realistic dataset creation
+- **`MemoryMonitor`**: Memory usage tracking
+- **`PrecisionTimer`**: High-precision timing
+
+### Metrics Collection
+
+- **`InMemoryMetricsCollector`**: In-memory metrics storage
+- **`NoOpMetricsCollector`**: No-op collector for production
+- **`setMetricsCollector()`**: Set global metrics collector
+- **`getMetricsCollector()`**: Get current metrics collector
+- **`measurePerformance()`**: Measure function performance
 
 ### Statistical Functions
 
@@ -338,18 +290,9 @@ npm run report -- --output ./reports/ --format json,html
 - **`confidenceInterval(values, level)`**: Calculate confidence intervals
 - **`pearsonCorrelation(x, y)`**: Calculate correlation coefficient
 
-### Utility Functions
-
-- **`calculateContextualConfidence()`**: Context-aware confidence scoring
-- **`createSimpleVariant()`**: Quick A/B test variant creation
-- **`createQuickABTest()`**: Rapid A/B test setup
-- **`visualizeRules()`**: Rule configuration analysis
-
 ### Reporting Functions
 
-- **`ReportBuilder`**: Flexible report construction
 - **`createBenchmarkReport()`**: Standardized benchmark reports
-- **`createABTestReport()`**: Standardized A/B test reports
 - **`createEvaluationReport()`**: Standardized evaluation reports
 - **`printReport()`**: Console output with formatting
 
@@ -368,35 +311,13 @@ NOREN_DEVTOOLS_OUTPUT_DIR=./reports
 NOREN_DEVTOOLS_MEMORY_SAMPLING=1000ms
 ```
 
-### Config File (`noren-devtools.config.js`)
-
-```javascript
-export default {
-  benchmark: {
-    iterations: 100,
-    warmupRuns: 10,
-    memoryTracking: true
-  },
-  abtest: {
-    sampleSize: 1000,
-    confidenceLevel: 0.95,
-    metrics: ['performance', 'accuracy']
-  },
-  evaluation: {
-    groundTruthPath: './test-data/',
-    outputFormat: ['json', 'csv']
-  }
-}
-```
-
-## 🚀 Performance Tips (v0.5.0)
+## 🚀 Performance Tips
 
 1. **Use predefined configurations** - BENCHMARK_CONFIGS provide optimized test scenarios
 2. **Leverage unified statistics** - Built-in statistical functions ensure consistent analysis
 3. **Enable memory monitoring** - Built-in MemoryMonitor tracks resource usage automatically
 4. **Utilize correlation analysis** - Text size correlation helps identify scaling issues
-5. **Apply contextual confidence** - Rule-based scoring reduces false positives effectively
-6. **Use streaming reports** - Unified reporting reduces memory overhead for large datasets
+5. **Use streaming reports** - Unified reporting reduces memory overhead for large datasets
 
 ## 📄 License
 
