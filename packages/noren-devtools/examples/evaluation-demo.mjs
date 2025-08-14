@@ -3,12 +3,12 @@
  * Shows how to evaluate PII detection accuracy using ground truth data
  */
 
+import { Registry } from '../../noren-core/dist/index.js'
 import { 
-  Registry,
   GroundTruthManager,
   EvaluationEngine,
   TestDatasetBuilder,
-} from '../packages/noren-core/dist/index.js'
+} from '../dist/noren-devtools/src/index.js'
 
 /**
  * Demo: Basic evaluation workflow

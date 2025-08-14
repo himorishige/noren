@@ -52,10 +52,11 @@ importers:
         version: 5.9.2
 
   packages/noren-devtools:
-    devDependencies:
+    dependencies:
       '@himorishige/noren-core':
         specifier: workspace:*
         version: link:../noren-core
+    devDependencies:
       '@types/node':
         specifier: ^20
         version: 20.19.10
