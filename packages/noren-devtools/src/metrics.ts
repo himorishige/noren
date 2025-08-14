@@ -50,16 +50,6 @@ export interface AccuracyMetric {
 }
 
 /**
- * Contextual rule evaluation metrics
- */
-export interface ContextualMetric {
-  rules_evaluated: number
-  rules_applied: number
-  avg_confidence_adjustment: number
-  rule_hit_counts: Record<string, number>
-}
-
-/**
  * Metrics collector interface - can be implemented for different backends
  */
 export interface MetricsCollector {
@@ -70,11 +60,6 @@ export interface MetricsCollector {
     labels?: Record<string, string>,
   ): void
   recordAccuracy(operation: string, metric: AccuracyMetric, labels?: Record<string, string>): void
-  recordContextual(
-    operation: string,
-    metric: ContextualMetric,
-    labels?: Record<string, string>,
-  ): void
   flush(): Promise<void>
 }
 
@@ -145,43 +130,6 @@ export class InMemoryMetricsCollector implements MetricsCollector {
         name: 'noren.accuracy.false_negatives',
         value: metric.false_negatives,
         labels: { ...labels, operation },
-      })
-    }
-  }
-
-  recordContextual(
-    operation: string,
-    metric: ContextualMetric,
-    labels: Record<string, string> = {},
-  ): void {
-    this.recordMetric({
-      timestamp: Date.now(),
-      name: 'noren.contextual.rules_evaluated',
-      value: metric.rules_evaluated,
-      labels: { ...labels, operation },
-    })
-
-    this.recordMetric({
-      timestamp: Date.now(),
-      name: 'noren.contextual.rules_applied',
-      value: metric.rules_applied,
-      labels: { ...labels, operation },
-    })
-
-    this.recordMetric({
-      timestamp: Date.now(),
-      name: 'noren.contextual.avg_confidence_adjustment',
-      value: metric.avg_confidence_adjustment,
-      labels: { ...labels, operation },
-    })
-
-    // Record individual rule hit counts
-    for (const [ruleId, count] of Object.entries(metric.rule_hit_counts)) {
-      this.recordMetric({
-        timestamp: Date.now(),
-        name: 'noren.contextual.rule_hits',
-        value: count,
-        labels: { ...labels, operation, rule_id: ruleId },
       })
     }
   }
@@ -263,14 +211,6 @@ export class NoOpMetricsCollector implements MetricsCollector {
     // No-op
   }
 
-  recordContextual(
-    _operation: string,
-    _metric: ContextualMetric,
-    _labels?: Record<string, string>,
-  ): void {
-    // No-op
-  }
-
   async flush(): Promise<void> {
     // No-op
     return Promise.resolve()
@@ -297,6 +237,26 @@ export function getMetricsCollector(): MetricsCollector {
 }
 
 /**
+ * Type-safe helper to get memory usage from performance API
+ */
+function getMemoryUsage(): number | undefined {
+  try {
+    // Check if memory API is available (Chrome/Edge)
+    const perfWithMemory = performance as unknown as {
+      memory?: { usedJSHeapSize?: number }
+    }
+
+    const hasMemoryAPI =
+      'memory' in performance && typeof perfWithMemory.memory?.usedJSHeapSize === 'number'
+
+    return hasMemoryAPI ? perfWithMemory.memory?.usedJSHeapSize : undefined
+  } catch {
+    // Gracefully handle any access errors
+    return undefined
+  }
+}
+
+/**
  * Utility function to measure performance of an operation
  */
 export async function measurePerformance<T>(
@@ -305,15 +265,13 @@ export async function measurePerformance<T>(
   labels?: Record<string, string>,
 ): Promise<T> {
   const startTime = performance.now()
-  const startMemory = (performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory
-    ?.usedJSHeapSize
+  const startMemory = getMemoryUsage()
 
   try {
     const result = await fn()
 
     const endTime = performance.now()
-    const endMemory = (performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory
-      ?.usedJSHeapSize
+    const endMemory = getMemoryUsage()
 
     const metric: PerformanceMetric = {
       duration_ms: endTime - startTime,
@@ -373,34 +331,5 @@ export const NOREN_METRICS: Record<string, MetricDefinition> = {
     description: 'Number of false negative (missed) detections',
     aggregation: 'sum',
     labels: ['operation', 'pii_type', 'plugin'],
-  },
-
-  // Contextual metrics
-  'noren.contextual.rules_evaluated': {
-    name: 'noren.contextual.rules_evaluated',
-    description: 'Number of contextual rules evaluated',
-    aggregation: 'sum',
-    labels: ['operation'],
-  },
-
-  'noren.contextual.rules_applied': {
-    name: 'noren.contextual.rules_applied',
-    description: 'Number of contextual rules applied',
-    aggregation: 'sum',
-    labels: ['operation'],
-  },
-
-  'noren.contextual.avg_confidence_adjustment': {
-    name: 'noren.contextual.avg_confidence_adjustment',
-    description: 'Average confidence adjustment from contextual rules',
-    aggregation: 'average',
-    labels: ['operation'],
-  },
-
-  'noren.contextual.rule_hits': {
-    name: 'noren.contextual.rule_hits',
-    description: 'Individual rule hit counts',
-    aggregation: 'sum',
-    labels: ['operation', 'rule_id'],
   },
 }

@@ -9,7 +9,6 @@
     "testing",
     "benchmarking",
     "evaluation",
-    "a-b-testing",
     "noren-devtools"
   ],
   "homepage": "https://github.com/himorishige/noren#readme",
@@ -28,10 +27,8 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js",
-    "./ab-testing": "./dist/ab-testing.js",
     "./benchmark": "./dist/benchmark.js",
-    "./evaluation": "./dist/evaluation.js",
-    "./improvement-cycle": "./dist/improvement-cycle.js"
+    "./evaluation": "./dist/evaluation.js"
   },
   "sideEffects": false,
   "engines": {

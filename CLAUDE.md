@@ -73,7 +73,6 @@ node examples/hono-server.mjs
 
 # Development tools examples (requires noren-devtools)
 node examples/benchmark-demo.mjs
-node examples/ab-test-demo.mjs
 node examples/evaluation-demo.mjs
 ```
 
@@ -128,10 +127,10 @@ The project uses pnpm workspaces with six main packages:
    - Confidence scoring system for detection accuracy
 
 2. **@himorishige/noren-devtools** (`packages/noren-devtools/`)
-   - Advanced development and testing tools
-   - A/B testing, benchmarking, and accuracy evaluation
-   - Performance monitoring and memory analysis
-   - Configuration optimization tools
+   - Lightweight development and testing tools
+   - Performance benchmarking and accuracy evaluation
+   - Memory monitoring and metrics collection
+   - Statistical analysis and reporting
 
 3. **@himorishige/noren-plugin-jp** (`packages/noren-plugin-jp/`)
    - Japan-specific detectors: phone numbers, postal codes, MyNumber
@@ -204,12 +203,12 @@ Enhanced IPv6 detection using two-phase parser approach:
 
 ## New Features (v0.4.0)
 
-### Development Tools Package (NEW)
-- **@himorishige/noren-devtools**: Professional-grade development and testing tools
-- **A/B Testing**: Scientific configuration comparison
-- **Advanced Benchmarking**: Performance analysis with memory monitoring
+### Development Tools Package (Lightweight)
+- **@himorishige/noren-devtools**: Streamlined development and testing tools (70% size reduction)
+- **Performance Benchmarking**: Memory monitoring and throughput analysis
 - **Accuracy Evaluation**: Precision/recall metrics with ground truth datasets
-- **Improvement Cycles**: Automated configuration optimization
+- **Metrics Collection**: Performance and accuracy tracking
+- **Statistical Analysis**: Common statistical functions for data analysis
 
 ### Enhanced Core Features
 - **Confidence Scoring System**: Rule-based confidence calculation (0.0-1.0)
@@ -255,4 +254,4 @@ The `examples/` directory contains comprehensive samples demonstrating various u
 - Custom dictionary support allows for company-specific PII patterns
 - ETag-based hot-reloading enables runtime policy updates
 - Confidence scoring provides fine-grained detection control
-- Development tools enable scientific testing and optimization
+- Development tools enable efficient performance testing and evaluation
