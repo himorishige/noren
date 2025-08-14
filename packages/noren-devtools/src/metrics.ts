@@ -237,6 +237,26 @@ export function getMetricsCollector(): MetricsCollector {
 }
 
 /**
+ * Type-safe helper to get memory usage from performance API
+ */
+function getMemoryUsage(): number | undefined {
+  try {
+    // Check if memory API is available (Chrome/Edge)
+    const perfWithMemory = performance as unknown as {
+      memory?: { usedJSHeapSize?: number }
+    }
+
+    const hasMemoryAPI =
+      'memory' in performance && typeof perfWithMemory.memory?.usedJSHeapSize === 'number'
+
+    return hasMemoryAPI ? perfWithMemory.memory?.usedJSHeapSize : undefined
+  } catch {
+    // Gracefully handle any access errors
+    return undefined
+  }
+}
+
+/**
  * Utility function to measure performance of an operation
  */
 export async function measurePerformance<T>(
@@ -245,15 +265,13 @@ export async function measurePerformance<T>(
   labels?: Record<string, string>,
 ): Promise<T> {
   const startTime = performance.now()
-  const startMemory = (performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory
-    ?.usedJSHeapSize
+  const startMemory = getMemoryUsage()
 
   try {
     const result = await fn()
 
     const endTime = performance.now()
-    const endMemory = (performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory
-      ?.usedJSHeapSize
+    const endMemory = getMemoryUsage()
 
     const metric: PerformanceMetric = {
       duration_ms: endTime - startTime,
