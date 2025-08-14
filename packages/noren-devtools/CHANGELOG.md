@@ -1,5 +1,17 @@
 # @himorishige/noren-devtools
 
+## 0.5.1
+
+### Patch Changes
+
+- [#46](https://github.com/himorishige/noren/pull/46) [`0535662`](https://github.com/himorishige/noren/commit/05356628dd68f12a34e0ea8f78b421503638f2ff) Thanks [@himorishige](https://github.com/himorishige)! - Fix import paths in noren-devtools examples and improve dependency configuration
+
+  - Fix incorrect import paths in all noren-devtools/examples/\*.mjs files
+  - Update simple-ab-test.mjs to reference correct devtools output
+  - Move @himorishige/noren-core from peerDependencies to dependencies in noren-devtools
+  - Add noren-devtools path mapping to tsconfig.base.json
+  - Ensure examples can run correctly after build
+
 ## 0.5.0
 
 ### Minor Changes
