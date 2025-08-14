@@ -1,6 +1,6 @@
 {
   "name": "@himorishige/noren-devtools",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Development and testing tools for Noren PII detection library",
   "keywords": [
     "pii",

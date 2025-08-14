@@ -1,5 +1,33 @@
 # @himorishige/noren-devtools
 
+## 0.5.2
+
+### Patch Changes
+
+- [#48](https://github.com/himorishige/noren/pull/48) [`6824d34`](https://github.com/himorishige/noren/commit/6824d34a8c7487d553f70b652483416d17669150) Thanks [@himorishige](https://github.com/himorishige)! - Major lightweight optimization: Remove complex features to focus on core functionality
+
+  **Breaking Changes:**
+
+  - Remove A/B testing functionality (ab-testing.ts)
+  - Remove improvement cycle automation (improvement-cycle.ts)
+  - Remove contextual detection module (context-detection.ts)
+  - Remove contextual confidence scoring (contextual-confidence.ts)
+  - Simplify API exports to core functionality only
+
+  **Optimizations:**
+
+  - 71% bundle size reduction (192KB → 56KB)
+  - Streamlined codebase focused on essential development tools
+  - Maintain core benchmarking, evaluation, and metrics functionality
+  - Updated documentation and examples to reflect lightweight approach
+
+  **Remaining Features:**
+
+  - Performance benchmarking with memory monitoring
+  - Accuracy evaluation with ground truth datasets
+  - Metrics collection and statistical analysis
+  - Unified reporting system
+
 ## 0.5.1
 
 ### Patch Changes
