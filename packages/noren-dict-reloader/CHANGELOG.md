@@ -1,5 +1,14 @@
 # @himorishige/noren-dict-reloader
 
+## 2.0.2
+
+### Patch Changes
+
+- [#64](https://github.com/himorishige/noren/pull/64) [`4bf0831`](https://github.com/himorishige/noren/commit/4bf0831644c546d02619f5a7637c3cdd99a91597) Thanks [@himorishige](https://github.com/himorishige)! - fix type mappings
+
+- Updated dependencies [[`4bf0831`](https://github.com/himorishige/noren/commit/4bf0831644c546d02619f5a7637c3cdd99a91597)]:
+  - @himorishige/noren-core@0.6.2
+
 ## 2.0.1
 
 ### Patch Changes
