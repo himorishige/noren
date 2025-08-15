@@ -12,7 +12,11 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@himorishige/noren-core": ["../noren-core/dist"]
+    }
   },
   "include": ["src/**/*", "test/**/*"]
 }
