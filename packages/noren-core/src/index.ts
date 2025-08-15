@@ -3,6 +3,12 @@
 export { type AllowDenyConfig, AllowDenyManager } from './allowlist.js'
 export { CONFIDENCE_THRESHOLDS, filterByConfidence } from './confidence.js'
 export { type IPv6ParseResult, parseIPv6 } from './ipv6-parser.js'
+export {
+  createJSONDetector,
+  JSONDetector,
+  type JsonDetectionResult,
+  type JsonHit,
+} from './json-detector.js'
 
 // Advanced exports for plugins and power users
 export type { LazyPlugin } from './lazy.js'
@@ -25,6 +31,7 @@ export { hmacToken, importHmacKey } from './utils.js'
 import { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'
 import { calculateConfidence, filterByConfidence } from './confidence.js'
 import { builtinDetect } from './detection.js'
+import { createJSONDetector } from './json-detector.js'
 import { type LazyPlugin, loadPlugin } from './lazy.js'
 import { defaultMask } from './masking.js'
 import { hitPool } from './pool.js'
@@ -69,6 +76,7 @@ export interface RegistryOptions extends Policy {
   environment?: Environment
   allowDenyConfig?: AllowDenyConfig
   enableConfidenceScoring?: boolean // Enable confidence scoring (default: true)
+  enableJsonDetection?: boolean // Enable JSON/structured data detection (default: false)
 }
 
 export class Registry {
@@ -78,12 +86,20 @@ export class Registry {
   private contextHintsSet: Set<string>
   private allowDenyManager: AllowDenyManager
   private enableConfidenceScoring: boolean
+  private enableJsonDetection: boolean
 
   constructor(options: RegistryOptions) {
-    const { environment, allowDenyConfig, enableConfidenceScoring, ...policy } = options
+    const {
+      environment,
+      allowDenyConfig,
+      enableConfidenceScoring,
+      enableJsonDetection,
+      ...policy
+    } = options
     this.base = policy
     this.contextHintsSet = new Set(policy.contextHints ?? [])
     this.enableConfidenceScoring = enableConfidenceScoring ?? true
+    this.enableJsonDetection = enableJsonDetection ?? false
 
     // Initialize allowlist/denylist manager
     this.allowDenyManager = new AllowDenyManager({
@@ -121,6 +137,37 @@ export class Registry {
   }
   maskerFor(t: PiiType) {
     return this.maskers.get(t)
+  }
+
+  /**
+   * Try JSON detection on the input text
+   */
+  private tryJsonDetection(src: string, utils: DetectUtils): void {
+    const jsonDetector = createJSONDetector()
+    const result = jsonDetector.detectInJson(src, utils)
+
+    if (result.isValidJson && result.hits.length > 0) {
+      // Convert JsonHit to regular Hit for integration
+      for (const jsonHit of result.hits) {
+        const hit: Hit = {
+          type: jsonHit.type,
+          start: jsonHit.start,
+          end: jsonHit.end,
+          value: jsonHit.value,
+          risk: jsonHit.risk,
+          priority: -5, // Higher priority than default built-ins for JSON-based detection
+          confidence: jsonHit.confidence,
+          reasons: jsonHit.reasons,
+          features: {
+            ...jsonHit.features,
+            isJsonDetection: true,
+            jsonPath: jsonHit.jsonPath,
+            keyName: jsonHit.keyName,
+          },
+        }
+        utils.push(hit)
+      }
+    }
   }
 
   async detect(
@@ -161,6 +208,12 @@ export class Registry {
     }
 
     builtinDetect(u)
+
+    // Try JSON detection if enabled
+    if (this.enableJsonDetection) {
+      this.tryJsonDetection(src, u)
+    }
+
     // Assign default priority for builtin hits that didn't set one
     for (let i = 0; i < hits.length; i++) {
       if (hits[i].priority === undefined) hits[i].priority = DEFAULT_BUILTIN_PRIORITY
@@ -243,7 +296,10 @@ export class Registry {
           ...hit,
           confidence: confidenceResult.confidence,
           reasons: confidenceResult.reasons,
-          features: confidenceResult.features,
+          features: {
+            ...hit.features, // Preserve existing features (like JSON detection info)
+            ...confidenceResult.features, // Add confidence-related features
+          },
         }
 
         scoredHits.push(scoredHit)

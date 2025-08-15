@@ -13,11 +13,12 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 
 **Plus Modern Features:**
 - **🌐 Universal**: Works everywhere (Node.js, Cloudflare Workers, Deno, Bun)
-- **🎯 Smart**: Confidence scoring for precision control
+- **🎯 Smart**: Confidence scoring and JSON/NDJSON support
 - **🔌 Extensible**: Plugin architecture for regional/custom needs
+- **🔒 Enhanced Security**: 70%+ detection rate for security tokens
 
 > **Status: v0.5.0 Release**
-> This release delivers major performance optimizations with 77% code reduction and 102K+ operations/second processing speed.
+> This release delivers major enhancements: JSON/NDJSON detection, 70%+ security token detection rate, performance optimizations with 77% code reduction, and 102K+ operations/second processing speed.
 
 ## ✨ Key Features
 
@@ -33,6 +34,8 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 - **Credit cards** with Luhn algorithm validation
 - **IP addresses** (IPv4 & IPv6) with proper parsing
 - **Phone numbers** (E164 format)
+- **JSON/NDJSON data** with key-based context detection
+- **Security tokens** (GitHub, AWS, Stripe, Slack, OpenAI, etc.)
 - **Custom patterns** via plugin system
 
 ### 🌐 **Web Standards Only**
@@ -43,7 +46,8 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 
 ### 🔌 **Plugin Architecture**
 - **Region-specific plugins**: Japan, US, more coming
-- **Security plugins**: HTTP headers, API tokens, cookies
+- **Security plugins**: 11 new token types with 70%+ detection rate
+- **JSON detection**: Structured data with path tracking
 - **Custom dictionaries** with hot-reloading support
 - **Development tools** for testing and benchmarking
 
@@ -98,6 +102,7 @@ import * as securityPlugin from '@himorishige/noren-plugin-security'
 const registry = new Registry({
   defaultAction: 'mask',
   enableConfidenceScoring: true, // Enhanced accuracy
+  enableJsonDetection: true,      // New in v0.5.0+
   rules: {
     credit_card: { action: 'mask', preserveLast4: true },
     mynumber_jp: { action: 'remove' } // v0.5.0: Updated PII type naming
@@ -108,9 +113,9 @@ const registry = new Registry({
 registry.use(jpPlugin.detectors, jpPlugin.maskers)
 registry.use(securityPlugin.detectors, securityPlugin.maskers)
 
-const input = '〒150-0001 カード: 4242-4242-4242-4242 Bearer: eyJ0eXAiOiJKV1Q...'
+const input = '〒150-0001 カード: 4242-4242-4242-4242 GitHub: ghp_1234567890abcdef Bearer: eyJ0eXAiOiJKV1Q...'
 const result = await redactText(registry, input)
-// Output: 〒•••-•••• カード: **** **** **** 4242 Bearer: [REDACTED:AUTH]
+// Output: 〒•••-•••• カード: **** **** **** 4242 GitHub: ghp_******** Bearer: [REDACTED:AUTH]
 ```
 
 ### 4. **Tokenization** (Advanced)
@@ -164,6 +169,85 @@ Perfect for serverless and edge computing:
 - **Deno Deploy**: Native Web Standards support
 
 ## 🔧 Advanced Configuration
+
+### Data Types & Object Processing
+
+Noren processes **text strings only**. Objects and arrays must be converted to strings before processing:
+
+```typescript
+import { Registry, redactText } from '@himorishige/noren-core'
+
+const registry = new Registry({ defaultAction: 'mask' })
+
+// ❌ This will fail - objects not supported
+const badExample = { email: 'user@example.com' }
+// await redactText(registry, badExample) // Error: s.normalize is not a function
+
+// ✅ Convert to JSON string first (v0.5.0+ includes native JSON detection)
+const registry = new Registry({ 
+  defaultAction: 'mask',
+  enableJsonDetection: true // Enhanced JSON processing
+})
+
+const jsonString = JSON.stringify({ email: 'user@example.com', phone: '090-1234-5678' })
+const result = await redactText(registry, jsonString)
+// Output: {"email":"[REDACTED:email]","phone":"•••-••••-••••"}
+// With JSON detection: enhanced accuracy using key names as context
+
+// ✅ Custom object processing helper
+async function redactObject(registry, obj, options = {}) {
+  if (typeof obj === 'string') {
+    return await redactText(registry, obj, options)
+  }
+  
+  if (Array.isArray(obj)) {
+    const results = []
+    for (const item of obj) {
+      results.push(await redactObject(registry, item, options))
+    }
+    return results
+  }
+  
+  if (obj && typeof obj === 'object') {
+    const result = {}
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = await redactObject(registry, value, options)
+    }
+    return result
+  }
+  
+  return obj // numbers, booleans, etc. returned as-is
+}
+
+// Process complex nested structures
+const complexData = {
+  user: { email: 'user@example.com', phones: ['090-1111-2222', '03-3333-4444'] },
+  messages: ['Contact: admin@company.com', 'Phone: 080-5555-6666']
+}
+
+const redacted = await redactObject(registry, complexData, {
+  hmacKey: 'your-secure-32-character-key-here-123456'
+})
+// Output: Nested objects with PII properly masked in string values only
+```
+
+### Full-Width Character Support
+
+Noren automatically handles full-width (zenkaku) characters through Unicode NFKC normalization:
+
+```typescript
+const registry = new Registry({ defaultAction: 'mask' })
+
+// Full-width characters are automatically normalized before processing
+const fullWidthInput = 'メール: ｕｓｅｒ@ｅｘａｍｐｌｅ.ｃｏｍ 電話: ０９０-１２３４-５６７８'
+const result = await redactText(registry, fullWidthInput)
+// Output: メ-ル: [REDACTED:email] 電話: •••-••••-••••
+
+// Detection works the same as half-width equivalents
+const halfWidthInput = 'メール: user@example.com 電話: 090-1234-5678'  
+const sameResult = await redactText(registry, halfWidthInput)
+// Both inputs produce equivalent masking results
+```
 
 ### Environment-Aware Processing
 ```typescript

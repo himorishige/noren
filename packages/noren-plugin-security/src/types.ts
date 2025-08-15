@@ -25,6 +25,18 @@ export type SecurityPiiType =
   | 'sec_uuid_token' // UUID format tokens
   | 'sec_hex_token' // Long hexadecimal strings
   | 'sec_session_id' // Session ID format
+  // === NEW ENHANCED SECURITY TYPES ===
+  | 'sec_github_token' // GitHub Personal Access Tokens (ghp_, gho_, etc.)
+  | 'sec_aws_access_key' // AWS Access Key ID (AKIA, ASIA, etc.)
+  | 'sec_google_api_key' // Google/Firebase API Keys (AIza...)
+  | 'sec_stripe_api_key' // Stripe API Keys (sk_live_, pk_test_, etc.)
+  | 'sec_slack_token' // Slack Tokens (xoxb-, xoxp-, etc.)
+  | 'sec_sendgrid_api_key' // SendGrid API Keys (SG....)
+  | 'sec_openai_api_key' // OpenAI API Keys (sk-proj-, sk-)
+  | 'sec_google_oauth_token' // Google OAuth Tokens (ya29., 1//...)
+  | 'sec_azure_subscription_key' // Azure Subscription Keys
+  | 'sec_webhook_url' // Webhook URLs (Slack, Discord, GitHub)
+  | 'sec_signed_url' // Signed URLs (AWS S3, GCS, Azure SAS)
 
 /** Cookie parsing result */
 export interface CookieInfo {
@@ -80,4 +92,30 @@ export interface SecurityFeatures {
   hasUuidFormat?: boolean
   isHexadecimal?: boolean
   phoneType?: string
+
+  // === NEW ENHANCED FEATURES ===
+  // Service-specific features
+  service?: string
+  provider?: string
+  environment?: 'live' | 'test' | 'development'
+
+  // GitHub-specific features
+  tokenType?: 'personal' | 'organization' | 'app' | 'user'
+
+  // AWS-specific features
+  keyType?: 'access_key' | 'secret_key' | 'session_token'
+
+  // URL-specific features
+  isWebhook?: boolean
+  isSignedUrl?: boolean
+  urlLength?: number
+
+  // Enhanced validation features
+  hasKnownFormat?: boolean
+  passedValidation?: boolean
+  contextScore?: number
+
+  // Multi-parameter features (for signed URLs)
+  parameterCount?: number
+  hasRequiredParams?: boolean
 }

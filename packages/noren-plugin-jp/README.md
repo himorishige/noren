@@ -65,3 +65,17 @@ console.log(redactedText);
 | `phone_jp`     | Japanese phone number| `•••-••••-••••`          | ✓ Renamed |
 | `postal_jp`    | Japanese postal code | `〒•••-••••`             | ✓ Renamed |
 | `mynumber_jp`  | My Number            | `[REDACTED:MYNUMBER]`    | ✓ Renamed |
+
+## Full-Width Character Support
+
+This plugin works seamlessly with full-width (zenkaku) characters through Noren's built-in Unicode NFKC normalization:
+
+```typescript
+// Both half-width and full-width characters are detected equally
+const halfWidth = '電話: 090-1234-5678'
+const fullWidth = '電話: ０９０-１２３４-５６７８'
+
+// Both produce identical masking results
+const result1 = await redactText(registry, halfWidth)  // → 電話: •••-••••-••••
+const result2 = await redactText(registry, fullWidth)  // → 電話: •••-••••-••••
+```

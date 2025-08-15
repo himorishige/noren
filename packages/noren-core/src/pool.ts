@@ -41,6 +41,9 @@ export class HitPool {
         // Simple cleanup - let JS GC handle the rest
         hit.value = ''
         hit.priority = undefined
+        hit.confidence = undefined
+        hit.reasons = undefined
+        hit.features = undefined
         this.pool.push(hit)
       }
     }

@@ -13,6 +13,8 @@ The core library of the Noren PII protection suite - designed for **simplicity**
 - ⚡ **High performance**: 102K+ ops/sec with pre-compiled patterns
 - 🌐 **Web Standards**: Works everywhere (Node.js, Edge, Browsers)
 - 🎯 **Smart detection**: Built-in patterns with confidence scoring
+- 📊 **JSON/NDJSON Support**: Native structured data detection with key-based matching
+- ⚡ **Prefilter optimization**: Fast screening before expensive regex operations
 - 🔒 **Enhanced security**: HMAC-based tokenization with 32-char minimum key
 - 📦 **Zero dependencies**: Pure JavaScript, no external deps
 - 🎚️ **Confidence scoring**: Rule-based detection accuracy control
@@ -49,6 +51,7 @@ console.log(result)
 const registry = new Registry({
   defaultAction: 'mask',
   enableConfidenceScoring: true, // New in v0.4.0+
+  enableJsonDetection: true,      // New in v0.5.0+ for structured data
   environment: 'production',       // Smart defaults for production
   rules: {
     email: { action: 'mask' },
@@ -128,6 +131,79 @@ console.log(chunks.join(''))
 
 ## 🔧 Advanced Configuration
 
+### Data Types & Object Processing
+
+Noren processes **text strings only**. Objects and arrays must be converted to strings before processing:
+
+```typescript
+import { Registry, redactText } from '@himorishige/noren-core'
+
+const registry = new Registry({ defaultAction: 'mask' })
+
+// ❌ This will fail - objects not supported
+const badExample = { email: 'user@example.com' }
+// await redactText(registry, badExample) // Error: s.normalize is not a function
+
+// ✅ Convert to JSON string first  
+const jsonString = JSON.stringify({ email: 'user@example.com', phone: '090-1234-5678' })
+const result = await redactText(registry, jsonString)
+// Output: {"email":"[REDACTED:email]","phone":"•••-••••-••••"}
+
+// ✅ Custom object processing helper
+async function redactObject(registry, obj, options = {}) {
+  if (typeof obj === 'string') {
+    return await redactText(registry, obj, options)
+  }
+  
+  if (Array.isArray(obj)) {
+    const results = []
+    for (const item of obj) {
+      results.push(await redactObject(registry, item, options))
+    }
+    return results
+  }
+  
+  if (obj && typeof obj === 'object') {
+    const result = {}
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = await redactObject(registry, value, options)
+    }
+    return result
+  }
+  
+  return obj // numbers, booleans, etc. returned as-is
+}
+
+// Process complex nested structures
+const complexData = {
+  user: { email: 'user@example.com', phones: ['090-1111-2222', '03-3333-4444'] },
+  messages: ['Contact: admin@company.com', 'Phone: 080-5555-6666']
+}
+
+const redacted = await redactObject(registry, complexData, {
+  hmacKey: 'your-secure-32-character-key-here-123456'
+})
+// Output: Nested objects with PII properly masked in string values only
+```
+
+### Full-Width Character Support
+
+Noren automatically handles full-width (zenkaku) characters through Unicode NFKC normalization:
+
+```typescript
+const registry = new Registry({ defaultAction: 'mask' })
+
+// Full-width characters are automatically normalized before processing
+const fullWidthInput = 'Email: ｕｓｅｒ@ｅｘａｍｐｌｅ.ｃｏｍ Phone: ０９０-１２３４-５６７８'
+const result = await redactText(registry, fullWidthInput)
+// Output: Email: [REDACTED:email] Phone: •••-••••-••••
+
+// Detection works the same as half-width equivalents
+const halfWidthInput = 'Email: user@example.com Phone: 090-1234-5678'  
+const sameResult = await redactText(registry, halfWidthInput)
+// Both inputs produce equivalent masking results
+```
+
 ### Environment-Aware Processing
 
 ```typescript
@@ -174,6 +250,48 @@ registry.use(securityPlugin.detectors, securityPlugin.maskers)
 - **[@himorishige/noren-plugin-security](../noren-plugin-security)**: HTTP headers, API tokens, cookies
 - **[@himorishige/noren-dict-reloader](../noren-dict-reloader)**: Dynamic policy reloading
 
+## 📊 JSON/Structured Data Processing
+
+Noren v0.5.0+ includes native support for JSON and NDJSON (newline-delimited JSON) processing:
+
+```typescript
+const registry = new Registry({
+  defaultAction: 'mask',
+  enableJsonDetection: true // Enable structured data processing
+})
+
+// JSON object detection
+const jsonInput = JSON.stringify({
+  user: {
+    email: 'admin@company.com',
+    phone: '+1-555-123-4567',
+    address: {
+      ip: '192.168.1.100'
+    }
+  }
+})
+
+const result = await redactText(registry, jsonInput)
+// Detects PII within JSON structure and provides path information
+
+// NDJSON processing
+const ndjsonInput = [
+  JSON.stringify({ id: 1, email: 'user1@example.com' }),
+  JSON.stringify({ id: 2, email: 'user2@example.com' })
+].join('\n')
+
+const ndjsonResult = await redactText(registry, ndjsonInput)
+// Processes each JSON line independently
+```
+
+### JSON Detection Features
+
+- **Key-based detection**: Enhanced accuracy using JSON key names as context
+- **Path tracking**: Provides full JSON path for detected PII (e.g., `$.user.email`)
+- **Nested objects**: Recursive detection in deeply nested structures
+- **NDJSON support**: Line-by-line processing for streaming data
+- **Type safety**: Validates JSON structure before processing
+
 ## 📚 API Reference
 
 ### `Registry`
@@ -190,6 +308,7 @@ interface RegistryOptions {
   environment?: 'production' | 'development' | 'test'
   allowDenyConfig?: AllowDenyConfig
   enableConfidenceScoring?: boolean
+  enableJsonDetection?: boolean // New: Enable JSON/NDJSON processing
   sensitivity?: 'strict' | 'balanced' | 'relaxed'
   contextHints?: string[] // Keywords to improve detection
 }
@@ -254,13 +373,16 @@ See [@himorishige/noren-devtools](../noren-devtools) for development and testing
 
 ## 🔄 Version History
 
-### v0.5.0 (Latest) - Performance & Size Optimization
+### v0.5.0 (Latest) - Performance & Structured Data Support
+- **JSON/NDJSON detection**: Native support for structured data with key-based matching
+- **Prefilter optimization**: Fast screening reduces processing time for non-PII text
 - **77% code reduction**: Streamlined from 8,153 to 1,782 lines
 - **Single-pass detection**: Unified pattern matching for better performance
 - **Optimized IPv6 parser**: 31% size reduction with enhanced validation
 - **Streamlined Hit Pool**: 47% size reduction with object pooling
 - **Reduced API surface**: 65% fewer exports for better tree-shaking
 - **Enhanced security**: Stricter boundaries and improved validation
+- **Code quality improvements**: Full TypeScript strict mode compliance
 
 ### v0.4.0 - Confidence Scoring & Advanced Features
 - Added confidence scoring system

@@ -3,6 +3,7 @@
 import { parseIPv6 } from './ipv6-parser.js'
 import { DETECTION_PATTERNS, PATTERN_TYPES, UNIFIED_PATTERN } from './patterns.js'
 import { hitPool } from './pool.js'
+import { prefilterText, quickDigitValidation } from './prefilter.js'
 import type { DetectUtils } from './types.js'
 import { luhn, SECURITY_LIMITS } from './utils.js'
 
@@ -11,6 +12,12 @@ export function builtinDetect(u: DetectUtils) {
 
   // Simple length check for security
   if (src.length > SECURITY_LIMITS.maxInputLength) {
+    return
+  }
+
+  // Fast prefiltering to skip expensive regex when no candidates
+  const prefilterResult = prefilterText(src)
+  if (prefilterResult.skipExpensiveDetection) {
     return
   }
 
@@ -41,9 +48,14 @@ export function builtinDetect(u: DetectUtils) {
 
         // Additional validation for credit cards
         if (patternType.type === 'credit_card') {
-          const digits = value.replace(/[ -]/g, '')
-          if (digits.length < 13 || digits.length > 19 || !luhn(digits)) {
+          // Quick validation first
+          if (!quickDigitValidation(value, 'credit_card')) {
             isValid = false
+          } else {
+            const digits = value.replace(/[ -]/g, '')
+            if (!luhn(digits)) {
+              isValid = false
+            }
           }
         }
 
@@ -63,22 +75,23 @@ export function builtinDetect(u: DetectUtils) {
   }
 
   // Phone E164 detection (not in unified pattern due to complexity)
-  for (const match of src.matchAll(DETECTION_PATTERNS.e164)) {
-    if (!u.canPush || !u.canPush()) break
-
-    // Simple validation - check length
-    const digits = match[0].replace(/\D/g, '')
-    if (digits.length >= 10 && digits.length <= 15) {
+  // Only run if prefilter suggests phone candidates
+  if (prefilterResult.hasPhoneCandidate) {
+    for (const match of src.matchAll(DETECTION_PATTERNS.e164)) {
+      if (!u.canPush || !u.canPush()) break
       if (match.index == null) continue
 
-      const hit = hitPool.acquire(
-        'phone_e164',
-        match.index,
-        match.index + match[0].length,
-        match[0],
-        'medium',
-      )
-      u.push(hit)
+      // Quick validation first
+      if (quickDigitValidation(match[0], 'phone')) {
+        const hit = hitPool.acquire(
+          'phone_e164',
+          match.index,
+          match.index + match[0].length,
+          match[0],
+          'medium',
+        )
+        u.push(hit)
+      }
     }
   }
 }
