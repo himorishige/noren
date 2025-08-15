@@ -36,7 +36,7 @@ describe('WHATWG Streams Integration', () => {
     const testData = [
       'First chunk: email test@example.com',
       'Second chunk: card 4242 4242 4242 4242',
-      'Third chunk: IP address 192.168.1.1',
+      'Third chunk: user@company.com account',
     ]
 
     // Create readable stream
@@ -81,12 +81,12 @@ describe('WHATWG Streams Integration', () => {
     // Verify redaction occurred
     expect(results[0]).toContain('[REDACTED:email]')
     expect(results[1]).toContain('[REDACTED:credit_card]', 'Second chunk should have card redacted')
-    expect(results[2]).toContain('[REDACTED:ipv4]')
+    expect(results[2]).toContain('[REDACTED:email]')
 
     // Verify original sensitive data is not present
     expect(results.join('')).not.toContain('test@example.com')
     expect(results.join('')).not.toContain('4242 4242 4242 4242')
-    expect(results.join('')).not.toContain('192.168.1.1')
+    expect(results.join('')).not.toContain('user@company.com')
   })
 
   it('should handle backpressure correctly', async () => {
@@ -124,7 +124,7 @@ describe('WHATWG Streams Integration', () => {
     // Generate more data than the transform can handle immediately
     const dataChunks: string[] = []
     for (let i = 0; i < 10; i++) {
-      dataChunks.push(`Chunk ${i}: email user${i}@example.com and IP 192.168.1.${i}`)
+      dataChunks.push(`Chunk ${i}: email user${i}@example.com and card 4111111111111111`)
     }
 
     let enqueueCount = 0
@@ -183,7 +183,7 @@ describe('WHATWG Streams Integration', () => {
     for (let i = 0; i < results.length; i++) {
       expect(results[i]).toContain(`Chunk ${i}`, `Chunk ${i} should be preserved`)
       expect(results[i]).toContain('[REDACTED:email]', `Chunk ${i} should have email redacted`)
-      expect(results[i]).toContain('[REDACTED:ipv4]', `Chunk ${i} should have IP redacted`)
+      expect(results[i]).toContain('[REDACTED:credit_card]', `Chunk ${i} should have card redacted`)
     }
   })
 
@@ -418,7 +418,7 @@ describe('WHATWG Streams Integration', () => {
         'Start of stream\n',
         'Email: admin@company.com\n',
         'Credit Card: 4111 1111 1111 1111\n',
-        'IP Address: 10.0.0.1\n',
+        'Account: user@example.org\n',
         'End of stream\n',
       ]
 
@@ -478,12 +478,11 @@ describe('WHATWG Streams Integration', () => {
     // Verify redactions occurred
     expect(fullResult).toContain('[REDACTED:email]')
     expect(fullResult).toContain('[REDACTED:credit_card]')
-    expect(fullResult).toContain('[REDACTED:ipv4]')
 
     // Verify original data not present
     expect(fullResult).not.toContain('admin@company.com')
     expect(fullResult).not.toContain('4111 1111 1111 1111')
-    expect(fullResult).not.toContain('10.0.0.1')
+    expect(fullResult).not.toContain('user@example.org')
   })
 
   it('should handle concurrent stream processing', async () => {

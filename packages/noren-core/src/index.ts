@@ -2,14 +2,24 @@
 
 export { type AllowDenyConfig, AllowDenyManager } from './allowlist.js'
 export { CONFIDENCE_THRESHOLDS, filterByConfidence } from './confidence.js'
-export { type IPv6ParseResult, parseIPv6 } from './ipv6-parser.js'
+export {
+  CONTEXT_KEYWORDS,
+  NEGATIVE_CONTEXT_KEYWORDS,
+  STRICTNESS_LEVELS,
+  type StrictnessLevel,
+} from './constants.js'
+export {
+  type ContextAnalysis,
+  calculateContextScore,
+  extractSurroundingText,
+  meetsContextThreshold,
+} from './context-scoring.js'
 export {
   createJSONDetector,
   JSONDetector,
   type JsonDetectionResult,
   type JsonHit,
 } from './json-detector.js'
-
 // Advanced exports for plugins and power users
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
@@ -25,8 +35,15 @@ export type {
   Masker,
   PiiType,
   Policy,
+  ValidationStrictness,
 } from './types.js'
 export { hmacToken, importHmacKey } from './utils.js'
+export {
+  debugValidation,
+  type ValidationContext,
+  type ValidationResult,
+  validateCandidate,
+} from './validators.js'
 
 import { type AllowDenyConfig, AllowDenyManager, type Environment } from './allowlist.js'
 import { calculateConfidence, filterByConfidence } from './confidence.js'
@@ -37,6 +54,7 @@ import { defaultMask } from './masking.js'
 import { hitPool } from './pool.js'
 import type { Detector, DetectUtils, Hit, Masker, PiiType, Policy } from './types.js'
 import { hmacToken, importHmacKey, normalize, SECURITY_LIMITS } from './utils.js'
+import { type ValidationContext, validateCandidate } from './validators.js'
 
 // Risk level weights for tiebreaker comparison
 const RISK_WEIGHTS = { high: 3, medium: 2, low: 1 } as const
@@ -89,6 +107,9 @@ export class Registry {
   private enableJsonDetection: boolean
 
   constructor(options: RegistryOptions) {
+    // Validate configuration
+    this.validateOptions(options)
+
     const {
       environment,
       allowDenyConfig,
@@ -106,6 +127,51 @@ export class Registry {
       environment: environment ?? 'production',
       ...allowDenyConfig,
     })
+  }
+
+  /**
+   * Validate registry configuration options
+   */
+  private validateOptions(options: RegistryOptions) {
+    // Validate validation strictness
+    if (
+      options.validationStrictness &&
+      !['fast', 'balanced', 'strict'].includes(options.validationStrictness)
+    ) {
+      throw new Error(
+        `Invalid validationStrictness: ${options.validationStrictness}. Must be 'fast', 'balanced', or 'strict'`,
+      )
+    }
+
+    // Validate HMAC key strength (only for string keys)
+    if (options.hmacKey && typeof options.hmacKey === 'string' && options.hmacKey.length < 32) {
+      throw new Error('HMAC key must be at least 32 characters long for security')
+    }
+
+    // Validate context hints
+    if (options.contextHints && !Array.isArray(options.contextHints)) {
+      throw new Error('contextHints must be an array of strings')
+    }
+
+    // Validate rules structure
+    if (options.rules) {
+      for (const [type, rule] of Object.entries(options.rules)) {
+        if (rule && typeof rule === 'object') {
+          if (rule.action && !['mask', 'remove', 'tokenize'].includes(rule.action)) {
+            throw new Error(
+              `Invalid action '${rule.action}' for type '${type}'. Must be 'mask', 'remove', or 'tokenize'`,
+            )
+          }
+        }
+      }
+    }
+
+    // Validate default action
+    if (options.defaultAction && !['mask', 'remove', 'tokenize'].includes(options.defaultAction)) {
+      throw new Error(
+        `Invalid defaultAction: ${options.defaultAction}. Must be 'mask', 'remove', or 'tokenize'`,
+      )
+    }
   }
 
   use(detectors: Detector[] = [], maskers: Record<string, Masker> = {}, ctx: string[] = []) {
@@ -174,6 +240,17 @@ export class Registry {
     raw: string,
     ctxHints = this.base.contextHints ?? [],
   ): Promise<{ src: string; hits: Hit[] }> {
+    // Input validation and size limits
+    if (typeof raw !== 'string') {
+      throw new Error('Input must be a string')
+    }
+
+    if (raw.length > SECURITY_LIMITS.maxInputLength) {
+      throw new Error(
+        `Input too large: ${raw.length} chars exceeds limit of ${SECURITY_LIMITS.maxInputLength}`,
+      )
+    }
+
     const src = normalize(raw)
     const hits: Hit[] = []
 
@@ -207,7 +284,9 @@ export class Registry {
       canPush: () => hits.length < SECURITY_LIMITS.maxPatternMatches,
     }
 
-    builtinDetect(u)
+    // Get validation strictness from policy (default to 'fast' for backward compatibility)
+    const validationStrictness = this.base.validationStrictness ?? 'fast'
+    builtinDetect(u, validationStrictness)
 
     // Try JSON detection if enabled
     if (this.enableJsonDetection) {
@@ -220,12 +299,42 @@ export class Registry {
     }
     for (const d of this.detectors) {
       const originalPush = u.push
-      // Override push to set detector priority if not already set
+      // Override push to set detector priority and apply validation if not already set
       u.push = (hit: Hit) => {
         if (hit.priority === undefined) {
           hit.priority = d.priority ?? 0
         }
-        originalPush(hit)
+
+        // Apply validation for non-fast modes
+        if (validationStrictness !== 'fast') {
+          try {
+            // Extract context around the hit for validation
+            const windowSize = 48
+            const beforeStart = Math.max(0, hit.start - windowSize)
+            const afterEnd = Math.min(src.length, hit.end + windowSize)
+            const surroundingText = src.slice(beforeStart, afterEnd)
+
+            const validationContext: ValidationContext = {
+              surroundingText,
+              strictness: validationStrictness,
+              originalIndex: hit.start - beforeStart,
+            }
+
+            const validationResult = validateCandidate(hit.value, hit.type, validationContext)
+
+            // Only push if validation passes
+            if (validationResult.valid) {
+              originalPush(hit)
+            }
+            // For plugins, we don't log validation failures to avoid noise
+          } catch (_error) {
+            // If validation fails, fall back to accepting the hit
+            originalPush(hit)
+          }
+        } else {
+          // Fast mode: no validation
+          originalPush(hit)
+        }
       }
       await d.match(u)
       // Restore original push
@@ -281,8 +390,14 @@ export class Registry {
     const filteredHits: Hit[] = []
     for (let i = 0; i < writeIndex; i++) {
       const hit = hits[i]
+      // Extract context around the hit for allowlist/denylist checking
+      const contextWindowSize = 100
+      const contextStart = Math.max(0, hit.start - contextWindowSize)
+      const contextEnd = Math.min(src.length, hit.end + contextWindowSize)
+      const context = src.slice(contextStart, contextEnd)
+
       // Check if this value should be allowed (not treated as PII)
-      if (!this.allowDenyManager.isAllowed(hit.value, hit.type)) {
+      if (!this.allowDenyManager.isAllowed(hit.value, hit.type, context)) {
         filteredHits.push(hit)
       }
     }

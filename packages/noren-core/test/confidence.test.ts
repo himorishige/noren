@@ -50,31 +50,6 @@ describe('Confidence Scoring System', () => {
       expect(testResult.reasons).toContain('test-domain')
     })
 
-    it('should reduce confidence for private IP addresses', () => {
-      const privateHit: Hit = {
-        type: 'ipv4',
-        start: 0,
-        end: 11,
-        value: '192.168.1.1',
-        risk: 'low',
-      }
-
-      const publicHit: Hit = {
-        type: 'ipv4',
-        start: 0,
-        end: 7,
-        value: '8.8.8.8',
-        risk: 'low',
-      }
-
-      const privateResult = calculateConfidence(privateHit, '192.168.1.1')
-      const publicResult = calculateConfidence(publicHit, '8.8.8.8')
-
-      expect(privateResult.confidence).toBeLessThan(publicResult.confidence)
-      expect(privateResult.reasons).toContain('private-ip')
-      expect(publicResult.reasons).toContain('public-ip')
-    })
-
     it('should reduce confidence for patterns in code blocks', () => {
       const codeText = '```\nuser@example.com\n```'
       const normalText = 'Email: user@example.com'
@@ -94,28 +69,28 @@ describe('Confidence Scoring System', () => {
       expect(codeResult.reasons).toContain('in-code-block')
     })
 
-    it('should handle phone number patterns', () => {
+    it('should handle email patterns with repeated characters', () => {
       const validHit: Hit = {
-        type: 'phone_e164',
+        type: 'email',
         start: 0,
-        end: 14,
-        value: '+1-555-987-6543',
+        end: 18,
+        value: 'user@company.com',
         risk: 'medium',
       }
 
       const testHit: Hit = {
-        type: 'phone_e164',
+        type: 'email',
         start: 0,
-        end: 10,
-        value: '1111111111',
+        end: 18,
+        value: 'test@example.com',
         risk: 'medium',
       }
 
-      const validResult = calculateConfidence(validHit, '+1-555-987-6543')
-      const testResult = calculateConfidence(testHit, '1111111111')
+      const validResult = calculateConfidence(validHit, 'Contact: user@company.com')
+      const testResult = calculateConfidence(testHit, 'Example: test@example.com')
 
       expect(validResult.confidence).toBeGreaterThan(testResult.confidence)
-      expect(testResult.reasons).toContain('repeated-digits')
+      expect(testResult.reasons).toContain('example-keywords-present')
     })
   })
 

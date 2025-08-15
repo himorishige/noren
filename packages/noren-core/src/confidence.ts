@@ -3,7 +3,6 @@
  * Provides rule-based confidence calculation for detected patterns
  */
 
-import { parseIPv6 } from './ipv6-parser.js'
 import type { DetectionSensitivity, Hit, PiiType } from './types.js'
 
 /**
@@ -117,14 +116,6 @@ function getBasePatternScore(type: PiiType, _value: string): number {
       return 0.6 // Email patterns are generally reliable
     case 'credit_card':
       return 0.7 // Credit cards have Luhn validation
-    case 'ipv4':
-      return 0.5 // IP addresses are common but can be false positives
-    case 'ipv6':
-      return 0.6 // IPv6 is less common, more likely to be real
-    case 'phone_e164':
-      return 0.5 // Phone patterns can be ambiguous
-    case 'mac':
-      return 0.6 // MAC addresses have specific format
     default:
       return 0.4 // Unknown types get lower base score
   }
@@ -189,12 +180,6 @@ function getTypeSpecificAdjustment(
   switch (type) {
     case 'email':
       return getEmailConfidenceAdjustment(value, _features)
-    case 'ipv4':
-      return getIPv4ConfidenceAdjustment(value, _features)
-    case 'ipv6':
-      return getIPv6ConfidenceAdjustment(value, _features)
-    case 'phone_e164':
-      return getPhoneConfidenceAdjustment(value, _features)
     default:
       return { adjustment, reasons }
   }
@@ -239,128 +224,6 @@ function getEmailConfidenceAdjustment(
   if (/admin@|test@|user@/.test(email)) {
     adjustment -= 0.2
     reasons.push('generic-prefix')
-  }
-
-  return { adjustment, reasons }
-}
-
-/**
- * IPv4-specific confidence adjustments
- */
-function getIPv4ConfidenceAdjustment(
-  value: string,
-  _features: ConfidenceFeatures,
-): {
-  adjustment: number
-  reasons: string[]
-} {
-  let adjustment = 0
-  const reasons: string[] = []
-
-  const parts = value.split('.').map(Number)
-
-  // Private IP addresses are less likely to be PII
-  if (isPrivateIPv4(parts)) {
-    adjustment -= 0.2 // Reduced penalty to allow detection at strict threshold
-    reasons.push('private-ip')
-  } else {
-    adjustment += 0.3
-    reasons.push('public-ip')
-  }
-
-  // Loopback and special addresses
-  if (parts[0] === 127) {
-    adjustment -= 0.8
-    reasons.push('loopback-ip')
-  }
-
-  // Documentation ranges (RFC 5737)
-  if (
-    (parts[0] === 192 && parts[1] === 0 && parts[2] === 2) ||
-    (parts[0] === 198 && parts[1] === 51 && parts[2] === 100) ||
-    (parts[0] === 203 && parts[1] === 0 && parts[2] === 113)
-  ) {
-    adjustment -= 0.8
-    reasons.push('documentation-ip')
-  }
-
-  return { adjustment, reasons }
-}
-
-/**
- * Phone number-specific confidence adjustments
- */
-function getPhoneConfidenceAdjustment(
-  value: string,
-  _features: ConfidenceFeatures,
-): {
-  adjustment: number
-  reasons: string[]
-} {
-  let adjustment = 0
-  const reasons: string[] = []
-
-  const digits = value.replace(/\D/g, '')
-
-  // Repeated digits (like 1111111111) are likely test numbers
-  if (/^(\d)\1+$/.test(digits)) {
-    adjustment -= 0.8
-    reasons.push('repeated-digits')
-  }
-
-  // Sequential digits (like 1234567890)
-  if (digits === '1234567890') {
-    adjustment -= 0.8
-    reasons.push('sequential-digits')
-  }
-
-  // US test number ranges (555-0100 to 555-0199)
-  if (digits.match(/^1?555010[0-9]$/)) {
-    adjustment -= 0.8
-    reasons.push('us-test-number')
-  }
-
-  return { adjustment, reasons }
-}
-
-/**
- * IPv6-specific confidence adjustments
- */
-function getIPv6ConfidenceAdjustment(
-  value: string,
-  _features: ConfidenceFeatures,
-): {
-  adjustment: number
-  reasons: string[]
-} {
-  let adjustment = 0
-  const reasons: string[] = []
-
-  const parsed = parseIPv6(value)
-
-  if (parsed.valid) {
-    // Private/local addresses are less likely to be PII
-    if (parsed.isPrivate || parsed.isLoopback || parsed.isLinkLocal || parsed.isUniqueLocal) {
-      adjustment -= 0.3 // Less aggressive than IPv4 to allow some detection at strict level
-      if (parsed.isLoopback) {
-        reasons.push('ipv6-loopback')
-      } else if (parsed.isLinkLocal) {
-        reasons.push('ipv6-link-local')
-      } else if (parsed.isUniqueLocal) {
-        reasons.push('ipv6-unique-local')
-      } else {
-        reasons.push('ipv6-private')
-      }
-    } else {
-      adjustment += 0.2
-      reasons.push('ipv6-public')
-    }
-
-    // Documentation range
-    if (parsed.isDocumentation) {
-      adjustment -= 0.5
-      reasons.push('ipv6-documentation')
-    }
   }
 
   return { adjustment, reasons }
@@ -420,24 +283,6 @@ function calculatePatternComplexity(value: string): number {
   complexity += Math.min(value.length / 20, 2)
 
   return complexity
-}
-
-/**
- * Check if IPv4 address is private
- */
-function isPrivateIPv4(parts: number[]): boolean {
-  if (parts.length !== 4) return false
-
-  // 10.0.0.0/8
-  if (parts[0] === 10) return true
-
-  // 172.16.0.0/12
-  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true
-
-  // 192.168.0.0/16
-  if (parts[0] === 192 && parts[1] === 168) return true
-
-  return false
 }
 
 /**

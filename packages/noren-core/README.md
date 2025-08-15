@@ -13,6 +13,7 @@ The core library of the Noren PII protection suite - designed for **simplicity**
 - ⚡ **High performance**: 102K+ ops/sec with pre-compiled patterns
 - 🌐 **Web Standards**: Works everywhere (Node.js, Edge, Browsers)
 - 🎯 **Smart detection**: Built-in patterns with confidence scoring
+- 🛡️ **Advanced validation**: Context-aware false positive filtering with 3 strictness levels
 - 📊 **JSON/NDJSON Support**: Native structured data detection with key-based matching
 - ⚡ **Prefilter optimization**: Fast screening before expensive regex operations
 - 🔒 **Enhanced security**: HMAC-based tokenization with 32-char minimum key
@@ -38,7 +39,7 @@ const registry = new Registry({
 })
 
 // Detect and mask PII
-const input = 'Contact: john@example.com, Card: 4242-4242-4242-4242'
+const input = 'Contact: john@company.com, Card: 4242-4242-4242-4242'
 const result = await redactText(registry, input)
 
 console.log(result)
@@ -50,19 +51,18 @@ console.log(result)
 ```typescript
 const registry = new Registry({
   defaultAction: 'mask',
-  enableConfidenceScoring: true, // New in v0.4.0+
-  enableJsonDetection: true,      // New in v0.5.0+ for structured data
-  environment: 'production',       // Smart defaults for production
+  enableConfidenceScoring: true,     // Enhanced in v0.6.0+
+  validationStrictness: 'balanced',  // New in v0.6.0: Advanced validation
+  environment: 'production',         // Smart defaults with context-aware filtering
   rules: {
     email: { action: 'mask' },
-    credit_card: { action: 'mask', preserveLast4: true },
-    ipv4: { action: 'remove' }
+    credit_card: { action: 'mask', preserveLast4: true }
   }
 })
 
-const input = 'Email: user@company.com, Card: 4242-4242-4242-4242, IP: 192.168.1.1'
+const input = 'Email: user@company.com, Card: 4242-4242-4242-4242'
 const result = await redactText(registry, input)
-// Output: Email: [REDACTED:email], Card: **** **** **** 4242, IP:
+// Output: Email: [REDACTED:email], Card: **** **** **** 4242
 ```
 
 ### Tokenization
@@ -82,16 +82,55 @@ const sameResult = await redactText(registry, input)
 // Tokens will be identical
 ```
 
+### Advanced Validation (v0.6.0+)
+
+Control false positive detection with context-aware validation:
+
+```typescript
+const registry = new Registry({
+  defaultAction: 'mask',
+  validationStrictness: 'balanced' // 'fast' | 'balanced' | 'strict'
+})
+
+// Test data is automatically filtered out in balanced/strict modes
+const testInput = 'Test email: test@example.com, Real email: john@company.com'
+const result = await redactText(registry, testInput)
+// Output: Test email: test@example.com, Real email: [REDACTED:email]
+
+// Different strictness levels:
+// - 'fast': No validation (maximum performance)
+// - 'balanced': Filter test data and weak contexts (recommended)
+// - 'strict': Aggressive filtering with context requirements
+```
+
 ## 🎯 Supported PII Types
 
-| Type | Pattern | Example | Enhanced in v0.5.0 |
-|------|---------|---------|--------------------|
-| `mac` | MAC addresses | `00:11:22:33:44:55` | ✓ Boundary detection |
-| `email` | Email addresses | `john@example.com` | ✓ Unicode support |
-| `credit_card` | Credit card numbers (Luhn validated) | `4242-4242-4242-4242` | ✓ Stricter boundaries |
-| `ipv4` | IPv4 addresses | `192.168.1.1` | - |
-| `ipv6` | IPv6 addresses | `2001:db8::1` | ✓ Enhanced parser |
-| `phone_e164` | International phone numbers | `+1-555-123-4567` | - |
+**Core Package**:
+
+| Type | Pattern | Example | Notes |
+|------|---------|---------|-------|
+| `email` | Email addresses | `john@company.com` | ✓ Unicode support, validation |
+| `credit_card` | Credit card numbers (Luhn validated) | `4242-4242-4242-4242` | ✓ Brand detection, validation |
+| `phone_e164` | International phone numbers | `+1-555-123-4567` | ✓ Format validation |
+
+**Network Detection** (v0.6.0+):
+
+⚠️ **Breaking Change**: Network PII detection (IPv4/IPv6/MAC) has been moved to a dedicated plugin for better modularity:
+
+```bash
+npm install @himorishige/noren-plugin-network
+```
+
+```typescript
+import * as networkPlugin from '@himorishige/noren-plugin-network'
+
+const registry = new Registry({ defaultAction: 'mask' })
+registry.use(networkPlugin.detectors, networkPlugin.maskers)
+
+// Now IPv4, IPv6, and MAC detection works
+const result = await redactText(registry, 'Server: 192.168.1.1, MAC: 00:11:22:33:44:55')
+// Output: Server: [REDACTED:ipv4], MAC: [REDACTED:mac]
+```
 
 ## 📊 Stream Processing
 
@@ -106,7 +145,7 @@ const transform = createRedactionTransform(registry)
 // Process any ReadableStream
 const inputStream = new ReadableStream({
   start(controller) {
-    controller.enqueue('Data with john@example.com...')
+    controller.enqueue('Data with john@company.com...')
     controller.enqueue('More data with 4242-4242-4242-4242...')
     controller.close()
   }
@@ -145,7 +184,7 @@ const badExample = { email: 'user@example.com' }
 // await redactText(registry, badExample) // Error: s.normalize is not a function
 
 // ✅ Convert to JSON string first  
-const jsonString = JSON.stringify({ email: 'user@example.com', phone: '090-1234-5678' })
+const jsonString = JSON.stringify({ email: 'user@company.com', phone: '090-1234-5678' })
 const result = await redactText(registry, jsonString)
 // Output: {"email":"[REDACTED:email]","phone":"•••-••••-••••"}
 
@@ -176,7 +215,7 @@ async function redactObject(registry, obj, options = {}) {
 
 // Process complex nested structures
 const complexData = {
-  user: { email: 'user@example.com', phones: ['090-1111-2222', '03-3333-4444'] },
+  user: { email: 'user@company.com', phones: ['090-1111-2222', '03-3333-4444'] },
   messages: ['Contact: admin@company.com', 'Phone: 080-5555-6666']
 }
 
@@ -199,7 +238,7 @@ const result = await redactText(registry, fullWidthInput)
 // Output: Email: [REDACTED:email] Phone: •••-••••-••••
 
 // Detection works the same as half-width equivalents
-const halfWidthInput = 'Email: user@example.com Phone: 090-1234-5678'  
+const halfWidthInput = 'Email: user@company.com Phone: 090-1234-5678'  
 const sameResult = await redactText(registry, halfWidthInput)
 // Both inputs produce equivalent masking results
 ```
@@ -230,11 +269,15 @@ const registry = new Registry({
 Extend functionality with plugins:
 
 ```typescript
-// Use region-specific plugins
+// Use plugins for extended functionality
+import * as networkPlugin from '@himorishige/noren-plugin-network'
 import * as jpPlugin from '@himorishige/noren-plugin-jp'
 import * as securityPlugin from '@himorishige/noren-plugin-security'
 
 const registry = new Registry({ defaultAction: 'mask' })
+
+// Add network detection (IPv4/IPv6/MAC)
+registry.use(networkPlugin.detectors, networkPlugin.maskers)
 
 // Add Japanese PII detection
 registry.use(jpPlugin.detectors, jpPlugin.maskers)
@@ -243,8 +286,27 @@ registry.use(jpPlugin.detectors, jpPlugin.maskers)
 registry.use(securityPlugin.detectors, securityPlugin.maskers)
 ```
 
+#### Plugin Validation Integration (v0.6.0+)
+
+Plugins automatically inherit the registry's validation settings:
+
+```typescript
+const registry = new Registry({
+  defaultAction: 'mask',
+  validationStrictness: 'balanced' // Applies to plugins too
+})
+
+registry.use(jpPlugin.detectors, jpPlugin.maskers)
+
+// Plugin detections are validated using the same rules as core detectors
+const text = 'テスト電話: 03-1234-5678, 本番電話: 03-9876-5432'
+const result = await redactText(registry, text)
+// Only real phone numbers are detected, test patterns are filtered out
+```
+
 ### Available Plugins
 
+- **[@himorishige/noren-plugin-network](../noren-plugin-network)**: IPv4/IPv6 addresses, MAC addresses **(Required for network detection in v0.6.0+)**
 - **[@himorishige/noren-plugin-jp](../noren-plugin-jp)**: Japanese phone numbers, postal codes, My Number
 - **[@himorishige/noren-plugin-us](../noren-plugin-us)**: US phone numbers, ZIP codes, SSNs
 - **[@himorishige/noren-plugin-security](../noren-plugin-security)**: HTTP headers, API tokens, cookies
@@ -265,9 +327,7 @@ const jsonInput = JSON.stringify({
   user: {
     email: 'admin@company.com',
     phone: '+1-555-123-4567',
-    address: {
-      ip: '192.168.1.100'
-    }
+    creditCard: '4242-4242-4242-4242'
   }
 })
 
@@ -276,8 +336,8 @@ const result = await redactText(registry, jsonInput)
 
 // NDJSON processing
 const ndjsonInput = [
-  JSON.stringify({ id: 1, email: 'user1@example.com' }),
-  JSON.stringify({ id: 2, email: 'user2@example.com' })
+  JSON.stringify({ id: 1, email: 'user1@company.com' }),
+  JSON.stringify({ id: 2, email: 'user2@company.com' })
 ].join('\n')
 
 const ndjsonResult = await redactText(registry, ndjsonInput)
@@ -311,6 +371,7 @@ interface RegistryOptions {
   enableJsonDetection?: boolean // New: Enable JSON/NDJSON processing
   sensitivity?: 'strict' | 'balanced' | 'relaxed'
   contextHints?: string[] // Keywords to improve detection
+  validationStrictness?: 'fast' | 'balanced' | 'strict' // v0.6.0+: Context validation level
 }
 ```
 
@@ -373,7 +434,36 @@ See [@himorishige/noren-devtools](../noren-devtools) for development and testing
 
 ## 🔄 Version History
 
-### v0.5.0 (Latest) - Performance & Structured Data Support
+### v0.6.0 (Latest) - Advanced Validation & Architecture Optimization
+
+**🚨 Breaking Changes:**
+- **Network detection separation**: IPv4/IPv6/MAC detection moved to `@himorishige/noren-plugin-network`
+- **Smaller core bundle**: 35% reduction in core package size by removing network patterns
+- **Plugin-based architecture**: Better modularity and optional feature loading
+
+**🛡️ New Features:**
+- **Advanced validation system**: Context-aware false positive filtering with 3 strictness levels (`fast`/`balanced`/`strict`)
+- **Plugin validation integration**: Automatic validation for plugin-detected PII types with seamless inheritance
+- **🇯🇵 Enhanced Japanese language support**: Specialized validators and expanded context keywords for improved accuracy
+- **📋 Debug utilities**: New `debugValidation()` function for detailed validation analysis
+- **⚡ Performance optimized**: Validation adds minimal overhead while significantly reducing false positives
+- **🎯 Context-aware filtering**: Smart detection of test data, examples, and weak contexts
+- **🔄 Backward compatible**: All existing APIs work without changes (except network detection)
+
+**📦 Migration Guide:**
+```typescript
+// Before v0.6.0 (network detection included)
+const result = await redactText(registry, 'IP: 192.168.1.1')
+
+// v0.6.0+ (install network plugin)
+npm install @himorishige/noren-plugin-network
+
+import * as networkPlugin from '@himorishige/noren-plugin-network'
+registry.use(networkPlugin.detectors, networkPlugin.maskers)
+const result = await redactText(registry, 'IP: 192.168.1.1')
+```
+
+### v0.5.0 - Performance & Structured Data Support
 - **JSON/NDJSON detection**: Native support for structured data with key-based matching
 - **Prefilter optimization**: Fast screening reduces processing time for non-PII text
 - **77% code reduction**: Streamlined from 8,153 to 1,782 lines

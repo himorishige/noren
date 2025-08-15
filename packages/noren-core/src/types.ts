@@ -6,6 +6,11 @@ export type PiiType =
   | 'ipv6'
   | 'mac'
   | 'phone_e164'
+  | 'phone_jp'
+  | 'postal_jp'
+  | 'mynumber_jp'
+  | 'api_key'
+  | 'jwt_token'
   | 'credit_card'
   | (string & {})
 
@@ -24,6 +29,7 @@ export type Hit = {
 export type Action = 'mask' | 'remove' | 'tokenize' | 'ignore'
 
 export type DetectionSensitivity = 'strict' | 'balanced' | 'relaxed'
+export type ValidationStrictness = 'fast' | 'balanced' | 'strict'
 
 export type Policy = {
   defaultAction?: Action
@@ -31,8 +37,10 @@ export type Policy = {
   contextHints?: string[]
   hmacKey?: string | CryptoKey
   sensitivity?: DetectionSensitivity
+  validationStrictness?: ValidationStrictness
   confidenceThreshold?: number
   enableContextualConfidence?: boolean
+  enableValidation?: boolean
 }
 
 export type DetectUtils = {

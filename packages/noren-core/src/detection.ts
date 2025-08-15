@@ -1,13 +1,17 @@
-// Optimized built-in detection logic for v0.5.0 - single-pass unified detection
+// Optimized built-in detection logic for v0.6.0 - single-pass unified detection with validation
 
-import { parseIPv6 } from './ipv6-parser.js'
-import { DETECTION_PATTERNS, PATTERN_TYPES, UNIFIED_PATTERN } from './patterns.js'
+import { extractSurroundingText } from './context-scoring.js'
+import { PATTERN_TYPES, UNIFIED_PATTERN } from './patterns.js'
 import { hitPool } from './pool.js'
 import { prefilterText, quickDigitValidation } from './prefilter.js'
 import type { DetectUtils } from './types.js'
 import { luhn, SECURITY_LIMITS } from './utils.js'
+import { type ValidationContext, validateCandidate } from './validators.js'
 
-export function builtinDetect(u: DetectUtils) {
+export function builtinDetect(
+  u: DetectUtils,
+  strictness: 'fast' | 'balanced' | 'strict' = 'balanced',
+) {
   const { src } = u
 
   // Simple length check for security
@@ -32,23 +36,10 @@ export function builtinDetect(u: DetectUtils) {
         const patternType = PATTERN_TYPES[i - 1]
         let isValid = true
         const value = match[i]
-        let startIndex = match.index
+        const startIndex = match.index
 
-        // Adjust for IPv6 lookahead match
-        if (patternType.type === 'ipv6') {
-          const fullMatch = match[0]
-          const ipv6Start = fullMatch.lastIndexOf(value)
-          startIndex = match.index + ipv6Start
-          // Additional validation for IPv6
-          const result = parseIPv6(value)
-          if (!result.valid) {
-            isValid = false
-          }
-        }
-
-        // Additional validation for credit cards
+        // Basic validation for credit cards (keep existing logic for compatibility)
         if (patternType.type === 'credit_card') {
-          // Quick validation first
           if (!quickDigitValidation(value, 'credit_card')) {
             isValid = false
           } else {
@@ -56,6 +47,36 @@ export function builtinDetect(u: DetectUtils) {
             if (!luhn(digits)) {
               isValid = false
             }
+          }
+        }
+
+        // Enhanced validation using new validator system
+        if (isValid && strictness !== 'fast') {
+          // Use window around the match for context, but include the full text for pattern matching
+          const windowSize = 48 // Larger window for context
+          const beforeStart = Math.max(0, startIndex - windowSize)
+          const afterEnd = Math.min(src.length, startIndex + value.length + windowSize)
+          const surroundingText = src.slice(beforeStart, afterEnd)
+
+          const validationContext: ValidationContext = {
+            surroundingText,
+            strictness,
+            originalIndex: startIndex - beforeStart, // Adjust index for windowed text
+          }
+
+          try {
+            const validationResult = validateCandidate(value, patternType.type, validationContext)
+
+            if (!validationResult.valid) {
+              isValid = false
+            }
+          } catch (error) {
+            // On validation error, fall back to allowing the match
+            // This prevents validation errors from breaking detection entirely
+            console.warn(
+              `Validation error for ${patternType.type}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            )
+            // Continue with isValid = true (fallback behavior)
           }
         }
 
@@ -67,30 +88,26 @@ export function builtinDetect(u: DetectUtils) {
             value,
             patternType.risk,
           )
+
+          // Add validation metadata if available
+          if (strictness !== 'fast') {
+            const surroundingText = extractSurroundingText(
+              src,
+              startIndex,
+              startIndex + value.length,
+            )
+            const validationContext: ValidationContext = {
+              surroundingText,
+              strictness,
+              originalIndex: startIndex,
+            }
+            const validationResult = validateCandidate(value, patternType.type, validationContext)
+            hit.confidence = validationResult.confidence
+          }
+
           u.push(hit)
         }
         break // Only process the first matching group
-      }
-    }
-  }
-
-  // Phone E164 detection (not in unified pattern due to complexity)
-  // Only run if prefilter suggests phone candidates
-  if (prefilterResult.hasPhoneCandidate) {
-    for (const match of src.matchAll(DETECTION_PATTERNS.e164)) {
-      if (!u.canPush || !u.canPush()) break
-      if (match.index == null) continue
-
-      // Quick validation first
-      if (quickDigitValidation(match[0], 'phone')) {
-        const hit = hitPool.acquire(
-          'phone_e164',
-          match.index,
-          match.index + match[0].length,
-          match[0],
-          'medium',
-        )
-        u.push(hit)
       }
     }
   }

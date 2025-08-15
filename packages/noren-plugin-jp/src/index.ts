@@ -1,6 +1,24 @@
 import type { Detector, DetectUtils, Masker } from '@himorishige/noren-core'
 import { validateMyNumber } from './validators.js'
 
+/**
+ * Simple check if a potential postal code pattern is actually a phone number
+ */
+function isLikelyPhoneNumber(text: string, matchIndex: number, matchLength: number): boolean {
+  const match = text.slice(matchIndex, matchIndex + matchLength)
+
+  // Phone numbers typically start with 0 (domestic) or +81 (international)
+  if (/^0\d/.test(match) || /^\+81/.test(match)) {
+    return true
+  }
+
+  // Check if there's a phone-related label nearby (within 30 characters before)
+  const beforeText = text.slice(Math.max(0, matchIndex - 30), matchIndex).toLowerCase()
+  const phoneLabels = ['tel', '電話', 'phone', 'fax', '携帯', 'mobile']
+
+  return phoneLabels.some((label) => beforeText.includes(label))
+}
+
 // Pre-compiled regex patterns for JP detectors with Japanese-aware boundaries
 const JP_PATTERNS = {
   postal: /(?<![0-9０-９¥$€£¢])\d{3}-?\d{4}(?![0-9０-９])/g,
@@ -20,32 +38,52 @@ const JP_CONTEXTS = {
 export const detectors: Detector[] = [
   {
     id: 'jp.postal',
+    priority: 5, // Lower priority than phone detection
     match: ({ src, push, hasCtx }: DetectUtils) => {
-      const hasContext = hasCtx(Array.from(JP_CONTEXTS.postal))
+      const hasPostalContext = hasCtx(['〒', '郵便', '住所', 'zip', 'postal'])
 
       for (const m of src.matchAll(JP_PATTERNS.postal)) {
         if (m.index == null) continue
-        // 文脈なしでも低信頼度で検出（PRレビュー指摘事項対応）
-        const confidence = hasContext ? 0.75 : 0.4
 
-        push({
-          type: 'postal_jp',
-          start: m.index,
-          end: m.index + m[0].length,
-          value: m[0],
-          risk: 'low',
-          confidence,
-          reasons: ['postal_pattern_match', hasContext ? 'context_match' : 'no_context'],
-          features: {
-            hasContext,
-            normalized: m[0].replace(/[^\d]/g, '').replace(/(\d{3})(\d{4})/, '$1-$2'),
-          },
-        })
+        // Skip if this looks like a phone number
+        if (isLikelyPhoneNumber(src, m.index, m[0].length)) {
+          continue
+        }
+
+        // Check for postal symbol (〒) within 10 characters before
+        const beforeText = src.slice(Math.max(0, m.index - 10), m.index)
+        const hasPostalSymbol = beforeText.includes('〒')
+
+        // Simple confidence calculation
+        const confidence = hasPostalSymbol ? 0.9 : hasPostalContext ? 0.6 : 0.4
+
+        // Only report with reasonable confidence
+        if (confidence >= 0.4) {
+          push({
+            type: 'postal_jp',
+            start: m.index,
+            end: m.index + m[0].length,
+            value: m[0],
+            risk: 'low',
+            confidence,
+            reasons: [
+              'postal_pattern',
+              ...(hasPostalSymbol ? ['has_postal_symbol'] : []),
+              ...(hasPostalContext ? ['has_context'] : []),
+            ],
+            features: {
+              hasPostalSymbol,
+              hasContext: hasPostalContext,
+              normalized: m[0].replace(/[^\d]/g, '').replace(/(\d{3})(\d{4})/, '$1-$2'),
+            },
+          })
+        }
       }
     },
   },
   {
     id: 'jp.phone',
+    priority: 10, // Higher priority than postal detection
     match: ({ src, push, hasCtx }: DetectUtils) => {
       const hasContext = hasCtx(Array.from(JP_CONTEXTS.phone))
 
