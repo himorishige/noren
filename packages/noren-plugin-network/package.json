@@ -42,10 +42,11 @@
   "bugs": {
     "url": "https://github.com/himorishige/noren/issues"
   },
-  "dependencies": {
-    "@himorishige/noren-core": "workspace:*"
+  "peerDependencies": {
+    "@himorishige/noren-core": "^0.6.0"
   },
   "devDependencies": {
+    "@himorishige/noren-core": "workspace:*",
     "typescript": "^5.6.3",
     "vitest": "^3.2.4"
   },
