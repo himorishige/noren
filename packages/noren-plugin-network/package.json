@@ -1,22 +1,23 @@
 {
   "name": "@himorishige/noren-plugin-network",
-  "version": "0.6.0",
+  "version": "0.5.0",
   "description": "Network PII detection plugin for Noren - IPv4, IPv6, and MAC address detection",
   "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": {
-      "import": "./dist/noren-plugin-network/src/index.js",
-      "types": "./dist/noren-plugin-network/src/index.d.ts"
-    }
+    ".": "./dist/index.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "cd ../noren-core && pnpm build && cd ../noren-plugin-network && tsc -p tsconfig.json",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm run build",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "cd ../noren-core && pnpm build && cd ../noren-plugin-network && tsc -p tsconfig.json --noEmit"
+    "test:watch": "vitest watch"
   },
   "keywords": [
     "pii",
