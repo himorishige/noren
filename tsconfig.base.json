@@ -13,7 +13,8 @@
       "@himorishige/noren-dict-reloader": ["packages/noren-dict-reloader/src/index.ts"],
       "@himorishige/noren-plugin-jp": ["packages/noren-plugin-jp/src/index.ts"],
       "@himorishige/noren-plugin-us": ["packages/noren-plugin-us/src/index.ts"],
-      "@himorishige/noren-plugin-security": ["packages/noren-plugin-security/src/index.ts"]
+      "@himorishige/noren-plugin-security": ["packages/noren-plugin-security/src/index.ts"],
+      "@himorishige/noren-plugin-network": ["packages/noren-plugin-network/src/index.ts"]
     }
   }
 }
