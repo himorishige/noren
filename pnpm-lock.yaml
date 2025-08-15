@@ -91,11 +91,10 @@ importers:
         version: 5.9.2
 
   packages/noren-plugin-network:
-    dependencies:
+    devDependencies:
       '@himorishige/noren-core':
         specifier: workspace:*
         version: link:../noren-core
-    devDependencies:
       typescript:
         specifier: ^5.6.3
         version: 5.9.2
