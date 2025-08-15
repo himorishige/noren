@@ -20,6 +20,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@himorishige/noren-core': path.resolve(__dirname, '../noren-core/src/index.ts'),
       '@himorishige/noren-dict-reloader': path.resolve(__dirname, 'src/index.ts'),
     },
   },
