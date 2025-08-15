@@ -5,11 +5,6 @@
     "moduleResolution": "node",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "strict": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "@himorishige/noren-core": ["packages/noren-core/src/index.ts"],
-      "@himorishige/noren-core/*": ["packages/noren-core/src/*"]
-    }
+    "skipLibCheck": true
   }
 }
