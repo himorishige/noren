@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "@himorishige/noren-core": ["./packages/noren-core/src"]
+      "@himorishige/noren-core": ["./packages/noren-core/dist"]
     }
   }
 }
