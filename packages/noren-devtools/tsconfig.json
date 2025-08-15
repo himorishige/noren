@@ -3,10 +3,8 @@
   "compilerOptions": {
     "declaration": true,
     "outDir": "./dist",
-    "rootDir": "./src",
-    "composite": true
+    "rootDir": "./src"
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "test"],
-  "references": [{ "path": "../noren-core" }]
+  "exclude": ["dist", "test"]
 }
