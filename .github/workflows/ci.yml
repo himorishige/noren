@@ -81,8 +81,10 @@ jobs:
 
       - name: Build and Typecheck
         run: |
-          # Build all packages in dependency order (serial execution)
-          pnpm -r --workspace-concurrency=1 run build
+          # Clean any stale TypeScript build info cache
+          find packages -name "tsconfig.tsbuildinfo" -delete || true
+          # Build all packages
+          pnpm run build
           # Then run typecheck on all packages
           pnpm -r run typecheck
 

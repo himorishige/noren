@@ -39,17 +39,20 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run TypeCheck
-        run: pnpm typecheck
-
-      - name: Run Tests
-        run: pnpm test
-
       - name: Run Linting
         run: pnpm check
 
-      - name: Build packages
-        run: pnpm build
+      - name: Build packages and TypeCheck
+        run: |
+          # Clean any stale TypeScript build info cache
+          find packages -name "tsconfig.tsbuildinfo" -delete || true
+          # Build all packages
+          pnpm run build
+          # Then run typecheck on all packages
+          pnpm -r run typecheck
+
+      - name: Run Tests
+        run: pnpm test
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
