@@ -17,8 +17,8 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 - **🔌 Extensible**: Plugin architecture for regional/custom needs
 - **🔒 Enhanced Security**: 70%+ detection rate for security tokens
 
-> **Status: v0.5.0 Release**
-> This release delivers major enhancements: JSON/NDJSON detection, 70%+ security token detection rate, performance optimizations with 77% code reduction, and 102K+ operations/second processing speed.
+> **Status: v0.6.0 Release**
+> This release introduces plugin architecture modularity: Network PII detection (IPv4/IPv6/MAC) has been moved to a dedicated plugin for better maintainability and customization.
 
 ## ✨ Key Features
 
@@ -32,10 +32,10 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 ### 🎯 **Smart Detection**
 - **Email addresses** with TLD validation
 - **Credit cards** with Luhn algorithm validation
-- **IP addresses** (IPv4 & IPv6) with proper parsing
 - **Phone numbers** (E164 format)
 - **JSON/NDJSON data** with key-based context detection
 - **Security tokens** (GitHub, AWS, Stripe, Slack, OpenAI, etc.)
+- **IP addresses** (IPv4 & IPv6) via network plugin
 - **Custom patterns** via plugin system
 
 ### 🌐 **Web Standards Only**
@@ -58,6 +58,7 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 | [`@himorishige/noren-core`](./packages/noren-core/README.md)                | 🎯 **Core library** - Fast PII detection, masking, and tokenization |
 | [`@himorishige/noren-plugin-jp`](./packages/noren-plugin-jp/README.md)           | 🇯🇵 **Japan plugin** - Phone numbers, postal codes, My Number |
 | [`@himorishige/noren-plugin-us`](./packages/noren-plugin-us/README.md)           | 🇺🇸 **US plugin** - Phone numbers, ZIP codes, SSNs |
+| [`@himorishige/noren-plugin-network`](./packages/noren-plugin-network/README.md)     | 🌐 **Network plugin** - IPv4, IPv6, MAC addresses |
 | [`@himorishige/noren-plugin-security`](./packages/noren-plugin-security/README.md)     | 🛡️ **Security plugin** - HTTP headers, API tokens, cookies |
 | [`@himorishige/noren-dict-reloader`](./packages/noren-dict-reloader/README.md)       | 🔄 **Dynamic reload** - ETag-based policy hot-reloading |
 | [`@himorishige/noren-devtools`](./packages/noren-devtools/README.md)            | 🔧 **Development tools** - Benchmarking, evaluation, metrics |
@@ -72,7 +73,7 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 ```bash
 npm install @himorishige/noren-core
 # Or with additional plugins
-npm install @himorishige/noren-core @himorishige/noren-plugin-jp @himorishige/noren-plugin-security
+npm install @himorishige/noren-core @himorishige/noren-plugin-jp @himorishige/noren-plugin-security @himorishige/noren-plugin-network
 ```
 
 ### 2. **Basic Usage** (1-minute setup)
@@ -86,11 +87,11 @@ const registry = new Registry({
 })
 
 // Process your text
-const input = 'Email: john@example.com, Card: 4242-4242-4242-4242, IP: 192.168.1.1'
+const input = 'Email: john@example.com, Card: 4242-4242-4242-4242, Phone: 090-1234-5678'
 const result = await redactText(registry, input)
 
 console.log(result)
-// Output: Email: [REDACTED:email], Card: [REDACTED:credit_card], IP: [REDACTED:ipv4]
+// Output: Email: [REDACTED:email], Card: [REDACTED:credit_card], Phone: [REDACTED:phone_e164]
 ```
 
 ### 3. **With Regional Plugins**
@@ -98,6 +99,7 @@ console.log(result)
 import { Registry, redactText } from '@himorishige/noren-core'
 import * as jpPlugin from '@himorishige/noren-plugin-jp'
 import * as securityPlugin from '@himorishige/noren-plugin-security'
+import * as networkPlugin from '@himorishige/noren-plugin-network'
 
 const registry = new Registry({
   defaultAction: 'mask',
@@ -112,10 +114,11 @@ const registry = new Registry({
 // Add plugins
 registry.use(jpPlugin.detectors, jpPlugin.maskers)
 registry.use(securityPlugin.detectors, securityPlugin.maskers)
+registry.use(networkPlugin.detectors, networkPlugin.maskers)
 
-const input = '〒150-0001 カード: 4242-4242-4242-4242 GitHub: ghp_1234567890abcdef Bearer: eyJ0eXAiOiJKV1Q...'
+const input = '〒150-0001 カード: 4242-4242-4242-4242 IP: 192.168.1.1 GitHub: ghp_1234567890abcdef'
 const result = await redactText(registry, input)
-// Output: 〒•••-•••• カード: **** **** **** 4242 GitHub: ghp_******** Bearer: [REDACTED:AUTH]
+// Output: 〒•••-•••• カード: **** **** **** 4242 IP: [REDACTED:ipv4] GitHub: ghp_********
 ```
 
 ### 4. **Tokenization** (Advanced)

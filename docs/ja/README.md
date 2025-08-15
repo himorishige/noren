@@ -16,8 +16,8 @@ Noren (暖簾)は、アプリケーションの「エッジ」で機密データ
 - **🎯 スマート**: 信頼度スコアリングによる精密な制御
 - **🔌 拡張可能**: 地域やカスタムニーズに対応するプラグインアーキテクチャ
 
-> **ステータス: v0.5.0 リリース**
-> このリリースは、77%コード削減と102K+操作/秒の処理速度を実現した大幅なパフォーマンス最適化を提供します。
+> **ステータス: v0.6.0 リリース**
+> このリリースでは、プラグインアーキテクチャのモジュール化を導入しました：ネットワークPII検出（IPv4/IPv6/MAC）は、保守性とカスタマイズ性の向上のため、専用プラグインに移動されました。
 
 ## ✨ 主な特長
 
@@ -31,8 +31,8 @@ Noren (暖簾)は、アプリケーションの「エッジ」で機密データ
 ### 🎯 **スマートな検出**
 - TLD検証付きの**メールアドレス**
 - Luhnアルゴリズム検証付きの**クレジットカード**
-- **IPアドレス**（IPv4 & IPv6）の適切な解析
 - **電話番号**（E164フォーマット）
+- **IPアドレス**（IPv4 & IPv6）ネットワークプラグイン経由
 - プラグインシステムによる**カスタムパターン**
 
 ### 🌐 **Web標準のみ**
@@ -54,6 +54,7 @@ Noren (暖簾)は、アプリケーションの「エッジ」で機密データ
 | [`@himorishige/noren-core`](../../packages/noren-core/README.md)                | 🎯 **コアライブラリ** - 高速なPII検出、マスキング、トークン化 |
 | [`@himorishige/noren-plugin-jp`](../../packages/noren-plugin-jp/README.md)           | 🇯🇵 **日本向けプラグイン** - 電話番号、郵便番号、マイナンバー |
 | [`@himorishige/noren-plugin-us`](../../packages/noren-plugin-us/README.md)           | 🇺🇸 **米国向けプラグイン** - 電話番号、郵便番号、SSN |
+| [`@himorishige/noren-plugin-network`](../../packages/noren-plugin-network/README.md)     | 🌐 **ネットワークプラグイン** - IPv4、IPv6、MACアドレス |
 | [`@himorishige/noren-plugin-security`](../../packages/noren-plugin-security/README.md)     | 🛡️ **セキュリティプラグイン** - HTTPヘッダー、APIトークン、Cookie |
 | [`@himorishige/noren-dict-reloader`](../../packages/noren-dict-reloader/README.md)       | 🔄 **動的リロード** - ETagベースのポリシーホットリロード |
 | [`@himorishige/noren-devtools`](../../packages/noren-devtools/README.md)            | 🔧 **開発ツール** - ベンチマーク、A/Bテスト、評価 |
@@ -68,7 +69,7 @@ Noren (暖簾)は、アプリケーションの「エッジ」で機密データ
 ```bash
 npm install @himorishige/noren-core
 # または、追加プラグインと共にインストール
-npm install @himorishige/noren-core @himorishige/noren-plugin-jp @himorishige/noren-plugin-security
+npm install @himorishige/noren-core @himorishige/noren-plugin-jp @himorishige/noren-plugin-security @himorishige/noren-plugin-network
 ```
 
 ### 2. **基本的な使い方** (1分セットアップ)
@@ -82,11 +83,11 @@ const registry = new Registry({
 })
 
 // テキストを処理
-const input = 'Email: john@example.com, Card: 4242-4242-4242-4242, IP: 192.168.1.1'
+const input = 'Email: john@example.com, Card: 4242-4242-4242-4242, Phone: 090-1234-5678'
 const result = await redactText(registry, input)
 
 console.log(result)
-// 出力: Email: [REDACTED:email], Card: [REDACTED:credit_card], IP: [REDACTED:ipv4]
+// 出力: Email: [REDACTED:email], Card: [REDACTED:credit_card], Phone: [REDACTED:phone_e164]
 ```
 
 ### 3. **地域別プラグインの利用**
@@ -94,23 +95,25 @@ console.log(result)
 import { Registry, redactText } from '@himorishige/noren-core'
 import * as jpPlugin from '@himorishige/noren-plugin-jp'
 import * as securityPlugin from '@himorishige/noren-plugin-security'
+import * as networkPlugin from '@himorishige/noren-plugin-network'
 
 const registry = new Registry({
   defaultAction: 'mask',
   enableConfidenceScoring: true, // 信頼度スコアリングで精度向上
   rules: {
     credit_card: { action: 'mask', preserveLast4: true }, // クレカは末尾4桁を保持
-    mynumber_jp: { action: 'remove' } // v0.5.0: マイナンバーは完全に削除
+    mynumber_jp: { action: 'remove' } // マイナンバーは完全に削除
   }
 })
 
 // プラグインを追加
 registry.use(jpPlugin.detectors, jpPlugin.maskers)
 registry.use(securityPlugin.detectors, securityPlugin.maskers)
+registry.use(networkPlugin.detectors, networkPlugin.maskers)
 
-const input = '〒150-0001 カード: 4242-4242-4242-4242 Bearer: eyJ0eXAiOiJKV1Q...'
+const input = '〒150-0001 カード: 4242-4242-4242-4242 IP: 192.168.1.1 GitHub: ghp_1234567890abcdef'
 const result = await redactText(registry, input)
-// 出力: 〒•••-•••• カード: **** **** **** 4242 Bearer: [REDACTED:AUTH]
+// 出力: 〒•••-•••• カード: **** **** **** 4242 IP: [REDACTED:ipv4] GitHub: ghp_********
 ```
 
 ### 4. **トークン化** (高度な利用)
@@ -278,7 +281,7 @@ registry.use([myDetector], { ssn: (hit) => '***-**-****' })
 
 ## ⚡ パフォーマンスとベンチマーク
 
-### 📊 **ベンチマーク** (v0.5.0)
+### 📊 **ベンチマーク** (v0.6.0)
 - **バンドルサイズ**: 124KB最適化ディストリビューション
 - **処理速度**: 102,229操作/秒 (0.0098ms per iteration)
 - **メモリ効率**: オブジェクトプーリングと自動クリーンアップ
