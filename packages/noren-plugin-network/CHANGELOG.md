@@ -1,5 +1,14 @@
 # @himorishige/noren-plugin-network
 
+## 0.6.1
+
+### Patch Changes
+
+- [#60](https://github.com/himorishige/noren/pull/60) [`c67d4a0`](https://github.com/himorishige/noren/commit/c67d4a0121ed909d2d258983edc111f8547510c6) Thanks [@himorishige](https://github.com/himorishige)! - fix: type mappings
+
+- Updated dependencies [[`c67d4a0`](https://github.com/himorishige/noren/commit/c67d4a0121ed909d2d258983edc111f8547510c6)]:
+  - @himorishige/noren-core@0.6.1
+
 ## 0.6.0
 
 ### Minor Changes
