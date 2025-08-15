@@ -81,11 +81,10 @@ jobs:
 
       - name: Build and Typecheck
         run: |
-          # First build core packages that others depend on
-          pnpm -r --filter ./packages/noren-core run build
-          # Then typecheck and build all packages
-          pnpm -r --filter ./packages/** run typecheck
-          pnpm -r --filter ./packages/** run build
+          # Build all packages in dependency order (serial execution)
+          pnpm -r --workspace-concurrency=1 run build
+          # Then run typecheck on all packages
+          pnpm -r run typecheck
 
       - name: Test
         run: pnpm -r --filter ./packages/** run test
