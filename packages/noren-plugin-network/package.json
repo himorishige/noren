@@ -16,7 +16,7 @@
     "build": "cd ../noren-core && pnpm build && cd ../noren-plugin-network && tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "cd ../noren-core && pnpm build && cd ../noren-plugin-network && tsc -p tsconfig.json --noEmit"
   },
   "keywords": [
     "pii",
