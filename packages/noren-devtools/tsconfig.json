@@ -8,7 +8,5 @@
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "test"],
-  "references": [
-    { "path": "../noren-core" }
-  ]
+  "references": [{ "path": "../noren-core" }]
 }
