@@ -34,7 +34,7 @@ describe('noren-plugin-security detectors', () => {
   })
 
   it('detects API keys with prefixes', () => {
-    const text = 'API key: sk_live_1234567890abcdef'
+    const text = 'API key: sk_test_1234567890abcdef'
     const hits = runDetect(text)
     const apiKey = hits.find((h) => h.type === 'sec_api_key')
     expect(apiKey).toBeTruthy()

@@ -87,7 +87,7 @@ function generateSecurityTestData(size: 'small' | 'medium' | 'large'): string {
 
     // Security tokens
     'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-    'X-API-Key: sk_live_abcd1234567890efghijklmnop',
+    'X-API-Key: sk_test_example1234567890abcdef',
     'Cookie: session_id=abc123def456789012345678; theme=dark',
     'client_secret=secret_key_1234567890abcdef',
     'access_token=ghijklmnopqrstuvwxyz123456789',

@@ -104,7 +104,7 @@ describe('Enhanced Security Detection', () => {
   describe('Stripe API Keys', () => {
     it('should detect Stripe API keys', () => {
       const testCases = [
-        'sk_live_51H2oKvB3K4y1234567890abcdef',
+        'sk_test_1234567890abcdef1234567890dummy',
         'pk_live_51H2oKvB3K4y1234567890abcdef',
         'sk_test_51H2oKvB3K4y1234567890abcdef',
         'pk_test_51H2oKvB3K4y1234567890abcdef',
@@ -128,7 +128,7 @@ describe('Enhanced Security Detection', () => {
   describe('Slack Tokens', () => {
     it('should detect Slack bot tokens', () => {
       const testCases = [
-        'xoxb-1234567890-1234567890-abcdefghijklmnopqrstuvwx',
+        'xoxb-1111111111-2222222222-dummytokenstring12345678',
         'xoxp-1234567890-1234567890-abcdefghijklmnopqrstuvwx',
         'xapp-1-A1234567890-1234567890-abcdefghijklmnopqrstuvwx',
       ]
@@ -231,8 +231,8 @@ describe('Enhanced Security Detection', () => {
         - GitHub: ghp_1234567890abcdef1234567890abcdef123456
         - AWS: AKIAIOSFODNN7EXAMPLE
         - Google: AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI
-        - Stripe: sk_live_51H2oKvB3K4y1234567890abcdef
-        - Slack: xoxb-1234567890-1234567890-abcdefghijklmnopqrstuvwx
+        - Stripe: sk_test_1234567890abcdef1234567890dummy
+        - Slack: xoxb-1111111111-2222222222-dummytokenstring12345678
         - SendGrid: SG.1234567890abcdef.1234567890abcdef1234567890abcdef
         - OpenAI: sk-proj-1234567890abcdef1234567890abcdef1234567890
       `.repeat(10)

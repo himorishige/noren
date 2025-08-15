@@ -48,7 +48,7 @@ const httpLog = `
 POST /api/users HTTP/1.1
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.SflKxwR...
 Cookie: session_id=abc123def456; theme=dark
-X-API-Key: sk_live_1234567890abcdef
+X-API-Key: sk_test_1234567890abcdef
 `;
 
 const maskedLog = await redactText(registry, httpLog);
@@ -103,9 +103,9 @@ registry.use(securityPlugin.detectors, securityPlugin.maskers);
 const apiKeys = `
 GitHub Token: ghp_1234567890abcdef1234567890abcdef123456
 AWS Access Key: AKIAIOSFODNN7EXAMPLE
-Stripe Secret: sk_live_51H2oKvB3K4y1234567890abcdef
+Stripe Secret: sk_test_1234567890abcdef1234567890dummy
 OpenAI API Key: sk-proj-1234567890abcdef1234567890abcdef1234567890
-Slack Bot Token: xoxb-1234567890-1234567890-abcdefghijklmnopqrstuvwx
+Slack Bot Token: xoxb-1111111111-2222222222-dummytokenstring12345678
 SendGrid API Key: SG.1234567890abcdef.1234567890abcdef1234567890abcdef
 `;
 
@@ -129,7 +129,7 @@ The enhanced detection system uses context clues to improve accuracy:
 // High accuracy with service-specific context
 const textWithContext = `
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-STRIPE_SECRET_KEY=sk_live_51H2oKvB3K4y1234567890abcdef
+STRIPE_SECRET_KEY=sk_test_1234567890abcdef1234567890dummy
 GITHUB_TOKEN=ghp_1234567890abcdef1234567890abcdef123456
 `;
 
