@@ -7,7 +7,7 @@
   },
   "scripts": {
     "clean": "pnpm -r --filter './packages/**' run clean",
-    "build": "pnpm run clean && pnpm -r --filter './packages/**' run --if-present build",
+    "build": "pnpm run clean && pnpm -r --filter './packages/**' --workspace-concurrency=1 run --if-present build",
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r --filter './packages/**' run --if-present test",
     "lint": "biome lint .",
