@@ -13,7 +13,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "cd ../noren-core && pnpm build && cd ../noren-plugin-network && tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -41,11 +41,10 @@
   "bugs": {
     "url": "https://github.com/himorishige/noren/issues"
   },
-  "peerDependencies": {
-    "@himorishige/noren-core": "^0.6.0"
+  "dependencies": {
+    "@himorishige/noren-core": "workspace:*"
   },
   "devDependencies": {
-    "@himorishige/noren-core": "workspace:*",
     "typescript": "^5.6.3",
     "vitest": "^3.2.4"
   },
