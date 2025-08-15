@@ -13,6 +13,7 @@ Essential tools for testing, benchmarking, and evaluating your PII detection wor
 - 📈 **Metrics Collection**: Performance and accuracy tracking
 - 🔬 **Statistical Analysis**: Common statistical functions for data analysis
 - 📋 **Unified Reporting**: Consistent report generation
+- 📊 **JSON/NDJSON Testing**: Specialized tools for structured data evaluation
 - ⚡ **Optimized Performance**: 70% size reduction with streamlined functionality
 
 ## 🚀 Installation
@@ -35,7 +36,10 @@ import {
 } from '@himorishige/noren-devtools'
 import { Registry } from '@himorishige/noren-core'
 
-const registry = new Registry({ defaultAction: 'mask' })
+const registry = new Registry({ 
+  defaultAction: 'mask',
+  enableJsonDetection: true // New in v0.5.0
+})
 const runner = new BenchmarkRunner()
 
 // Use predefined benchmark configuration
@@ -77,6 +81,12 @@ const syntheticEntry = createSyntheticEntry('test1', [
   { type: 'phone', pattern: '555-0123' }
 ])
 groundTruth.addEntry(syntheticEntry)
+
+// Test JSON detection capabilities (v0.5.0+)
+const jsonEntry = createSyntheticEntry('json-test', [
+  { type: 'email', pattern: JSON.stringify({ user: { email: 'test@example.com' }}) }
+])
+groundTruth.addEntry(jsonEntry)
 
 // Run evaluation
 const evaluator = new EvaluationEngine()

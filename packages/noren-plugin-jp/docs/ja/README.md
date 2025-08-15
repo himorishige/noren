@@ -49,3 +49,17 @@ console.log(redactedText);
 | `phone_jp`       | 日本の電話番号 | `•••-••••-••••`   | ✓ 名称変更 |
 | `postal_jp`      | 日本の郵便番号 | `〒•••-••••`      | ✓ 名称変更 |
 | `mynumber_jp`    | マイナンバー   | `[REDACTED:MYNUMBER]` | ✓ 名称変更 |
+
+## 全角文字のサポート
+
+このプラグインは、NorenのUnicode NFKC正規化機能により、全角文字もシームレスに処理できます：
+
+```typescript
+// 半角・全角どちらの文字も同等に検出されます
+const halfWidth = '電話: 090-1234-5678'
+const fullWidth = '電話: ０９０-１２３４-５６７８'
+
+// どちらも同じマスキング結果を生成します
+const result1 = await redactText(registry, halfWidth)  // → 電話: •••-••••-••••
+const result2 = await redactText(registry, fullWidth)  // → 電話: •••-••••-••••
+```

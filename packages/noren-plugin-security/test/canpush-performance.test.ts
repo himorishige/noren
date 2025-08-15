@@ -53,7 +53,7 @@ describe('canPush Performance Tests', () => {
     // Create text with many potential matches
     const manyApiKeys = Array(20)
       .fill(0)
-      .map((_, i) => `sk_live_${i.toString().padStart(32, '0')}`)
+      .map((_, i) => `sk_test_${i.toString().padStart(32, '0')}`)
       .join(' ')
 
     const { hits: limitedHits, totalIterations } = runDetectWithLimit(manyApiKeys, 5)
@@ -75,9 +75,9 @@ describe('canPush Performance Tests', () => {
       Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature1
       Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature2
       Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature3
-      X-API-Key: sk_live_key1
-      X-API-Key: sk_live_key2
-      X-API-Key: sk_live_key3
+      X-API-Key: sk_test_key1
+      X-API-Key: sk_test_key2
+      X-API-Key: sk_test_key3
     `
 
     const contextHints = ['Authorization', 'Bearer', 'X-API-Key']
@@ -98,7 +98,7 @@ describe('canPush Performance Tests', () => {
     expect(emptyHits.length).toBe(0)
 
     // Limit of 0
-    const { hits: zeroLimitHits } = runDetectWithLimit('sk_live_test123', 0)
+    const { hits: zeroLimitHits } = runDetectWithLimit('sk_test_test123', 0)
     expect(zeroLimitHits.length).toBe(0)
 
     // Text with no matches
@@ -128,7 +128,7 @@ describe('Confidence Scoring Integration', () => {
         expectedMinConfidence: 0.9,
       },
       {
-        text: 'API key: sk_live_1234567890abcdef',
+        text: 'API key: sk_test_1234567890abcdef',
         expectedType: 'sec_api_key',
         expectedMinConfidence: 0.85,
       },

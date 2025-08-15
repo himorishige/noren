@@ -79,7 +79,6 @@ describe('Confidence Scoring Integration', () => {
       const testInput = `
         Real: user@gmail.com
         Test: test@example.com
-        IP: 192.168.1.1
       `
 
       // Strict - should redact almost everything
@@ -90,7 +89,6 @@ describe('Confidence Scoring Integration', () => {
       })
       const strictResult = await redactText(strictRegistry, testInput)
       expect(strictResult).toContain('[REDACTED:email]')
-      expect(strictResult).toContain('[REDACTED:ipv4]')
 
       // Relaxed - should redact only high-confidence matches
       const relaxedRegistry = new Registry({
@@ -101,7 +99,6 @@ describe('Confidence Scoring Integration', () => {
       const relaxedResult = await redactText(relaxedRegistry, testInput)
       expect(relaxedResult).toContain('[REDACTED:email]')
       expect(relaxedResult).toContain('test@example.com') // Should not be redacted
-      expect(relaxedResult).toContain('192.168.1.1') // Should not be redacted
     })
 
     it('should combine with allowlist filtering', async () => {
@@ -114,19 +111,15 @@ describe('Confidence Scoring Integration', () => {
       const testInput = `
         Test domain: test@example.com
         Real domain: user@gmail.com
-        Private IP: 192.168.1.1
-        Public IP: 8.8.8.8
       `
 
       const result = await redactText(registry, testInput)
 
       // Test patterns should be allowed by environment settings, not by confidence
       expect(result).toContain('test@example.com')
-      expect(result).toContain('192.168.1.1')
 
       // Real PII should still be redacted
       expect(result).not.toContain('user@gmail.com')
-      expect(result).not.toContain('8.8.8.8')
     })
   })
 

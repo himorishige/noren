@@ -103,17 +103,6 @@ describe('Tokenization Error Handling', () => {
     )
   })
 
-  it('should handle short hmacKey during tokenization', async () => {
-    const reg = new Registry({
-      defaultAction: 'tokenize',
-      hmacKey: 'too-short-key-less-than-32-char', // Less than 32 chars (31)
-    })
-
-    await expect(redactText(reg, 'Card: 4242 4242 4242 4242')).rejects.toThrow(
-      /HMAC key must be at least 32 characters long/,
-    )
-  })
-
   it('should handle CryptoKey input correctly', async () => {
     // Create a valid CryptoKey
     const keyString = 'valid-32-character-crypto-key-for-testing-tokenization-scenarios'

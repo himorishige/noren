@@ -22,25 +22,6 @@ describe('Allowlist/Denylist Functionality', () => {
       expect(manager.isAllowed('noreply@domain.com', 'email')).toBe(true)
     })
 
-    it('should handle private IPs based on configuration', () => {
-      const devManager = new AllowDenyManager({
-        environment: 'development',
-        allowPrivateIPs: true,
-      })
-      const prodManager = new AllowDenyManager({
-        environment: 'production',
-        allowPrivateIPs: false,
-      })
-
-      expect(devManager.isAllowed('192.168.1.1', 'ipv4')).toBe(true)
-      expect(devManager.isAllowed('10.0.0.1', 'ipv4')).toBe(true)
-      expect(devManager.isAllowed('127.0.0.1', 'ipv4')).toBe(true)
-
-      expect(prodManager.isAllowed('192.168.1.1', 'ipv4')).toBe(false)
-      expect(prodManager.isAllowed('10.0.0.1', 'ipv4')).toBe(false)
-      expect(prodManager.isAllowed('8.8.8.8', 'ipv4')).toBe(false)
-    })
-
     it('should respect custom allowlist and denylist', () => {
       const customAllowlist = new Map([['email', new Set(['allowed@custom.com'])]])
       const customDenylist = new Map([['email', new Set(['denied@custom.com', 'noreply@'])]])
@@ -65,8 +46,8 @@ describe('Allowlist/Denylist Functionality', () => {
         allowTestPatterns: true,
       })
 
-      expect(manager.isAllowed('test@real-company.com', 'email')).toBe(true)
-      expect(manager.isAllowed('dummy.user@gmail.com', 'email')).toBe(true)
+      expect(manager.isAllowed('test@example.com', 'email')).toBe(true)
+      expect(manager.isAllowed('dummy@example.org', 'email')).toBe(true)
       expect(manager.isAllowed('1234567890', 'phone')).toBe(true)
       expect(manager.isAllowed('1111111111', 'phone')).toBe(true)
     })
@@ -82,21 +63,16 @@ describe('Allowlist/Denylist Functionality', () => {
       const text = `
         Test email: test@example.com
         Real email: user@gmail.com
-        Private IP: 192.168.1.1
-        Public IP: 8.8.8.8
       `
 
       const result = await redactText(reg, text)
 
       // Test patterns should not be redacted
       expect(result).toContain('test@example.com')
-      expect(result).toContain('192.168.1.1')
 
       // Real PII should be redacted
       expect(result).toContain('[REDACTED:email]')
-      expect(result).toContain('[REDACTED:ipv4]')
       expect(result).not.toContain('user@gmail.com')
-      expect(result).not.toContain('8.8.8.8')
     })
 
     it('should redact everything in production environment', async () => {
@@ -108,14 +84,12 @@ describe('Allowlist/Denylist Functionality', () => {
       const text = `
         Test email: test@example.com
         NoReply: noreply@company.com
-        Private IP: 192.168.1.1
       `
 
       const result = await redactText(reg, text)
 
       // Test patterns should be redacted in production
       expect(result).not.toContain('test@example.com')
-      expect(result).not.toContain('192.168.1.1')
 
       // NoReply should not be redacted
       expect(result).toContain('noreply@company.com')

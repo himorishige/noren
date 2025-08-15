@@ -1,0 +1,55 @@
+{
+  "name": "@himorishige/noren-plugin-network",
+  "version": "0.6.0",
+  "description": "Network PII detection plugin for Noren - IPv4, IPv6, and MAC address detection",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/noren-plugin-network/src/index.js",
+      "types": "./dist/noren-plugin-network/src/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "pii",
+    "masking",
+    "network",
+    "ipv4",
+    "ipv6",
+    "mac",
+    "privacy",
+    "data-protection",
+    "edge",
+    "web-standards"
+  ],
+  "author": "himorishige",
+  "license": "MIT",
+  "homepage": "https://github.com/himorishige/noren#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himorishige/noren.git",
+    "directory": "packages/noren-plugin-network"
+  },
+  "bugs": {
+    "url": "https://github.com/himorishige/noren/issues"
+  },
+  "peerDependencies": {
+    "@himorishige/noren-core": "^0.6.0"
+  },
+  "devDependencies": {
+    "@himorishige/noren-core": "workspace:*",
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

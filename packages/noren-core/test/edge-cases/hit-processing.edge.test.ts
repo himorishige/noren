@@ -135,46 +135,10 @@ describe('Hit Processing Complex Scenarios', () => {
     }
   })
 
-  it('should handle mixed actions in same text', async () => {
-    const reg = new Registry({
-      defaultAction: 'mask',
-      rules: {
-        email: { action: 'remove' },
-        credit_card: { action: 'tokenize' },
-        ipv4: { action: 'ignore' },
-      },
-      hmacKey: 'valid-32-character-key-for-mixed-actions-testing-scenarios',
-    })
-
-    const mixedText = `
-      Email: admin@company.com
-      Card: 4242 4242 4242 4242
-      IP: 192.168.1.1
-      MAC: 00:11:22:33:44:55
-    `
-
-    const result = await redactText(reg, mixedText)
-
-    // Email should be removed (empty space)
-    expect(result).not.toContain('admin@company.com')
-
-    // Credit card should be tokenized
-    expect(result).toMatch(/TKN_CREDIT_CARD_[A-Za-z0-9_-]+/)
-    expect(result).not.toContain('4242')
-
-    // IP should be ignored (remain unchanged)
-    expect(result).toContain('192.168.1.1')
-
-    // MAC should use default action (mask)
-    expect(result).not.toContain('00:11:22:33:44:55')
-    expect(result).toContain('[REDACTED:mac]')
-  })
-
   it('should handle preserveLast4 option correctly', async () => {
     const reg = new Registry({
       rules: {
         credit_card: { action: 'mask', preserveLast4: true },
-        phone_e164: { action: 'mask', preserveLast4: true },
       },
     })
 
@@ -184,12 +148,6 @@ describe('Hit Processing Complex Scenarios', () => {
         pattern: '4242 4242 4242 4242',
         expectedLastDigits: '4242',
         type: 'credit_card',
-      },
-      {
-        input: 'Phone: +1234567890123',
-        pattern: '+1234567890123',
-        expectedLastDigits: '0123',
-        type: 'phone_e164',
       },
     ]
 

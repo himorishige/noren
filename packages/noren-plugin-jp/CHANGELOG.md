@@ -1,5 +1,37 @@
 # @himorishige/noren-plugin-jp
 
+## 0.6.0
+
+### Minor Changes
+
+- **Enhanced Postal Code Detection**: Improved phone number conflict resolution
+  - Postal codes (123-4567) are no longer misdetected when they match phone number patterns
+  - `TEL: 03-1234-5678` is correctly identified as phone_jp, not postal_jp
+  - Maintained high accuracy for legitimate postal codes with context
+
+- **Lightweight Architecture**: Simplified detection algorithm
+  - Removed heavy address dictionary dependencies (47 prefectures, 80+ address units)
+  - Streamlined context analysis for better performance
+  - Focused on core functionality: phone number conflict avoidance + postal symbol detection
+
+- **Performance Optimizations**: Aligned with Noren's Edge-native principles
+  - Reduced memory usage through simplified logic
+  - Faster processing for large text documents
+  - Maintained detection accuracy for high-confidence cases (〒 symbol, postal context)
+
+- **Code Quality Improvements**:
+  - Removed 200+ lines of complex address matching code
+  - Simplified confidence scoring (3 levels: 0.9, 0.6, 0.4)
+  - Enhanced test coverage with realistic use cases
+
+### Breaking Changes
+
+None. All public APIs remain compatible.
+
+### Migration Guide
+
+No migration required. The simplified implementation maintains backward compatibility while improving accuracy and performance.
+
 ## 0.5.0
 
 ### Minor Changes
