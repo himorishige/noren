@@ -32,7 +32,10 @@ Noren (暖簾)は、アプリケーションの「エッジ」で機密データ
 - TLD検証付きの**メールアドレス**
 - Luhnアルゴリズム検証付きの**クレジットカード**
 - **電話番号**（E164フォーマット）
+- **JSON/NDJSON データ**キーベースのコンテキスト検出付き
+- **セキュリティトークン**（GitHub、AWS、Stripe、Slack、OpenAIなど）
 - **IPアドレス**（IPv4 & IPv6）ネットワークプラグイン経由
+- **MCP（Model Context Protocol）**JSON-RPC over stdio サポート
 - プラグインシステムによる**カスタムパターン**
 
 ### 🌐 **Web標準のみ**
@@ -151,6 +154,51 @@ const stream = new ReadableStream({
 const redactedStream = stream.pipeThrough(transform)
 ```
 
+### 6. **MCP（Model Context Protocol）統合**
+stdio通信でPII保護が必要なAIツールに最適です：
+
+```typescript
+import { 
+  Registry, 
+  createMCPRedactionTransform,
+  redactJsonRpcMessage 
+} from '@himorishige/noren-core'
+
+// MCPサーバー用のレジストリを作成
+const registry = new Registry({
+  defaultAction: 'mask',
+  validationStrictness: 'fast', // リアルタイム処理用に最適化
+  enableJsonDetection: true,
+  rules: {
+    email: { action: 'mask' },
+    api_key: { action: 'remove' },
+    jwt_token: { action: 'tokenize' }
+  }
+})
+
+// JSON-RPCメッセージを処理
+const transform = createMCPRedactionTransform({
+  registry,
+  policy: { defaultAction: 'mask' }
+})
+
+// MCPサーバーのstdioパイプラインで使用
+await process.stdin
+  .pipeThrough(transform)
+  .pipeTo(process.stdout)
+
+// または個別のJSON-RPCメッセージを処理
+const request = {
+  jsonrpc: '2.0',
+  method: 'getUserProfile',
+  params: { email: 'user@company.com' },
+  id: 1
+}
+
+const redacted = await redactJsonRpcMessage(request, { registry })
+// 出力: { jsonrpc: '2.0', method: 'getUserProfile', params: { email: '[REDACTED:email]' }, id: 1 }
+```
+
 ## 💡 ユースケース
 
 ### 🎯 **一般的なシナリオ**
@@ -158,6 +206,7 @@ const redactedStream = stream.pipeThrough(transform)
 - **カスタマーサポート**: サポートチケット内の機密データをマスク
 - **データ分析**: 構造を維持したままデータセットを匿名化
 - **コンプライアンス**: GDPR、CCPA、その他のプライバシー規制に対応
+- **AIツール統合**: Claude Code AIやその他のMCP対応ツールでの機密データ保護
 
 ### 🚀 **エッジ環境での利用**
 サーバーレスやエッジコンピューティングに最適です:
@@ -277,6 +326,7 @@ registry.use([myDetector], { ssn: (hit) => '***-**-****' })
 - **[トークン化](../../examples/tokenize.mjs)**: HMACベースのトークン化
 - **[ストリーム処理](../../examples/stream-redact.mjs)**: 大規模ファイルの処理
 - **[セキュリティプラグイン](../../examples/security-demo.mjs)**: HTTPヘッダーとトークン
+- **[MCPサーバーアダプター](../../examples/mcp-server-adapter.mjs)**: AIツール用JSON-RPC over stdio保護
 - **[Webサーバー](../../examples/hono-server.mjs)**: Honoフレームワークとの統合
 
 ## ⚡ パフォーマンスとベンチマーク

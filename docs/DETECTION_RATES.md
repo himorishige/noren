@@ -10,7 +10,7 @@ Noren achieves high-precision PII detection across multiple entity types with th
 - **Core Detection**: 87.5% F1 for email, 83.3% F1 for credit card detection
 - **Security Detection**: 96.3-100% F1 scores for JWT tokens and API keys
 - **Low False Positive Rate**: <3% across all entity types
-- **Comprehensive Coverage**: 120 test cases covering diverse patterns and edge cases
+- **Comprehensive Coverage**: 135 test cases covering diverse patterns and edge cases including MCP integration
 
 ## Evaluation Methodology
 
@@ -20,6 +20,7 @@ Our evaluation is based on carefully curated synthetic datasets containing:
 
 - **20 Core PII cases**: Email addresses (10), credit card numbers (10)
 - **100 Security token cases**: JWT tokens (20), API keys (20), Auth headers (15), Cookies (15), URL tokens (15), Misc tokens (15)
+- **15 MCP Integration cases**: JSON-RPC validation (7), NDJSON parsing (2), PII redaction (3), Stream processing (3)
 - **Diverse patterns**: Standard formats, edge cases, internationalization
 - **Negative examples**: Non-PII patterns that could cause false positives
 
@@ -124,6 +125,59 @@ Our evaluation is based on carefully curated synthetic datasets containing:
 
 - Generic API key patterns may have higher false positive rates
 - Custom/proprietary API key formats require additional patterns
+
+## MCP (Model Context Protocol) Integration Performance
+
+### JSON-RPC Message Processing
+
+**Dataset**: 15 test cases covering JSON-RPC 2.0 message validation, NDJSON parsing, PII redaction within structured messages, and real-time stream processing scenarios.
+
+*Benchmark results measured on Node.js v22.18.0, macOS (darwin platform) using `examples/mcp-benchmark.mjs`*
+
+| Metric | Score | Details |
+|--------|-------|---------|
+| Message Validation | 100.0% | Perfect JSON-RPC 2.0 structure validation across request/response/notification/error types |
+| NDJSON Parsing | 100.0% | Flawless line-delimited JSON handling with invalid line filtering |
+| PII Detection | 62.5% | JSON-embedded PII detection rate (5/8 test cases) - room for improvement in JSON context |
+| Structure Preservation | 100.0% | JSON integrity maintained after redaction with fallback string representation |
+| Stream Processing | 100.0% | Efficient real-time stdio processing with configurable buffering |
+
+**Strengths**:
+
+- **Real-time Processing**: Sub-millisecond latency for typical JSON-RPC messages in stdio communication
+- **Structure Preservation**: JSON-RPC message integrity maintained during PII redaction with intelligent fallback
+- **Mixed Content Handling**: Seamlessly processes mixed JSON-RPC and plain text in stdio streams
+- **Memory Efficiency**: Configurable line buffering (default 64KB) prevents memory bloat in large streams
+- **Protocol Compliance**: Full JSON-RPC 2.0 specification compliance with proper validation
+- **AI Tool Integration**: Optimized for Claude Code AI and other MCP-compatible development tools
+
+**Use Cases**:
+
+- **AI Development Tools**: Secure communication between Claude Code AI and external services
+- **MCP Server Proxies**: Transparent PII protection for stdio-based Model Context Protocol implementations
+- **Development Environment Security**: Safe logging and monitoring of AI tool interactions
+- **CI/CD Integration**: Protected build logs and automated testing output with AI tool involvement
+
+**Performance Metrics** *(measured using examples/mcp-benchmark.mjs)*:
+
+- **Processing Speed**: 101.24μs (0.1ms) per JSON-RPC message for typical payloads
+- **Memory Usage**: ~13.4KB per message during processing, constant O(1) for stream size
+- **Throughput**: 30.9K messages/second in continuous NDJSON stream scenarios
+- **Single Message Throughput**: 9.9K messages/second for individual JSON-RPC processing
+- **Structure Preservation**: 100% JSON-RPC integrity maintained after redaction
+
+**Limitations**:
+
+- **JSON-embedded PII Detection**: 62.5% detection rate indicates need for improved JSON context analysis
+- **Large single-line JSON messages**: May impact buffering efficiency in stream processing
+- **Complex nested JSON structures**: Require recursive processing overhead
+- **Non-standard JSON-RPC extensions**: May need additional validation patterns
+
+**Future Improvements**:
+
+- Enhanced JSON key-based context hints for better PII detection within structured data
+- Optimized recursive JSON traversal for complex nested structures
+- Extended JSON-RPC validation patterns for custom protocol extensions
 
 ## Performance Characteristics
 
