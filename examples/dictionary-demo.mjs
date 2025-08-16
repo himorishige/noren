@@ -12,7 +12,7 @@ const PRODUCT_DICT_URL = 'https://example.local/product-dict.json'
 
 // Set up mock fetch to serve dictionary files
 const originalFetch = globalThis.fetch
-globalThis.fetch = async (url, init) => {
+globalThis.fetch = async (url, _init) => {
   console.log(`[FETCH] ${url}`)
 
   if (url.startsWith(POLICY_URL)) {
@@ -201,7 +201,7 @@ function compile(policy, dicts, options = {}) {
 }
 
 // Helper function for basic dictionary confidence scoring
-function calculateDictionaryConfidence(hit, matchedText, dictEntry) {
+function calculateDictionaryConfidence(_hit, matchedText, dictEntry) {
   let confidence = 0.8 // Base confidence for dictionary matches
 
   // Adjust based on pattern complexity
@@ -226,7 +226,7 @@ async function main() {
     policyUrl: POLICY_URL,
     dictManifestUrl: MANIFEST_URL,
     compile,
-    onSwap: (newRegistry, changed) => {
+    onSwap: (_newRegistry, changed) => {
       console.log('🔄 Dictionary updated:', changed.join(', '))
     },
     onError: (error) => {

@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import { Readable, Writable } from 'node:stream'
-import { Registry, createRedactionTransform } from '../packages/noren-core/dist/index.js'
+import { createRedactionTransform, Registry } from '../packages/noren-core/dist/index.js'
 import * as jp from '../packages/noren-plugin-jp/dist/noren-plugin-jp/src/index.js'
 import * as us from '../packages/noren-plugin-us/dist/noren-plugin-us/src/index.js'
 

@@ -5,8 +5,8 @@
 
 import { Registry } from '../../noren-core/dist/index.js'
 import {
-  GroundTruthManager,
   EvaluationEngine,
+  GroundTruthManager,
   TestDatasetBuilder,
 } from '../dist/noren-devtools/src/index.js'
 

@@ -4,7 +4,7 @@
  */
 
 import { Registry } from '../../noren-core/dist/index.js'
-import { BenchmarkRunner, BENCHMARK_CONFIGS } from '../dist/noren-devtools/src/index.js'
+import { BENCHMARK_CONFIGS, BenchmarkRunner } from '../dist/noren-devtools/src/index.js'
 
 /**
  * Demo: Basic performance benchmarking
@@ -237,7 +237,7 @@ async function contextualConfidenceBenchmark() {
   }
 
   // Calculate performance impact
-  const baseDuration = results['Disabled'].avg_duration_ms
+  const baseDuration = results.Disabled.avg_duration_ms
   console.log('\\n=== Performance Impact Analysis ===')
   for (const [name, summary] of Object.entries(results)) {
     if (name === 'Disabled') continue
@@ -316,7 +316,7 @@ async function main() {
     await contextualConfidenceBenchmark()
     await stressBenchmark()
 
-    console.log('\\n' + '='.repeat(50))
+    console.log(`\\n${'='.repeat(50)}`)
     console.log('✅ All benchmarks completed successfully!')
     console.log('\\n📊 Performance Summary:')
     console.log('- Basic detection: Measured timing and memory usage')

@@ -1,4 +1,4 @@
-import { Registry, createRedactionTransform } from '../packages/noren-core/dist/index.js'
+import { createRedactionTransform, Registry } from '../packages/noren-core/dist/index.js'
 import * as jp from '../packages/noren-plugin-jp/dist/noren-plugin-jp/src/index.js'
 import * as us from '../packages/noren-plugin-us/dist/noren-plugin-us/src/index.js'
 
@@ -76,7 +76,22 @@ try {
     try {
       const text = new TextDecoder().decode(chunk)
       // Check if it contains null bytes (likely binary)
-      if (text.includes('\0') || /[\x00-\x08\x0E-\x1F\x7F-\x9F]/.test(text)) {
+      // Check if it contains null bytes or control characters (likely binary)
+      const hasNullBytes = text.includes('\0')
+      // Check for control characters by examining character codes
+      let hasControlChars = false
+      for (let i = 0; i < text.length; i++) {
+        const code = text.charCodeAt(i)
+        if (
+          (code >= 0 && code <= 8) ||
+          (code >= 14 && code <= 31) ||
+          (code >= 127 && code <= 159)
+        ) {
+          hasControlChars = true
+          break
+        }
+      }
+      if (hasNullBytes || hasControlChars) {
         console.log(
           `  Type: Binary (hex: ${Array.from(chunk)
             .map((b) => b.toString(16).padStart(2, '0'))
@@ -86,7 +101,7 @@ try {
         console.log(`  Type: Text`)
         console.log(`  Content: ${JSON.stringify(text)}`)
       }
-    } catch (e) {
+    } catch (_e) {
       console.log(
         `  Type: Binary (hex: ${Array.from(chunk)
           .map((b) => b.toString(16).padStart(2, '0'))

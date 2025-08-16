@@ -5,22 +5,17 @@
  * using ground truth datasets and generates comprehensive reports.
  */
 
-import { readFileSync, writeFileSync } from 'fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // Import noren packages
-import { Registry, redactText } from '../packages/noren-core/dist/index.js'
+import { Registry } from '../packages/noren-core/dist/index.js'
+import { EvaluationEngine, GroundTruthManager } from '../packages/noren-devtools/dist/index.js'
 import {
   detectors as securityDetectors,
   maskers as securityMaskers,
 } from '../packages/noren-plugin-security/dist/index.js'
-import {
-  GroundTruthManager,
-  EvaluationEngine,
-  createEvaluationReport,
-  printReport,
-} from '../packages/noren-devtools/dist/index.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -263,7 +258,7 @@ async function main() {
 
   // Ensure output directory exists
   try {
-    await import('fs').then((fs) => fs.promises.mkdir(OUTPUT_DIR, { recursive: true }))
+    await import('node:fs').then((fs) => fs.promises.mkdir(OUTPUT_DIR, { recursive: true }))
   } catch (error) {
     console.warn('Could not create output directory:', error.message)
   }
