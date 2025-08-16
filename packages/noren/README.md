@@ -15,8 +15,8 @@ Like the traditional Japanese shop curtain that provides **just enough privacy**
 
 ### 🚀 **Blazingly Fast**
 
-- **227,599 QPS** - Process over 200,000 prompts per second
-- **0.004ms average** - Sub-millisecond detection
+- **357,770 QPS** - Process over 350,000 prompts per second
+- **0.0027ms average** - Ultra sub-millisecond detection
 - **Edge-optimized** - Perfect for Cloudflare Workers, Vercel Edge
 
 ### 🪶 **Ultra Lightweight**
@@ -224,8 +224,8 @@ Noren is designed for production workloads:
 
 | Metric               | Value       |
 | -------------------- | ----------- |
-| **Throughput**       | 227,599 QPS |
-| **Latency (avg)**    | 0.004ms     |
+| **Throughput**       | 357,770 QPS |
+| **Latency (avg)**    | 0.0027ms    |
 | **Latency (P95)**    | 0.008ms     |
 | **Bundle Size**      | 34KB        |
 | **Memory per Query** | 152 bytes   |
@@ -233,13 +233,13 @@ Noren is designed for production workloads:
 
 _Benchmarks run on MacBook Pro M3, 16GB RAM_
 
-### 🏎️ Speed Comparison
+### 🏎️ Performance Metrics
 
 ```
-Noren:          0.004ms  (⚡ This library)
-Competitor A:   2.40ms   (600x slower)
-Competitor B:   5.20ms   (1300x slower)
-Competitor C:   12.30ms  (3075x slower)
+Average Response Time: 0.0027ms
+Throughput:           357,770 QPS
+Memory per Query:     152 bytes
+Bundle Size:          34KB (zero dependencies)
 ```
 
 ## 🌍 Universal Compatibility

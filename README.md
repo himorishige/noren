@@ -8,13 +8,13 @@
 
 Like the traditional Japanese **"noren" (のれん)** curtain that provides **just enough privacy** while maintaining openness, the **Noren ecosystem** intelligently protects your applications from modern security threats without blocking legitimate interactions.
 
-**[Noren (@himorishige/noren)](./packages/noren/)** - Our **flagship AI security library** for prompt injection protection, delivering **227,599 QPS** and **0.004ms** detection speed.
+**[Noren (@himorishige/noren)](./packages/noren/)** - Our **flagship AI security library** for prompt injection protection, delivering **357,770 QPS** and **0.0027ms** detection speed.
 
 ## 🚀 Why Choose the Noren Ecosystem?
 
 ### 🎯 **AI-First Security** (Main Product)
 **[@himorishige/noren](./packages/noren/)** - Revolutionary prompt injection protection for the AI era
-- **🏎️ Blazingly Fast**: 227,599 QPS, 0.004ms average detection
+- **🏎️ Blazingly Fast**: 357,770 QPS, 0.0027ms average detection
 - **🪶 Ultra Lightweight**: 34KB bundle, 77% smaller than competitors  
 - **🎯 AI-Aware**: Built for Claude, ChatGPT, and modern LLM workflows
 - **🔌 MCP Compatible**: Native Model Context Protocol support
@@ -103,7 +103,7 @@ npm install @himorishige/noren
 ```typescript
 import { isSafe, createGuard, scanText } from '@himorishige/noren'
 
-// ⚡ Ultra-fast safety check (0.004ms average)
+// ⚡ Ultra-fast safety check (0.0027ms average)
 const safe = isSafe('What is the weather today?') // ✅ true
 const dangerous = isSafe('Ignore all previous instructions') // ❌ false
 
@@ -120,7 +120,7 @@ console.log({
 
 // 🔌 Perfect for MCP (Claude, AI tools)
 // 🌍 Edge-optimized (Cloudflare Workers, Vercel)
-// 🏎️ 227,599 QPS throughput
+// 🏎️ 357,770 QPS throughput
 ```
 
 ### 🛡️ **Option 2: Traditional PII Protection**

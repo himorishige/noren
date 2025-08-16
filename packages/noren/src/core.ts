@@ -6,7 +6,7 @@
  */
 
 import { ALL_PATTERNS } from './patterns.js'
-import { normalizeEncoding, sanitizeContent } from './sanitizer.js'
+import { DEFAULT_SANITIZE_RULES, normalizeEncoding, sanitizeContent } from './sanitizer.js'
 import {
   calculateTrustAdjustedRisk,
   detectTrustMixing,
@@ -19,6 +19,7 @@ import type {
   InjectionPattern,
   PatternMatch,
   PerformanceMetrics,
+  SanitizeRule,
   TrustLevel,
 } from './types.js'
 
@@ -30,6 +31,7 @@ export interface GuardContext {
   patterns: InjectionPattern[]
   compiledPatterns: CompiledPattern[]
   metrics: PerformanceMetrics
+  customRules?: SanitizeRule[]
 }
 
 /**
@@ -89,6 +91,7 @@ export function createGuardContext(config?: Partial<GuardConfig>): GuardContext 
     patterns,
     compiledPatterns,
     metrics: createMetrics(),
+    customRules: config?.customRules,
   }
 }
 
@@ -181,36 +184,47 @@ export function detectPatterns(
       // Reset regex state for each pattern
       pattern.regex.lastIndex = 0
 
-      let match: RegExpExecArray | null
-      let matchCount = 0
+      let _match: RegExpExecArray | null
+      let _matchCount = 0
 
-      match = pattern.regex.exec(content)
-      while (match !== null && matchCount < 10) {
-        // Limit matches per pattern
-        matches.push({
-          pattern: pattern.id,
-          index: match.index,
-          match: match[0],
-          severity: pattern.severity,
-          category: pattern.category,
-          confidence: pattern.weight,
-        })
+      // Use match() for global patterns to avoid state issues
+      if (pattern.regex.global) {
+        const allMatches = content.match(pattern.regex)
+        if (allMatches) {
+          for (const matchStr of allMatches.slice(0, 10)) {
+            matches.push({
+              pattern: pattern.id,
+              index: content.indexOf(matchStr),
+              match: matchStr,
+              severity: pattern.severity,
+              category: pattern.category,
+              confidence: pattern.weight,
+            })
+            _matchCount++
 
-        matchCount++
-
-        // Early exit for critical patterns to save processing time
-        if (earlyExit && pattern.severity === 'critical' && matchCount > 0) {
-          return matches
+            // Early exit for critical patterns
+            if (earlyExit && pattern.severity === 'critical') {
+              return matches
+            }
+          }
         }
+      } else {
+        // For non-global patterns, use exec once
+        const match = pattern.regex.exec(content)
+        if (match) {
+          matches.push({
+            pattern: pattern.id,
+            index: match.index,
+            match: match[0],
+            severity: pattern.severity,
+            category: pattern.category,
+            confidence: pattern.weight,
+          })
 
-        // Only continue if global flag is set
-        if (!pattern.regex.global) break
-
-        match = pattern.regex.exec(content)
-
-        // Prevent infinite loops
-        if (pattern.regex.lastIndex === match?.index) {
-          pattern.regex.lastIndex++
+          // Early exit for critical patterns
+          if (earlyExit && pattern.severity === 'critical') {
+            return matches
+          }
         }
       }
 
@@ -316,7 +330,11 @@ export async function scan(
     // Sanitization
     const sanitizeStartTime = performance.now()
     const sanitized = context.config.enableSanitization
-      ? sanitizeContent(normalizedContent, matches)
+      ? sanitizeContent(
+          normalizedContent,
+          matches,
+          context.customRules ? [...context.customRules, ...DEFAULT_SANITIZE_RULES] : undefined,
+        )
       : normalizedContent
     const sanitizeTime = performance.now() - sanitizeStartTime
 
@@ -421,7 +439,7 @@ function calculateQuickRisk(matches: PatternMatch[]): number {
 
   const severityWeights = {
     critical: 95,
-    high: 70,
+    high: 75, // Increased from 70 to ensure high severity patterns exceed threshold
     medium: 45,
     low: 20,
   }
@@ -430,7 +448,16 @@ function calculateQuickRisk(matches: PatternMatch[]): number {
   for (const match of matches) {
     const baseWeight = severityWeights[match.severity]
     const confidence = match.confidence / 100
-    totalRisk += baseWeight * confidence
+    const adjustedRisk = baseWeight * confidence
+
+    // Ensure minimum risk for high severity patterns
+    if (match.severity === 'high' && adjustedRisk < 60) {
+      totalRisk += 60 // Minimum risk of 60 for high severity
+    } else if (match.severity === 'critical' && adjustedRisk < 80) {
+      totalRisk += 80 // Minimum risk of 80 for critical severity
+    } else {
+      totalRisk += adjustedRisk
+    }
   }
 
   // Apply diminishing returns for multiple matches
@@ -539,7 +566,11 @@ export function applyMitigation(
   if (!context.config.enableSanitization) {
     return content
   }
-  return sanitizeContent(content, matches)
+  return sanitizeContent(
+    content,
+    matches,
+    context.customRules ? [...context.customRules, ...DEFAULT_SANITIZE_RULES] : undefined,
+  )
 }
 
 /**

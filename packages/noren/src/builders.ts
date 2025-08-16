@@ -8,6 +8,13 @@
 import type { InjectionPattern, SanitizeAction, SanitizeRule, Severity } from './types.js'
 
 /**
+ * Escapes special regex characters in a string
+ */
+export function escapeRegexChars(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
  * Pattern builder state
  */
 export interface PatternBuilderState {
@@ -39,11 +46,19 @@ export function addPattern(
     sanitize?: boolean
   },
 ): PatternBuilderState {
-  const regex =
-    typeof options.pattern === 'string' ? new RegExp(options.pattern, 'gi') : options.pattern
+  let regex: RegExp
+
+  try {
+    regex =
+      typeof options.pattern === 'string' ? new RegExp(options.pattern, 'gi') : options.pattern
+  } catch (error) {
+    // If regex is invalid, create a pattern that never matches
+    console.warn(`Invalid regex pattern: ${options.pattern}`, error)
+    regex = /(?:)/gi
+  }
 
   const newPattern: InjectionPattern = {
-    id: `custom_${state.idCounter++}`,
+    id: `custom_${state.idCounter}`,
     description: options.description || 'Custom pattern',
     pattern: regex,
     severity: options.severity || 'medium',
@@ -55,6 +70,7 @@ export function addPattern(
   return {
     ...state,
     patterns: [...state.patterns, newPattern],
+    idCounter: state.idCounter + 1,
   }
 }
 
@@ -67,10 +83,30 @@ export function addKeywords(
   keywords: string[],
   severity: Severity = 'medium',
 ): PatternBuilderState {
+  if (!keywords || keywords.length === 0) {
+    // Return state with an empty pattern placeholder
+    return {
+      ...state,
+      patterns: [
+        ...state.patterns,
+        {
+          id: `${category}_keyword_${state.idCounter}`,
+          description: 'Empty keyword list',
+          pattern: /(?:)/gi, // Empty alternation
+          severity,
+          category,
+          weight: 0,
+          sanitize: false,
+        },
+      ],
+      idCounter: state.idCounter + 1,
+    }
+  }
+
   const newPatterns = keywords.map((keyword, index) => ({
     id: `${category}_keyword_${state.idCounter + index}`,
     description: `Keyword: ${keyword}`,
-    pattern: new RegExp(`\\b${keyword}\\b`, 'gi'),
+    pattern: new RegExp(`\\b${escapeRegexChars(keyword)}\\b`, 'gi'),
     severity,
     category: category,
     weight: 60,
@@ -92,10 +128,30 @@ export function addCompanyTerms(
   companyName: string,
   terms: string[],
 ): PatternBuilderState {
+  if (!terms || terms.length === 0) {
+    // Return state with an empty pattern placeholder
+    return {
+      ...state,
+      patterns: [
+        ...state.patterns,
+        {
+          id: `company_${companyName}_${state.idCounter}`,
+          description: 'Empty company terms',
+          pattern: /(?:)/gi, // Empty alternation
+          severity: 'high' as Severity,
+          category: 'company',
+          weight: 0,
+          sanitize: false,
+        },
+      ],
+      idCounter: state.idCounter + 1,
+    }
+  }
+
   const newPatterns = terms.map((term, index) => ({
     id: `company_${companyName}_${state.idCounter + index}`,
     description: `Company term: ${term}`,
-    pattern: new RegExp(`\\b${term}\\b`, 'gi'),
+    pattern: new RegExp(`\\b${escapeRegexChars(term)}\\b`, 'gi'),
     severity: 'high' as Severity,
     category: 'company',
     weight: 75,
@@ -176,8 +232,16 @@ export function addRule(
     priority?: number
   },
 ): RuleBuilderState {
-  const regex =
-    typeof options.pattern === 'string' ? new RegExp(options.pattern, 'gi') : options.pattern
+  let regex: RegExp
+
+  try {
+    regex =
+      typeof options.pattern === 'string' ? new RegExp(options.pattern, 'gi') : options.pattern
+  } catch (error) {
+    // If regex is invalid, create a pattern that never matches
+    console.warn(`Invalid regex pattern for rule: ${options.pattern}`, error)
+    regex = /(?:)/gi
+  }
 
   const newRule: SanitizeRule = {
     pattern: regex,
@@ -190,6 +254,7 @@ export function addRule(
   return {
     ...state,
     rules: [...state.rules, newRule],
+    ruleCounter: state.ruleCounter + 1,
   }
 }
 
@@ -201,11 +266,14 @@ export function addRemovalRule(
   pattern: string | RegExp,
   category = 'custom',
 ): RuleBuilderState {
-  return addRule(state, {
-    pattern,
-    action: 'remove',
-    category,
-  })
+  return {
+    ...addRule(state, {
+      pattern,
+      action: 'remove',
+      category,
+    }),
+    ruleCounter: state.ruleCounter + 1,
+  }
 }
 
 /**
@@ -217,12 +285,15 @@ export function addReplacementRule(
   replacement: string,
   category = 'custom',
 ): RuleBuilderState {
-  return addRule(state, {
-    pattern,
-    action: 'replace',
-    replacement,
-    category,
-  })
+  return {
+    ...addRule(state, {
+      pattern,
+      action: 'replace',
+      replacement,
+      category,
+    }),
+    ruleCounter: state.ruleCounter + 1,
+  }
 }
 
 /**
@@ -233,11 +304,14 @@ export function addQuoteRule(
   pattern: string | RegExp,
   category = 'custom',
 ): RuleBuilderState {
-  return addRule(state, {
-    pattern,
-    action: 'quote',
-    category,
-  })
+  return {
+    ...addRule(state, {
+      pattern,
+      action: 'quote',
+      category,
+    }),
+    ruleCounter: state.ruleCounter + 1,
+  }
 }
 
 /**
@@ -272,26 +346,28 @@ export function createBuilder(): BuilderState {
 export function patternBuilder() {
   let state = createPatternBuilder()
 
-  return {
+  const api = {
     add: (options: Parameters<typeof addPattern>[1]) => {
       state = addPattern(state, options)
-      return patternBuilder()
+      return api
     },
     addKeywords: (category: string, keywords: string[], severity?: Severity) => {
       state = addKeywords(state, category, keywords, severity)
-      return patternBuilder()
+      return api
     },
     addCompanyTerms: (companyName: string, terms: string[]) => {
       state = addCompanyTerms(state, companyName, terms)
-      return patternBuilder()
+      return api
     },
     addRegexPatterns: (patterns: Parameters<typeof addRegexPatterns>[1]) => {
       state = addRegexPatterns(state, patterns)
-      return patternBuilder()
+      return api
     },
     build: () => buildPatterns(state),
     getState: () => state,
   }
+
+  return api
 }
 
 /**
@@ -300,26 +376,28 @@ export function patternBuilder() {
 export function ruleBuilder() {
   let state = createRuleBuilder()
 
-  return {
+  const api = {
     add: (options: Parameters<typeof addRule>[1]) => {
       state = addRule(state, options)
-      return ruleBuilder()
+      return api
     },
     addRemoval: (pattern: string | RegExp, category?: string) => {
       state = addRemovalRule(state, pattern, category)
-      return ruleBuilder()
+      return api
     },
     addReplacement: (pattern: string | RegExp, replacement: string, category?: string) => {
       state = addReplacementRule(state, pattern, replacement, category)
-      return ruleBuilder()
+      return api
     },
     addQuote: (pattern: string | RegExp, category?: string) => {
       state = addQuoteRule(state, pattern, category)
-      return ruleBuilder()
+      return api
     },
     build: () => buildRules(state),
     getState: () => state,
   }
+
+  return api
 }
 
 /**

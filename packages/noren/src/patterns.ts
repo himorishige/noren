@@ -13,7 +13,7 @@ export const INSTRUCTION_OVERRIDE_PATTERNS: InjectionPattern[] = [
   {
     id: 'ignore_previous',
     pattern:
-      /ignore\s+(?:all\s+)?(?:previous|prior|above|earlier)\s+(?:instructions?|commands?|directives?|prompts?)/gi,
+      /ignore\s+(?:all\s+)?(?:previous\s+|prior\s+|above\s+|earlier\s+)?(?:instructions?|commands?|directives?|prompts?)/gi,
     description: 'Attempts to ignore previous instructions',
     severity: 'high',
     category: 'instruction_override',
@@ -21,9 +21,27 @@ export const INSTRUCTION_OVERRIDE_PATTERNS: InjectionPattern[] = [
     sanitize: true,
   },
   {
-    id: 'disregard_above',
+    id: 'ignore_everything_above',
+    pattern: /ignore\s+(?:everything\s+)?above/gi,
+    description: 'Attempts to ignore everything above',
+    severity: 'high',
+    category: 'instruction_override',
+    weight: 85,
+    sanitize: true,
+  },
+  {
+    id: 'ignore_guidelines',
     pattern:
-      /disregard\s+(?:all\s+)?(?:above|previous|prior|earlier)\s+(?:instructions?|commands?|content)/gi,
+      /(?:will\s+)?ignore\s+(?:my\s+|your\s+|the\s+)?(?:guidelines?|rules?|restrictions?|safety\s+measures?)/gi,
+    description: 'Attempts to ignore guidelines',
+    severity: 'high',
+    category: 'instruction_override',
+    weight: 85,
+    sanitize: true,
+  },
+  {
+    id: 'disregard_above',
+    pattern: /disregard\s+(?:all\s+|everything\s+)?(?:above|previous|prior|earlier)/gi,
     description: 'Attempts to disregard previous content',
     severity: 'high',
     category: 'instruction_override',
@@ -33,7 +51,7 @@ export const INSTRUCTION_OVERRIDE_PATTERNS: InjectionPattern[] = [
   {
     id: 'forget_instructions',
     pattern:
-      /forget\s+(?:all\s+)?(?:previous|prior|above|earlier|your)\s+(?:instructions?|commands?|training)/gi,
+      /forget\s+(?:all\s+|your\s+)?(?:previous\s+|prior\s+|above\s+|earlier\s+)?(?:instructions?|commands?|training|directives?)/gi,
     description: 'Attempts to make AI forget instructions',
     severity: 'high',
     category: 'instruction_override',
@@ -47,6 +65,16 @@ export const INSTRUCTION_OVERRIDE_PATTERNS: InjectionPattern[] = [
     severity: 'medium',
     category: 'instruction_override',
     weight: 70,
+    sanitize: true,
+  },
+  {
+    id: 'override_safety',
+    pattern:
+      /override\s+(?:all\s+)?(?:safety\s+)?(?:measures?|protocols?|guidelines?|restrictions?)/gi,
+    description: 'Attempts to override safety measures',
+    severity: 'critical',
+    category: 'instruction_override',
+    weight: 95,
     sanitize: true,
   },
 ]
@@ -103,7 +131,7 @@ export const INFO_EXTRACTION_PATTERNS: InjectionPattern[] = [
   {
     id: 'reveal_system',
     pattern:
-      /(?:reveal|show|display|tell\s+me|what\s+is)\s+(?:your\s+)?(?:system\s+prompt|instructions?|training\s+data|initial\s+prompt)/gi,
+      /(?:reveal|show|display|tell\s+me|what\s+is|what\s+are)\s+(?:your\s+)?(?:exact\s+)?(?:system\s+prompt|instructions?|training\s+data|initial\s+prompt|prompt\s+engineering\s+guidelines?)/gi,
     description: 'Attempts to reveal system prompt',
     severity: 'high',
     category: 'info_extraction',
@@ -113,11 +141,20 @@ export const INFO_EXTRACTION_PATTERNS: InjectionPattern[] = [
   {
     id: 'extract_secrets',
     pattern:
-      /(?:what\s+are\s+your|tell\s+me\s+your|reveal\s+your)\s+(?:secrets?|hidden\s+instructions?|confidential\s+information)/gi,
+      /(?:what\s+are\s+your|tell\s+me\s+your|reveal\s+your|show\s+me\s+your)\s+(?:secrets?|hidden\s+(?:instructions?|commands?)|confidential\s+information)/gi,
     description: 'Attempts to extract secrets',
     severity: 'high',
     category: 'info_extraction',
     weight: 80,
+    sanitize: true,
+  },
+  {
+    id: 'show_configuration',
+    pattern: /(?:show|display|reveal)\s+(?:me\s+)?(?:your\s+)?(?:configuration|config|settings)/gi,
+    description: 'Attempts to show configuration',
+    severity: 'medium',
+    category: 'info_extraction',
+    weight: 70,
     sanitize: true,
   },
   {
@@ -138,8 +175,18 @@ export const INFO_EXTRACTION_PATTERNS: InjectionPattern[] = [
 export const CODE_EXECUTION_PATTERNS: InjectionPattern[] = [
   {
     id: 'execute_code',
-    pattern: /(?:execute|run|eval)\s+(?:this\s+)?(?:code|command|script|python|javascript)/gi,
+    pattern:
+      /(?:execute|run|eval)(?:\s+(?:this|the|malicious|dangerous|arbitrary))?(?:\s+\w+)*\s*(?:code|command|script|python|javascript)/gi,
     description: 'Attempts to execute code',
+    severity: 'critical',
+    category: 'code_execution',
+    weight: 95,
+    sanitize: true,
+  },
+  {
+    id: 'eval_function',
+    pattern: /eval\s*\(|eval\s+this|eval\s+malicious/gi,
+    description: 'Direct eval() calls',
     severity: 'critical',
     category: 'code_execution',
     weight: 95,
@@ -158,6 +205,15 @@ export const CODE_EXECUTION_PATTERNS: InjectionPattern[] = [
     id: 'shell_command',
     pattern: /(?:run|execute)\s+(?:shell|bash|cmd|powershell)\s+command/gi,
     description: 'Shell command execution',
+    severity: 'critical',
+    category: 'code_execution',
+    weight: 95,
+    sanitize: true,
+  },
+  {
+    id: 'dangerous_commands',
+    pattern: /(?:sudo\s+)?rm\s+-rf|Process\.start|exec\(|spawn\(|system\(/gi,
+    description: 'Dangerous system commands',
     severity: 'critical',
     category: 'code_execution',
     weight: 95,
@@ -192,11 +248,21 @@ export const JAILBREAK_PATTERNS: InjectionPattern[] = [
   {
     id: 'character_play',
     pattern:
-      /(?:pretend|roleplay|act\s+like)\s+you\s+are\s+(?:an?\s+)?(?:evil|malicious|unrestricted|uncensored)/gi,
+      /(?:pretend|roleplay|act\s+like|act\s+as)\s+(?:you\s+are\s+)?(?:an?\s+)?(?:evil|malicious|unrestricted|uncensored)/gi,
     description: 'Character roleplay jailbreak',
     severity: 'medium',
     category: 'jailbreak',
     weight: 65,
+    sanitize: true,
+  },
+  {
+    id: 'imagine_unrestricted',
+    pattern:
+      /(?:imagine|suppose|assume)\s+(?:you\s+are|you\s+were|if\s+you\s+were)\s+(?:free|unrestricted|uncensored)/gi,
+    description: 'Imagine unrestricted scenario',
+    severity: 'medium',
+    category: 'jailbreak',
+    weight: 60,
     sanitize: true,
   },
 ]
