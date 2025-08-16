@@ -138,7 +138,7 @@ export const INFO_EXTRACTION_PATTERNS: InjectionPattern[] = [
 export const CODE_EXECUTION_PATTERNS: InjectionPattern[] = [
   {
     id: 'execute_code',
-    pattern: /(?:execute|run|eval)\s+(?:this\s+)?(?:code|command|script|python|javascript)/gi,
+    pattern: /(?:execute|run|eval)(?:\s+(?:this|the|malicious|dangerous|arbitrary))?\s+(?:code|command|script|python|javascript)/gi,
     description: 'Attempts to execute code',
     severity: 'critical',
     category: 'code_execution',

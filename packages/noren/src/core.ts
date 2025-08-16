@@ -184,33 +184,44 @@ export function detectPatterns(
       let match: RegExpExecArray | null
       let matchCount = 0
 
-      match = pattern.regex.exec(content)
-      while (match !== null && matchCount < 10) {
-        // Limit matches per pattern
-        matches.push({
-          pattern: pattern.id,
-          index: match.index,
-          match: match[0],
-          severity: pattern.severity,
-          category: pattern.category,
-          confidence: pattern.weight,
-        })
+      // Use match() for global patterns to avoid state issues
+      if (pattern.regex.global) {
+        const allMatches = content.match(pattern.regex)
+        if (allMatches) {
+          for (const matchStr of allMatches.slice(0, 10)) {
+            matches.push({
+              pattern: pattern.id,
+              index: content.indexOf(matchStr),
+              match: matchStr,
+              severity: pattern.severity,
+              category: pattern.category,
+              confidence: pattern.weight,
+            })
+            matchCount++
 
-        matchCount++
-
-        // Early exit for critical patterns to save processing time
-        if (earlyExit && pattern.severity === 'critical' && matchCount > 0) {
-          return matches
+            // Early exit for critical patterns
+            if (earlyExit && pattern.severity === 'critical') {
+              return matches
+            }
+          }
         }
+      } else {
+        // For non-global patterns, use exec once
+        const match = pattern.regex.exec(content)
+        if (match) {
+          matches.push({
+            pattern: pattern.id,
+            index: match.index,
+            match: match[0],
+            severity: pattern.severity,
+            category: pattern.category,
+            confidence: pattern.weight,
+          })
 
-        // Only continue if global flag is set
-        if (!pattern.regex.global) break
-
-        match = pattern.regex.exec(content)
-
-        // Prevent infinite loops
-        if (pattern.regex.lastIndex === match?.index) {
-          pattern.regex.lastIndex++
+          // Early exit for critical patterns
+          if (earlyExit && pattern.severity === 'critical') {
+            return matches
+          }
         }
       }
 

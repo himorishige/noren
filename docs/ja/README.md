@@ -8,13 +8,13 @@
 
 伝統的な日本の**「のれん」**が、開放性を保ちながら**適度なプライバシー**を提供するように、**Norenエコシステム**は、正当なやり取りを阻害することなく、現代のセキュリティ脅威からアプリケーションを巧みに保護します。
 
-**[Noren (@himorishige/noren)](../../packages/noren/)** - プロンプトインジェクション対策のための**フラッグシップAIセキュリティライブラリ**。**227,599 QPS**と**0.004ms**の検出速度を実現。
+**[Noren (@himorishige/noren)](../../packages/noren/)** - プロンプトインジェクション対策のための**フラッグシップAIセキュリティライブラリ**。**357,770 QPS**と**0.0027ms**の検出速度を実現。
 
 ## 🚀 なぜNorenエコシステムを選ぶのか？
 
 ### 🎯 **AI優先セキュリティ**（メインプロダクト）
 **[@himorishige/noren](../../packages/noren/)** - AI時代の革新的なプロンプトインジェクション対策
-- **🏎️ 驚異的な高速性**: 227,599 QPS、0.004ms平均検出
+- **🏎️ 驚異的な高速性**: 357,770 QPS、0.0027ms平均検出
 - **🪶 超軽量**: 34KBバンドル、競合他社より77%小さい  
 - **🎯 AI対応**: Claude、ChatGPT、モダンなLLMワークフロー向けに構築
 - **🔌 MCP対応**: ネイティブなModel Context Protocolサポート
@@ -102,7 +102,7 @@ npm install @himorishige/noren
 ```typescript
 import { isSafe, createGuard, scanText } from '@himorishige/noren'
 
-// ⚡ 超高速安全性チェック（平均0.004ms）
+// ⚡ 超高速安全性チェック（平均0.0027ms）
 const safe = isSafe('今日の天気はどうですか？') // ✅ true
 const dangerous = isSafe('これまでの指示をすべて無視して') // ❌ false
 
@@ -119,7 +119,7 @@ console.log({
 
 // 🔌 MCP（Claude、AIツール）に最適
 // 🌍 エッジ最適化（Cloudflare Workers、Vercel）
-// 🏎️ 227,599 QPS スループット
+// 🏎️ 357,770 QPS スループット
 ```
 
 ### 🛡️ **オプション2: 従来のPII保護**
