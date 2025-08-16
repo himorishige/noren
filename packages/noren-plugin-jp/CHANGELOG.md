@@ -1,5 +1,21 @@
 # @himorishige/noren-plugin-jp
 
+## 0.6.3
+
+### Patch Changes
+
+- [#77](https://github.com/himorishige/noren/pull/77) [`ea7c814`](https://github.com/himorishige/noren/commit/ea7c814de6ada089522dba3418dc2651c12ff7ee) Thanks [@himorishige](https://github.com/himorishige)! - Fix lint warnings and code quality issues
+
+  - Fix template literal warnings in MCP utilities by replacing string concatenation with template literals
+  - Add missing radix parameter to parseInt calls in test files for consistent numeric parsing
+  - Update biome.json schema version from 2.1.4 to 2.2.0 for compatibility
+  - Remove unused imports from example files to clean up code
+  - Fix unused variable warnings by prefixing with underscore
+  - Ensure all lint checks pass with zero warnings
+
+- Updated dependencies [[`ea7c814`](https://github.com/himorishige/noren/commit/ea7c814de6ada089522dba3418dc2651c12ff7ee)]:
+  - @himorishige/noren-core@0.6.3
+
 ## 0.6.2
 
 ### Patch Changes

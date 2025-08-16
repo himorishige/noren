@@ -1,6 +1,6 @@
 {
   "name": "@himorishige/noren-plugin-jp",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Japan-specific PII detection plugin for Noren (phone numbers, postal codes, MyNumber)",
   "keywords": [
     "pii",

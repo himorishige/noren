@@ -1,5 +1,12 @@
 # @himorishige/noren-plugin-network
 
+## 0.6.3
+
+### Patch Changes
+
+- Updated dependencies [[`ea7c814`](https://github.com/himorishige/noren/commit/ea7c814de6ada089522dba3418dc2651c12ff7ee)]:
+  - @himorishige/noren-core@0.6.3
+
 ## 0.6.2
 
 ### Patch Changes
