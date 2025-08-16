@@ -1,6 +1,6 @@
 {
   "name": "@himorishige/noren-plugin-network",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Network PII detection plugin for Noren - IPv4, IPv6, and MAC address detection",
   "type": "module",
   "main": "dist/index.js",
