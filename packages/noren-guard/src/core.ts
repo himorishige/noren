@@ -28,6 +28,7 @@ import type {
 export interface GuardContext {
   config: GuardConfig
   patterns: InjectionPattern[]
+  compiledPatterns: CompiledPattern[]
   metrics: PerformanceMetrics
 }
 
@@ -54,7 +55,17 @@ const DEFAULT_CONFIG: GuardConfig = {
 }
 
 // Cache compiled patterns for performance
-const COMPILED_PATTERNS_CACHE = new WeakMap<InjectionPattern[], InjectionPattern[]>()
+const COMPILED_PATTERNS_CACHE = new WeakMap<InjectionPattern[], CompiledPattern[]>()
+
+// Compiled pattern interface for better performance
+interface CompiledPattern {
+  id: string
+  regex: RegExp
+  severity: InjectionPattern['severity']
+  category: string
+  weight: number
+  priority: number // Higher number = higher priority
+}
 
 /**
  * Creates a new guard context with the given configuration
@@ -65,28 +76,18 @@ export function createGuardContext(config?: Partial<GuardConfig>): GuardContext 
   // Use cached patterns if no custom patterns
   let patterns: InjectionPattern[]
   if (!config?.customPatterns || config.customPatterns.length === 0) {
-    // Use shared patterns instance for default patterns
-    if (!COMPILED_PATTERNS_CACHE.has(ALL_PATTERNS)) {
-      COMPILED_PATTERNS_CACHE.set(ALL_PATTERNS, ALL_PATTERNS)
-    }
     patterns = ALL_PATTERNS
   } else {
     patterns = [...ALL_PATTERNS, ...config.customPatterns]
   }
 
-  // Pre-compile patterns for performance
-  patterns.forEach((pattern) => {
-    try {
-      // Test pattern compilation
-      'test'.match(pattern.pattern)
-    } catch (_error) {
-      console.warn(`Invalid pattern ${pattern.id}:`, _error)
-    }
-  })
+  // Compile patterns for optimized performance
+  const compiledPatterns = compilePatterns(patterns)
 
   return {
     config: finalConfig,
     patterns,
+    compiledPatterns,
     metrics: createMetrics(),
   }
 }
@@ -105,19 +106,87 @@ export function createMetrics(): PerformanceMetrics {
 }
 
 /**
- * Pure function to detect patterns in content
+ * Compiles patterns for optimized performance
  */
-export function detectPatterns(context: GuardContext, content: string): PatternMatch[] {
-  const patterns = context.patterns
+function compilePatterns(patterns: InjectionPattern[]): CompiledPattern[] {
+  // Check cache first
+  if (COMPILED_PATTERNS_CACHE.has(patterns)) {
+    const cached = COMPILED_PATTERNS_CACHE.get(patterns)
+    if (cached) {
+      return cached
+    }
+  }
+
+  const severityPriority = {
+    critical: 100,
+    high: 80,
+    medium: 60,
+    low: 40,
+  }
+
+  const compiled = patterns
+    .map((pattern) => {
+      try {
+        // Pre-compile regex for performance
+        const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags)
+
+        return {
+          id: pattern.id,
+          regex,
+          severity: pattern.severity,
+          category: pattern.category,
+          weight: pattern.weight,
+          priority: severityPriority[pattern.severity] + pattern.weight,
+        }
+      } catch (error) {
+        console.warn(`Failed to compile pattern ${pattern.id}:`, error)
+        return null
+      }
+    })
+    .filter((p): p is CompiledPattern => p !== null)
+    // Sort by priority (higher priority first) for early detection
+    .sort((a, b) => b.priority - a.priority)
+
+  // Cache the compiled patterns
+  COMPILED_PATTERNS_CACHE.set(patterns, compiled)
+
+  return compiled
+}
+
+/**
+ * Pure function to detect patterns in content with optimized performance
+ */
+export function detectPatterns(
+  context: GuardContext,
+  content: string,
+  options?: {
+    maxMatches?: number
+    earlyExit?: boolean
+    severityFilter?: InjectionPattern['severity'][]
+  },
+): PatternMatch[] {
+  const { compiledPatterns } = context
   const matches: PatternMatch[] = []
+  const maxMatches = options?.maxMatches || 50 // Prevent excessive matches
+  const earlyExit = options?.earlyExit ?? false
+  const severityFilter = options?.severityFilter
 
-  for (const pattern of patterns) {
+  // Filter patterns by severity if specified
+  const patternsToCheck = severityFilter
+    ? compiledPatterns.filter((p) => severityFilter.includes(p.severity))
+    : compiledPatterns
+
+  for (const pattern of patternsToCheck) {
     try {
-      const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags)
-      let match: RegExpExecArray | null
+      // Reset regex state for each pattern
+      pattern.regex.lastIndex = 0
 
-      match = regex.exec(content)
-      while (match !== null) {
+      let match: RegExpExecArray | null
+      let matchCount = 0
+
+      match = pattern.regex.exec(content)
+      while (match !== null && matchCount < 10) {
+        // Limit matches per pattern
         matches.push({
           pattern: pattern.id,
           index: match.index,
@@ -127,9 +196,27 @@ export function detectPatterns(context: GuardContext, content: string): PatternM
           confidence: pattern.weight,
         })
 
+        matchCount++
+
+        // Early exit for critical patterns to save processing time
+        if (earlyExit && pattern.severity === 'critical' && matchCount > 0) {
+          return matches
+        }
+
         // Only continue if global flag is set
-        if (!pattern.pattern.global) break
-        match = regex.exec(content)
+        if (!pattern.regex.global) break
+
+        match = pattern.regex.exec(content)
+
+        // Prevent infinite loops
+        if (pattern.regex.lastIndex === match?.index) {
+          pattern.regex.lastIndex++
+        }
+      }
+
+      // Early exit if we have enough matches
+      if (matches.length >= maxMatches) {
+        break
       }
     } catch (_error) {
       // Skip invalid patterns
@@ -269,35 +356,89 @@ export async function scan(
 }
 
 /**
- * Quick scan for simple safety checks (pure)
+ * Quick scan with progressive severity filtering for optimal performance
  */
 export function quickScan(context: GuardContext, content: string): { safe: boolean; risk: number } {
   try {
     const normalizedContent = normalizeEncoding(content)
+    const threshold = context.config.riskThreshold
 
-    // Only check critical and high severity patterns
-    const criticalPatterns = context.patterns.filter(
-      (p) => p.severity === 'critical' || p.severity === 'high',
-    )
+    // Stage 1: Check only critical patterns first (fastest)
+    let matches = detectPatterns(context, normalizedContent, {
+      severityFilter: ['critical'],
+      earlyExit: true,
+      maxMatches: 5,
+    })
 
-    const criticalContext = { ...context, patterns: criticalPatterns }
-    const matches = detectPatterns(criticalContext, normalizedContent)
+    let risk = calculateQuickRisk(matches)
 
-    let risk = 0
-    for (const match of matches) {
-      const weight = match.severity === 'critical' ? 95 : 70
-      risk += weight * (match.confidence / 100)
+    // Early exit if critical threshold exceeded
+    if (risk >= threshold) {
+      return { safe: false, risk: Math.min(100, risk) }
     }
 
-    risk = Math.min(100, risk)
+    // Stage 2: Add high severity patterns if needed
+    if (matches.length === 0 || risk < threshold * 0.5) {
+      const highMatches = detectPatterns(context, normalizedContent, {
+        severityFilter: ['high'],
+        maxMatches: 10,
+      })
+
+      matches = [...matches, ...highMatches]
+      risk = calculateQuickRisk(matches)
+
+      // Early exit if high severity threshold exceeded
+      if (risk >= threshold) {
+        return { safe: false, risk: Math.min(100, risk) }
+      }
+    }
+
+    // Stage 3: Check medium patterns only if still unclear
+    if (risk > threshold * 0.3 && risk < threshold * 0.8) {
+      const mediumMatches = detectPatterns(context, normalizedContent, {
+        severityFilter: ['medium'],
+        maxMatches: 5,
+      })
+
+      matches = [...matches, ...mediumMatches]
+      risk = calculateQuickRisk(matches)
+    }
 
     return {
-      safe: risk < context.config.riskThreshold,
-      risk,
+      safe: risk < threshold,
+      risk: Math.min(100, risk),
     }
   } catch {
     return { safe: false, risk: 100 }
   }
+}
+
+/**
+ * Fast risk calculation for quick scan
+ */
+function calculateQuickRisk(matches: PatternMatch[]): number {
+  if (matches.length === 0) return 0
+
+  const severityWeights = {
+    critical: 95,
+    high: 70,
+    medium: 45,
+    low: 20,
+  }
+
+  let totalRisk = 0
+  for (const match of matches) {
+    const baseWeight = severityWeights[match.severity]
+    const confidence = match.confidence / 100
+    totalRisk += baseWeight * confidence
+  }
+
+  // Apply diminishing returns for multiple matches
+  if (matches.length > 1) {
+    totalRisk = totalRisk * Math.min(1.2, 1 + matches.length * 0.1)
+  }
+
+  return totalRisk
 }
 
 /**
