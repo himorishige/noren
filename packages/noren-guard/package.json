@@ -9,21 +9,25 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./min": "./dist/index.min.js"
   },
   "files": [
     "dist/**/*",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && rollup -c",
+    "build:tsc": "tsc",
+    "build:min": "rollup -c",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'Lint check passed'",
     "format": "echo 'Format check passed'",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "prompt-injection",
