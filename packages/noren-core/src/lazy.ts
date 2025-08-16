@@ -13,13 +13,6 @@ export interface LoadedPlugin {
   contextHints: string[]
 }
 
-// Registry extension for lazy loading
-declare module './types.js' {
-  interface Registry {
-    useLazy(plugin: LazyPlugin): Promise<void>
-  }
-}
-
 // Cache for loaded plugins to avoid duplicate imports
 const pluginCache = new Map<string, Promise<LoadedPlugin>>()
 

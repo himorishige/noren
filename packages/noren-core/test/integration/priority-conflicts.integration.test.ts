@@ -664,7 +664,7 @@ describe('Priority Conflict Resolution', () => {
             if (match.index !== undefined) {
               // Check if it's a valid IP range
               const parts = match[0].split('.')
-              if (parts.every((part) => parseInt(part) <= 255)) {
+              if (parts.every((part) => parseInt(part, 10) <= 255)) {
                 u.push({
                   type: 'network_ip',
                   start: match.index,
