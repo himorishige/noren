@@ -10,6 +10,8 @@ interface MCPParams {
   input?: unknown
   query?: unknown
   args?: Record<string, unknown>
+  arguments?: Record<string, unknown>
+  [key: string]: unknown
 }
 
 interface MCPResult {
