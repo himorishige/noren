@@ -1,0 +1,209 @@
+[
+  {
+    "id": "email-001",
+    "text": "Contact john.doe@example.com for support",
+    "annotations": [
+      {
+        "start": 8,
+        "end": 28,
+        "type": "email",
+        "value": "john.doe@example.com",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "email-002",
+    "text": "Send report to admin@company.org immediately",
+    "annotations": [
+      {
+        "start": 15,
+        "end": 32,
+        "type": "email",
+        "value": "admin@company.org",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "email-003",
+    "text": "User test.user+tag@sub.domain.co.uk logged in",
+    "annotations": [
+      {
+        "start": 5,
+        "end": 35,
+        "type": "email",
+        "value": "test.user+tag@sub.domain.co.uk",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "email-004",
+    "text": "Invalid email: not@email without TLD",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "email-005",
+    "text": "Multiple emails: first@test.com and second@test.net here",
+    "annotations": [
+      {
+        "start": 17,
+        "end": 31,
+        "type": "email",
+        "value": "first@test.com",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      },
+      {
+        "start": 36,
+        "end": 51,
+        "type": "email",
+        "value": "second@test.net",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "email-006",
+    "text": "Check logs at user@192.168.1.100 for details",
+    "annotations": [
+      {
+        "start": 14,
+        "end": 32,
+        "type": "email",
+        "value": "user@192.168.1.100",
+        "confidence": 0.8,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "email-007",
+    "text": "URL: https://example.com/page should not be detected",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "email-008",
+    "text": "Email in brackets: <support@company.com> for help",
+    "annotations": [
+      {
+        "start": 20,
+        "end": 39,
+        "type": "email",
+        "value": "support@company.com",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "email-009",
+    "text": "Japanese domain: user@会社.jp works",
+    "annotations": [
+      {
+        "start": 17,
+        "end": 27,
+        "type": "email",
+        "value": "user@会社.jp",
+        "confidence": 0.9,
+        "metadata": {
+          "difficulty": "hard",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "mixed",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "email-010",
+    "text": "Very long email: verylongusernamethatisstillvalid@extremelylongdomainnamethatisalsovalid.com",
+    "annotations": [
+      {
+        "start": 17,
+        "end": 92,
+        "type": "email",
+        "value": "verylongusernamethatisstillvalid@extremelylongdomainnamethatisalsovalid.com",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  }
+]

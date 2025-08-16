@@ -1,0 +1,363 @@
+[
+  {
+    "_comment": "SYNTHETIC TEST DATA - All JWT tokens in this file are dummy/fake values for PII detection testing only",
+    "_warning": "NO REAL TOKENS - These are artificially generated JWTs with fake signatures that do not authenticate anything",
+    "id": "jwt-001",
+    "text": "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+    "annotations": [
+      {
+        "start": 22,
+        "end": 177,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-002",
+    "text": "Token: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYWJjZGVmIiwiaWF0IjoxNjMwMDAwMDAwLCJuYmYiOjE2MzAwMDAwMDAsImV4cCI6MTYzMDA4NjQwMCwic3ViIjoiMTIzNCIsInNjb3BlcyI6W119.fake-signature-here",
+    "annotations": [
+      {
+        "start": 7,
+        "end": 200,
+        "type": "sec_jwt_token",
+        "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYWJjZGVmIiwiaWF0IjoxNjMwMDAwMDAwLCJuYmYiOjE2MzAwMDAwMDAsImV4cCI6MTYzMDA4NjQwMCwic3ViIjoiMTIzNCIsInNjb3BlcyI6W119.fake-signature-here",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-003",
+    "text": "Invalid JWT: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.incomplete",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-004",
+    "text": "JWT in URL: https://api.example.com/auth?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c&redirect=home",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-005",
+    "text": "Not a JWT: eyJhbGciOiJIUzI1NiJ9 (missing payload and signature)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-006",
+    "text": "Refresh token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiYXVkIjoiYXBpLmV4YW1wbGUuY29tIiwic3ViIjoiNTY3ODkwIiwiaWF0IjoxNjMwMDAwMDAwLCJleHAiOjE2MzAwODY0MDB9.fake-rsa-signature-would-be-much-longer",
+    "annotations": [
+      {
+        "start": 15,
+        "end": 244,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiYXVkIjoiYXBpLmV4YW1wbGUuY29tIiwic3ViIjoiNTY3ODkwIiwiaWF0IjoxNjMwMDAwMDAwLCJleHAiOjE2MzAwODY0MDB9.fake-rsa-signature-would-be-much-longer",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-007",
+    "text": "Config: JWT_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+    "annotations": [
+      {
+        "start": 19,
+        "end": 174,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "config",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-008",
+    "text": "Log entry: user authenticated with token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c at 2023-08-15",
+    "annotations": [
+      {
+        "start": 41,
+        "end": 196,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "log",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-009",
+    "text": "Not JWT: abc.def.ghi (too short segments)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-010",
+    "text": "Multiline JWT:\neyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\nEnd of token",
+    "annotations": [
+      {
+        "start": 15,
+        "end": 170,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-011",
+    "text": "RS256 JWT: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiYXVkIjoiYXBpLmV4YW1wbGUuY29tIiwic3ViIjoiNTY3ODkwIiwiaWF0IjoxNjMwMDAwMDAwLCJleHAiOjE2MzAwODY0MDB9.fake-rsa-signature-would-be-much-longer-than-this-example",
+    "annotations": [
+      {
+        "start": 11,
+        "end": 258,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiYXVkIjoiYXBpLmV4YW1wbGUuY29tIiwic3ViIjoiNTY3ODkwIiwiaWF0IjoxNjMwMDAwMDAwLCJleHAiOjE2MzAwODY0MDB9.fake-rsa-signature-would-be-much-longer-than-this-example",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "algorithm": "RS256"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-012",
+    "text": "ES256 token: eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.fake-ecdsa-signature-here",
+    "annotations": [
+      {
+        "start": 13,
+        "end": 167,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.fake-ecdsa-signature-here",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "algorithm": "ES256"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-013",
+    "text": "None algorithm JWT: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-014",
+    "text": "Broken JWT header: eyJhbGc.broken.signature",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-015",
+    "text": "JWT with extra dots: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIi4ubmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c.extra",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-016",
+    "text": "Code: const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';",
+    "annotations": [
+      {
+        "start": 21,
+        "end": 176,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "code",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-017",
+    "text": "JSON config: {\\\"accessToken\\\": \\\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\\\"}",
+    "annotations": [
+      {
+        "start": 33,
+        "end": 188,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "json",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-018",
+    "text": "Environment: JWT_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+    "annotations": [
+      {
+        "start": 23,
+        "end": 178,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "config",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-019",
+    "text": "YAML: jwt_secret: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+    "annotations": [
+      {
+        "start": 18,
+        "end": 173,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "yaml",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "jwt-020",
+    "text": "PS256 JWT: eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.fake-pss-signature-here-would-be-longer",
+    "annotations": [
+      {
+        "start": 11,
+        "end": 179,
+        "type": "sec_jwt_token",
+        "value": "eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.fake-pss-signature-here-would-be-longer",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "algorithm": "PS256"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  }
+]

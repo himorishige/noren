@@ -1,0 +1,188 @@
+[
+  {
+    "id": "misc-001",
+    "text": "Request ID: 550e8400-e29b-41d4-a716-446655440000",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-002",
+    "text": "Correlation ID: f47ac10b-58cc-4372-a567-0e02b2c3d479 for tracking",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-003",
+    "text": "Hex token: a1b2c3d4e5f6789012345678901234567890abcdefg",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-004",
+    "text": "32-byte hex: 1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-005",
+    "text": "Google OAuth: ya29.A0ARrdaM1234567890abcdefghijklmnopqrstuvwxyzABCDEF",
+    "annotations": [
+      {
+        "start": 14,
+        "end": 69,
+        "type": "sec_google_oauth_token",
+        "value": "ya29.A0ARrdaM1234567890abcdefghijklmnopqrstuvwxyzABCDEF",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-006",
+    "text": "Legacy OAuth: 1//abcdefghijklmnopqrstuvwxyz1234567890 access token",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-007",
+    "text": "Azure subscription key: 1234567890abcdef1234567890abcdef for cognitive services",
+    "annotations": [
+      {
+        "start": 24,
+        "end": 56,
+        "type": "sec_azure_subscription_key",
+        "value": "1234567890abcdef1234567890abcdef",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-008",
+    "text": "Log trace ID: {\\\"traceId\\\": \\\"6ba7b810-9dad-11d1-80b4-00c04fd430c8\\\", \\\"spanId\\\": \\\"abc123\\\"}",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "json",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-009",
+    "text": "Multiple UUIDs: task-123e4567-e89b-12d3-a456-426614174000 and job-987fcdeb-51d2-43f1-b123-456789abcdef",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-010",
+    "text": "Invalid UUID: 123e4567-e89b-12d3-a456-42661417400 (missing digit)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-011",
+    "text": "Not UUID: 123e4567-e89b-12d3-a456-42661417400g (invalid character)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-012",
+    "text": "Short hex: abc123def (too short for security concern)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-013",
+    "text": "Config hex token: SECRET_KEY=fedcba0987654321abcdef1234567890fedcba0987654321 in env",
+    "annotations": [
+      {
+        "start": 29,
+        "end": 77,
+        "type": "sec_hex_token",
+        "value": "fedcba0987654321abcdef1234567890fedcba0987654321",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "config",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-014",
+    "text": "Database UUID: INSERT INTO users (id, name) VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'John')",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "sql",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "misc-015",
+    "text": "Kubernetes secret: metadata:\\n  name: my-secret\\ndata:\\n  token: YWJjZGVmZ2hpamtsbW5vcA== (base64)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "yaml",
+      "created_at": 1692000000000
+    }
+  }
+]

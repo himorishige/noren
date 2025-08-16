@@ -1,0 +1,204 @@
+[
+  {
+    "id": "url-001",
+    "text": "API request: https://api.example.com/data?token=abc123def456ghi789&format=json",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-002",
+    "text": "OAuth callback: /auth/callback?access_token=1234567890abcdefghijklmnopqrstuvwxyz",
+    "annotations": [
+      {
+        "start": 30,
+        "end": 80,
+        "type": "sec_url_token",
+        "value": "?access_token=1234567890abcdefghijklmnopqrstuvwxyz",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "param_type": "access_token"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-003",
+    "text": "Config URL: https://service.com/setup?api_key=sk_live_abcdefghijklmnopqrstuvwxyz123456",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-004",
+    "text": "OAuth flow: /oauth?client_secret=secretkey123456789abcdefghijk&client_id=app123",
+    "annotations": [
+      {
+        "start": 18,
+        "end": 62,
+        "type": "sec_client_secret",
+        "value": "?client_secret=secretkey123456789abcdefghijk",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "param_type": "client_secret"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-005",
+    "text": "Refresh token URL: /refresh?refresh_token=xyz987654321abcdefghijklmnopqrstuvw",
+    "annotations": [
+      {
+        "start": 27,
+        "end": 77,
+        "type": "sec_url_token",
+        "value": "?refresh_token=xyz987654321abcdefghijklmnopqrstuvw",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "param_type": "refresh_token"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-006",
+    "text": "Auth endpoint: /login?auth_token=authenticateMe123456789abcdef&redirect=/dashboard",
+    "annotations": [
+      {
+        "start": 21,
+        "end": 62,
+        "type": "sec_url_token",
+        "value": "?auth_token=authenticateMe123456789abcdef",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "param_type": "auth_token"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-007",
+    "text": "Slack webhook: https://hooks.slack.com/services/T1234567890/B1234567890/abcdefghijklmnopqrstuvwx",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "webhook",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-008",
+    "text": "Discord webhook: https://discord.com/api/webhooks/1234567890123456789/abcdefghijklmnopqrstuvwxyz1234567890",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "webhook",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-009",
+    "text": "GitHub webhook: https://api.github.com/repos/user/repo/hooks/12345678",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "webhook",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-010",
+    "text": "AWS S3 signed URL: https://bucket.s3.amazonaws.com/object?X-Amz-Credential=AKIA123456789&X-Amz-Signature=abc123def456",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "signed_url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-011",
+    "text": "Google Cloud signed URL: https://storage.googleapis.com/bucket/object?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=service@project.iam.gserviceaccount.com&X-Goog-Signature=xyz789",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "signed_url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-012",
+    "text": "Azure SAS URL: https://account.blob.core.windows.net/container/blob?sv=2020-08-04&se=2024-12-31&sr=b&sp=r&sig=abcdefghijklmnopqrstuvwxyz123456",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "signed_url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-013",
+    "text": "Multiple tokens: /api?token=abc123&api_key=def456&client_secret=ghi789",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-014",
+    "text": "Not valid tokens: /api?q=search&page=1&limit=10 (no tokens)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "url-015",
+    "text": "Short token: /auth?token=abc (too short to be valid)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  }
+]

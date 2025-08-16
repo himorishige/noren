@@ -1,0 +1,268 @@
+[
+  {
+    "id": "auth-001",
+    "text": "Authorization: Bearer abcd1234567890efghijk1234567890lmnop",
+    "annotations": [
+      {
+        "start": 0,
+        "end": 58,
+        "type": "sec_auth_header",
+        "value": "Authorization: Bearer abcd1234567890efghijk1234567890lmnop",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "auth_type": "bearer"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-002",
+    "text": "Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+    "annotations": [
+      {
+        "start": 0,
+        "end": 45,
+        "type": "sec_auth_header",
+        "value": "Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "auth_type": "basic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-003",
+    "text": "X-API-Key: sk_test_abcdefghijklmnopqrstuvwxyz123456",
+    "annotations": [
+      {
+        "start": 11,
+        "end": 51,
+        "type": "sec_stripe_api_key",
+        "value": "sk_test_abcdefghijklmnopqrstuvwxyz123456",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "header_type": "x-api-key"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-004",
+    "text": "X-Auth-Token: 1234567890abcdefghijklmnopqrstuvwxyz",
+    "annotations": [
+      {
+        "start": 0,
+        "end": 50,
+        "type": "sec_api_key",
+        "value": "X-Auth-Token: 1234567890abcdefghijklmnopqrstuvwxyz",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "header_type": "x-auth-token"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-005",
+    "text": "X-Access-Token: xyza98765432109876543210fedcba",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-006",
+    "text": "API-Key: pk_live_1234567890abcdefghijklmnopqrstuvwxyz",
+    "annotations": [
+      {
+        "start": 9,
+        "end": 53,
+        "type": "sec_stripe_api_key",
+        "value": "pk_live_1234567890abcdefghijklmnopqrstuvwxyz",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "header_type": "api-key"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-007",
+    "text": "Auth-Token: secret123456789abcdefghijklmnop",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-008",
+    "text": "HTTP headers: Authorization: Bearer token123456789abcdef and X-API-Key: apikey987654321",
+    "annotations": [
+      {
+        "start": 14,
+        "end": 56,
+        "type": "sec_auth_header",
+        "value": "Authorization: Bearer token123456789abcdef",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic",
+          "auth_type": "bearer"
+        }
+      },
+      {
+        "start": 61,
+        "end": 87,
+        "type": "sec_api_key",
+        "value": "X-API-Key: apikey987654321",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic",
+          "header_type": "x-api-key"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-009",
+    "text": "Not valid: Authorization header without value",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-010",
+    "text": "Short key: X-API-Key: short (too short to be valid)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-011",
+    "text": "curl -H \"Authorization: Bearer longTokenHere1234567890abcdef\" https://api.example.com",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "command",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-012",
+    "text": "Request headers:\\nAuthorization: Bearer multilineToken123456789\\nContent-Type: application/json",
+    "annotations": [
+      {
+        "start": 18,
+        "end": 63,
+        "type": "sec_auth_header",
+        "value": "Authorization: Bearer multilineToken123456789",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic",
+          "auth_type": "bearer"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-013",
+    "text": "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature",
+    "annotations": [
+      {
+        "start": 0,
+        "end": 76,
+        "type": "sec_auth_header",
+        "value": "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "auth_type": "bearer"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-014",
+    "text": "Config: BEARER_TOKEN=secretkey123456789abcdefghijk",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "config",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "auth-015",
+    "text": "Log: User authenticated with token abc123def456ghi789jkl012",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "log",
+      "created_at": 1692000000000
+    }
+  }
+]

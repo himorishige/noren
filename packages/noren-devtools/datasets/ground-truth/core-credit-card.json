@@ -1,0 +1,195 @@
+[
+  {
+    "_comment": "SYNTHETIC TEST DATA - All credit card numbers in this file are dummy/fake values for PII detection testing only",
+    "_warning": "NO REAL CARD NUMBERS - These are Luhn-valid test numbers that do not belong to real payment cards",
+    "id": "cc-001",
+    "text": "Payment with card 4532015112830366 was processed",
+    "annotations": [
+      {
+        "start": 18,
+        "end": 34,
+        "type": "credit_card",
+        "value": "4532015112830366",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "brand": "visa"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cc-002",
+    "text": "Card number: 5555-5555-5555-4444 expires 12/25",
+    "annotations": [
+      {
+        "start": 13,
+        "end": 32,
+        "type": "credit_card",
+        "value": "5555-5555-5555-4444",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "brand": "mastercard"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cc-003",
+    "text": "AmEx card 3782 822463 10005 for business",
+    "annotations": [
+      {
+        "start": 10,
+        "end": 27,
+        "type": "credit_card",
+        "value": "3782 822463 10005",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "brand": "amex"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cc-004",
+    "text": "Invalid card: 1234567890123456 should not pass Luhn",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cc-005",
+    "text": "Order #4532015112830366-001 contains card number",
+    "annotations": [
+      {
+        "start": 7,
+        "end": 23,
+        "type": "credit_card",
+        "value": "4532015112830366",
+        "confidence": 0.9,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic",
+          "brand": "visa"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cc-006",
+    "text": "Account: 1234567890 is not a credit card",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cc-007",
+    "text": "JCB card number: 3530111333300000 processed",
+    "annotations": [
+      {
+        "start": 17,
+        "end": 33,
+        "type": "credit_card",
+        "value": "3530111333300000",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "brand": "jcb"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cc-008",
+    "text": "Card with spaces: 4532 0151 1283 0366 for payment",
+    "annotations": [
+      {
+        "start": 18,
+        "end": 37,
+        "type": "credit_card",
+        "value": "4532 0151 1283 0366",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "brand": "visa"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cc-009",
+    "text": "Mixed format 5555.5555.5555.4444 should be detected",
+    "annotations": [
+      {
+        "start": 13,
+        "end": 32,
+        "type": "credit_card",
+        "value": "5555.5555.5555.4444",
+        "confidence": 0.9,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic",
+          "brand": "mastercard"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cc-010",
+    "text": "Phone number 1234567890123456 looks like card but isn't",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  }
+]

@@ -22,7 +22,7 @@ function createBinarySafeRedactionTransform(window = 96) {
     window,
     policy: {
       hmacKey: 'development-secret-key-for-stream-example-32-chars',
-    }
+    },
   })
 }
 

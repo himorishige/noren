@@ -1,0 +1,3270 @@
+{
+  "timestamp": 1755306897710,
+  "version": "0.6.2",
+  "results": [
+    {
+      "category": "Core",
+      "type": "Email",
+      "results": [
+        {
+          "entry_id": "email-001",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 8,
+                "end": 28,
+                "type": "email",
+                "value": "john.doe@example.com",
+                "confidence": 0.6500000000000001,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 8,
+                "end": 28,
+                "type": "email",
+                "value": "john.doe@example.com",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "email-002",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 15,
+                "end": 32,
+                "type": "email",
+                "value": "admin@company.org",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 15,
+                "end": 32,
+                "type": "email",
+                "value": "admin@company.org",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "email-003",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 5,
+                "end": 35,
+                "type": "email",
+                "value": "test.user+tag@sub.domain.co.uk",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 5,
+                "end": 35,
+                "type": "email",
+                "value": "test.user+tag@sub.domain.co.uk",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "email-004",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "email-005",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 17,
+                "end": 31,
+                "type": "email",
+                "value": "first@test.com",
+                "confidence": 0.8,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 17,
+                "end": 31,
+                "type": "email",
+                "value": "first@test.com",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            },
+            {
+              "detected": {
+                "start": 36,
+                "end": 51,
+                "type": "email",
+                "value": "second@test.net",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 36,
+                "end": 51,
+                "type": "email",
+                "value": "second@test.net",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "email-006",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [
+            {
+              "start": 14,
+              "end": 32,
+              "type": "email",
+              "value": "user@192.168.1.100",
+              "confidence": 0.8,
+              "metadata": {
+                "difficulty": "medium",
+                "source": "synthetic"
+              }
+            }
+          ],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "email-007",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "email-008",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 20,
+                "end": 39,
+                "type": "email",
+                "value": "support@company.com",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 20,
+                "end": 39,
+                "type": "email",
+                "value": "support@company.com",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "email-009",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [
+            {
+              "start": 17,
+              "end": 27,
+              "type": "email",
+              "value": "user@会社.jp",
+              "confidence": 0.9,
+              "metadata": {
+                "difficulty": "hard",
+                "source": "synthetic"
+              }
+            }
+          ],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "email-010",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 17,
+                "end": 92,
+                "type": "email",
+                "value": "verylongusernamethatisstillvalid@extremelylongdomainnamethatisalsovalid.com",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 17,
+                "end": 92,
+                "type": "email",
+                "value": "verylongusernamethatisstillvalid@extremelylongdomainnamethatisalsovalid.com",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        }
+      ],
+      "aggregate": {
+        "total_entries": 10,
+        "total_annotations": 9,
+        "total_detections": 7,
+        "true_positives": 7,
+        "false_positives": 0,
+        "false_negatives": 2,
+        "precision": 1,
+        "recall": 0.7777777777777778,
+        "f1_score": 0.8750000000000001,
+        "type_metrics": {
+          "email": {
+            "tp": 7,
+            "fp": 0,
+            "fn": 2,
+            "precision": 1,
+            "recall": 0.7777777777777778,
+            "f1_score": 0.8750000000000001
+          }
+        },
+        "confidence_analysis": {
+          "avg_tp_confidence": 0.9142857142857144,
+          "avg_fp_confidence": 0,
+          "confidence_buckets": [
+            {
+              "range": "0.0-0.5",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.5-0.7",
+              "tp": 1,
+              "fp": 0,
+              "precision": 1
+            },
+            {
+              "range": "0.7-0.9",
+              "tp": 1,
+              "fp": 0,
+              "precision": 1
+            },
+            {
+              "range": "0.9-1.0",
+              "tp": 5,
+              "fp": 0,
+              "precision": 1
+            }
+          ]
+        }
+      },
+      "totalEntries": 10
+    },
+    {
+      "category": "Core",
+      "type": "Credit Card",
+      "results": [
+        {
+          "entry_id": "cc-001",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 18,
+                "end": 34,
+                "type": "credit_card",
+                "value": "4532015112830366",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 18,
+                "end": 34,
+                "type": "credit_card",
+                "value": "4532015112830366",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "brand": "visa"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cc-002",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 13,
+                "end": 32,
+                "type": "credit_card",
+                "value": "5555-5555-5555-4444",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 13,
+                "end": 32,
+                "type": "credit_card",
+                "value": "5555-5555-5555-4444",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "brand": "mastercard"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cc-003",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 10,
+                "end": 27,
+                "type": "credit_card",
+                "value": "3782 822463 10005",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 10,
+                "end": 27,
+                "type": "credit_card",
+                "value": "3782 822463 10005",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "brand": "amex"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cc-004",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "cc-005",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [
+            {
+              "start": 7,
+              "end": 23,
+              "type": "credit_card",
+              "value": "4532015112830366",
+              "confidence": 0.9,
+              "metadata": {
+                "difficulty": "medium",
+                "source": "synthetic",
+                "brand": "visa"
+              }
+            }
+          ],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "cc-006",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "cc-007",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 17,
+                "end": 33,
+                "type": "credit_card",
+                "value": "3530111333300000",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 17,
+                "end": 33,
+                "type": "credit_card",
+                "value": "3530111333300000",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "brand": "jcb"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cc-008",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 18,
+                "end": 37,
+                "type": "credit_card",
+                "value": "4532 0151 1283 0366",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 18,
+                "end": 37,
+                "type": "credit_card",
+                "value": "4532 0151 1283 0366",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "brand": "visa"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cc-009",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [
+            {
+              "start": 13,
+              "end": 32,
+              "type": "credit_card",
+              "value": "5555.5555.5555.4444",
+              "confidence": 0.9,
+              "metadata": {
+                "difficulty": "medium",
+                "source": "synthetic",
+                "brand": "mastercard"
+              }
+            }
+          ],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "cc-010",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        }
+      ],
+      "aggregate": {
+        "total_entries": 10,
+        "total_annotations": 7,
+        "total_detections": 5,
+        "true_positives": 5,
+        "false_positives": 0,
+        "false_negatives": 2,
+        "precision": 1,
+        "recall": 0.7142857142857143,
+        "f1_score": 0.8333333333333333,
+        "type_metrics": {
+          "credit_card": {
+            "tp": 5,
+            "fp": 0,
+            "fn": 2,
+            "precision": 1,
+            "recall": 0.7142857142857143,
+            "f1_score": 0.8333333333333333
+          }
+        },
+        "confidence_analysis": {
+          "avg_tp_confidence": 0.99,
+          "avg_fp_confidence": 0,
+          "confidence_buckets": [
+            {
+              "range": "0.0-0.5",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.5-0.7",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.7-0.9",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.9-1.0",
+              "tp": 5,
+              "fp": 0,
+              "precision": 1
+            }
+          ]
+        }
+      },
+      "totalEntries": 10
+    },
+    {
+      "category": "Security",
+      "type": "JWT",
+      "results": [
+        {
+          "entry_id": "jwt-001",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 22,
+                "end": 177,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 22,
+                "end": 177,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-002",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 7,
+                "end": 200,
+                "type": "sec_jwt_token",
+                "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYWJjZGVmIiwiaWF0IjoxNjMwMDAwMDAwLCJuYmYiOjE2MzAwMDAwMDAsImV4cCI6MTYzMDA4NjQwMCwic3ViIjoiMTIzNCIsInNjb3BlcyI6W119.fake-signature-here",
+                "confidence": 0.9,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 7,
+                "end": 200,
+                "type": "sec_jwt_token",
+                "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYWJjZGVmIiwiaWF0IjoxNjMwMDAwMDAwLCJuYmYiOjE2MzAwMDAwMDAsImV4cCI6MTYzMDA4NjQwMCwic3ViIjoiMTIzNCIsInNjb3BlcyI6W119.fake-signature-here",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-003",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "jwt-004",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "jwt-005",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "jwt-006",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 15,
+                "end": 244,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiYXVkIjoiYXBpLmV4YW1wbGUuY29tIiwic3ViIjoiNTY3ODkwIiwiaWF0IjoxNjMwMDAwMDAwLCJleHAiOjE2MzAwODY0MDB9.fake-rsa-signature-would-be-much-longer",
+                "confidence": 0.9,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 15,
+                "end": 244,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiYXVkIjoiYXBpLmV4YW1wbGUuY29tIiwic3ViIjoiNTY3ODkwIiwiaWF0IjoxNjMwMDAwMDAwLCJleHAiOjE2MzAwODY0MDB9.fake-rsa-signature-would-be-much-longer",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-007",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 19,
+                "end": 174,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 19,
+                "end": 174,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-008",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 41,
+                "end": 196,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 41,
+                "end": 196,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-009",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "jwt-010",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 15,
+                "end": 170,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 15,
+                "end": 170,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-011",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 11,
+                "end": 258,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiYXVkIjoiYXBpLmV4YW1wbGUuY29tIiwic3ViIjoiNTY3ODkwIiwiaWF0IjoxNjMwMDAwMDAwLCJleHAiOjE2MzAwODY0MDB9.fake-rsa-signature-would-be-much-longer-than-this-example",
+                "confidence": 0.9,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 11,
+                "end": 258,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiYXVkIjoiYXBpLmV4YW1wbGUuY29tIiwic3ViIjoiNTY3ODkwIiwiaWF0IjoxNjMwMDAwMDAwLCJleHAiOjE2MzAwODY0MDB9.fake-rsa-signature-would-be-much-longer-than-this-example",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "algorithm": "RS256"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-012",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 13,
+                "end": 167,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.fake-ecdsa-signature-here",
+                "confidence": 0.9,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 13,
+                "end": 167,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.fake-ecdsa-signature-here",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "algorithm": "ES256"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-013",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "jwt-014",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "jwt-015",
+          "true_positives": [],
+          "false_positives": [
+            {
+              "start": 21,
+              "end": 182,
+              "type": "sec_jwt_token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIi4ubmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c.extra",
+              "confidence": 0.99,
+              "risk": "high"
+            }
+          ],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "jwt-016",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 21,
+                "end": 176,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 21,
+                "end": 176,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-017",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 33,
+                "end": 188,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 33,
+                "end": 188,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-018",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 23,
+                "end": 178,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 23,
+                "end": 178,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-019",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 18,
+                "end": 173,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 18,
+                "end": 173,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "jwt-020",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 11,
+                "end": 179,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.fake-pss-signature-here-would-be-longer",
+                "confidence": 0.9,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 11,
+                "end": 179,
+                "type": "sec_jwt_token",
+                "value": "eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.fake-pss-signature-here-would-be-longer",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "algorithm": "PS256"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        }
+      ],
+      "aggregate": {
+        "total_entries": 20,
+        "total_annotations": 13,
+        "total_detections": 14,
+        "true_positives": 13,
+        "false_positives": 1,
+        "false_negatives": 0,
+        "precision": 0.9285714285714286,
+        "recall": 1,
+        "f1_score": 0.962962962962963,
+        "type_metrics": {
+          "sec_jwt_token": {
+            "tp": 13,
+            "fp": 1,
+            "fn": 0,
+            "precision": 0.9285714285714286,
+            "recall": 1,
+            "f1_score": 0.962962962962963
+          }
+        },
+        "confidence_analysis": {
+          "avg_tp_confidence": 0.9553846153846155,
+          "avg_fp_confidence": 0.99,
+          "confidence_buckets": [
+            {
+              "range": "0.0-0.5",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.5-0.7",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.7-0.9",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.9-1.0",
+              "tp": 13,
+              "fp": 1,
+              "precision": 0.9285714285714286
+            }
+          ]
+        }
+      },
+      "totalEntries": 20
+    },
+    {
+      "category": "Security",
+      "type": "API Keys",
+      "results": [
+        {
+          "entry_id": "api-001",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "api-002",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 9,
+                "end": 29,
+                "type": "sec_aws_access_key",
+                "value": "AKIAIOSFODNN7EXAMPLE",
+                "confidence": 0.8,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 9,
+                "end": 29,
+                "type": "sec_aws_access_key",
+                "value": "AKIAIOSFODNN7EXAMPLE",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-003",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "api-004",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 12,
+                "end": 60,
+                "type": "sec_stripe_api_key",
+                "value": "sk_test_1234567890123456789012345678901234567890",
+                "confidence": 0.9,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 12,
+                "end": 60,
+                "type": "sec_stripe_api_key",
+                "value": "sk_test_1234567890123456789012345678901234567890",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-005",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 16,
+                "end": 66,
+                "type": "sec_stripe_api_key",
+                "value": "sk_live_abc123def456ghi789jkl012mno345pqr678stu901",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 16,
+                "end": 66,
+                "type": "sec_stripe_api_key",
+                "value": "sk_live_abc123def456ghi789jkl012mno345pqr678stu901",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-006",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "api-007",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "api-008",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 10,
+                "end": 66,
+                "type": "sec_sendgrid_api_key",
+                "value": "SG.1234567890123456.abcdefghijklmnopqrstuvwxyz1234567890",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 10,
+                "end": 66,
+                "type": "sec_sendgrid_api_key",
+                "value": "SG.1234567890123456.abcdefghijklmnopqrstuvwxyz1234567890",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-009",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 12,
+                "end": 74,
+                "type": "sec_openai_api_key",
+                "value": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqr",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 12,
+                "end": 74,
+                "type": "sec_openai_api_key",
+                "value": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqr",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-010",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "api-011",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 17,
+                "end": 74,
+                "type": "sec_slack_token",
+                "value": "xoxb-1234567890123-1234567890123-abcdefghijklmnopqrstuvwx",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 17,
+                "end": 74,
+                "type": "sec_slack_token",
+                "value": "xoxb-1234567890123-1234567890123-abcdefghijklmnopqrstuvwx",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "slack_type": "bot"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-012",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "api-013",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 17,
+                "end": 92,
+                "type": "sec_slack_token",
+                "value": "xapp-1-A1234567890-1234567890123-abcdefghijklmnopqrstuvwxyz1234567890abcdef",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 17,
+                "end": 92,
+                "type": "sec_slack_token",
+                "value": "xapp-1-A1234567890-1234567890123-abcdefghijklmnopqrstuvwxyz1234567890abcdef",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "slack_type": "app"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-014",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 27,
+                "end": 93,
+                "type": "sec_google_oauth_token",
+                "value": "ya29.A0ARrdaM-1234567890abcdefghijklmnopqrstuvwxyzABCDEF1234567890",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 27,
+                "end": 93,
+                "type": "sec_google_oauth_token",
+                "value": "ya29.A0ARrdaM-1234567890abcdefghijklmnopqrstuvwxyzABCDEF1234567890",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-015",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 24,
+                "end": 64,
+                "type": "sec_azure_subscription_key",
+                "value": "abcdef1234567890abcdef1234567890abcdef12",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 24,
+                "end": 64,
+                "type": "sec_azure_subscription_key",
+                "value": "abcdef1234567890abcdef1234567890abcdef12",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-016",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 16,
+                "end": 71,
+                "type": "sec_openai_api_key",
+                "value": "sk-1234567890abcdefghijklmnopqrstuvwxyzABCDEF1234567890",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 16,
+                "end": 71,
+                "type": "sec_openai_api_key",
+                "value": "sk-1234567890abcdefghijklmnopqrstuvwxyzABCDEF1234567890",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "openai_type": "legacy"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-017",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 24,
+                "end": 84,
+                "type": "sec_openai_api_key",
+                "value": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOP",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 24,
+                "end": 84,
+                "type": "sec_openai_api_key",
+                "value": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOP",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "openai_type": "project"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-018",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 82,
+                "end": 106,
+                "type": "sec_api_key",
+                "value": "sk_live_1234567890abcdef",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 82,
+                "end": 106,
+                "type": "sec_api_key",
+                "value": "sk_live_1234567890abcdef",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-019",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 39,
+                "end": 79,
+                "type": "sec_stripe_api_key",
+                "value": "sk_test_abcdefghijklmnopqrstuvwxyz123456",
+                "confidence": 0.9,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 39,
+                "end": 79,
+                "type": "sec_stripe_api_key",
+                "value": "sk_test_abcdefghijklmnopqrstuvwxyz123456",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            },
+            {
+              "detected": {
+                "start": 98,
+                "end": 138,
+                "type": "sec_sendgrid_api_key",
+                "value": "SG.abcdefghijklmnop.qrstuvwxyz1234567890",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 98,
+                "end": 138,
+                "type": "sec_sendgrid_api_key",
+                "value": "SG.abcdefghijklmnop.qrstuvwxyz1234567890",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "api-020",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 52,
+                "end": 72,
+                "type": "sec_aws_access_key",
+                "value": "AKIAIOSFODNN7EXAMPLE",
+                "confidence": 0.8,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 52,
+                "end": 72,
+                "type": "sec_aws_access_key",
+                "value": "AKIAIOSFODNN7EXAMPLE",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        }
+      ],
+      "aggregate": {
+        "total_entries": 20,
+        "total_annotations": 15,
+        "total_detections": 15,
+        "true_positives": 15,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1,
+        "recall": 1,
+        "f1_score": 1,
+        "type_metrics": {
+          "sec_aws_access_key": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_stripe_api_key": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_sendgrid_api_key": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_openai_api_key": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_slack_token": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_google_oauth_token": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_azure_subscription_key": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_api_key": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          }
+        },
+        "confidence_analysis": {
+          "avg_tp_confidence": 0.9526666666666669,
+          "avg_fp_confidence": 0,
+          "confidence_buckets": [
+            {
+              "range": "0.0-0.5",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.5-0.7",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.7-0.9",
+              "tp": 2,
+              "fp": 0,
+              "precision": 1
+            },
+            {
+              "range": "0.9-1.0",
+              "tp": 13,
+              "fp": 0,
+              "precision": 1
+            }
+          ]
+        }
+      },
+      "totalEntries": 20
+    },
+    {
+      "category": "Security",
+      "type": "Auth Headers",
+      "results": [
+        {
+          "entry_id": "auth-001",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 0,
+                "end": 58,
+                "type": "sec_auth_header",
+                "value": "Authorization: Bearer abcd1234567890efghijk1234567890lmnop",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 0,
+                "end": 58,
+                "type": "sec_auth_header",
+                "value": "Authorization: Bearer abcd1234567890efghijk1234567890lmnop",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "auth_type": "bearer"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "auth-002",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 0,
+                "end": 45,
+                "type": "sec_auth_header",
+                "value": "Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 0,
+                "end": 45,
+                "type": "sec_auth_header",
+                "value": "Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "auth_type": "basic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "auth-003",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 11,
+                "end": 51,
+                "type": "sec_stripe_api_key",
+                "value": "sk_test_abcdefghijklmnopqrstuvwxyz123456",
+                "confidence": 0.9,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 11,
+                "end": 51,
+                "type": "sec_stripe_api_key",
+                "value": "sk_test_abcdefghijklmnopqrstuvwxyz123456",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "header_type": "x-api-key"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "auth-004",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 0,
+                "end": 50,
+                "type": "sec_api_key",
+                "value": "X-Auth-Token: 1234567890abcdefghijklmnopqrstuvwxyz",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 0,
+                "end": 50,
+                "type": "sec_api_key",
+                "value": "X-Auth-Token: 1234567890abcdefghijklmnopqrstuvwxyz",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "header_type": "x-auth-token"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "auth-005",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "auth-006",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 9,
+                "end": 53,
+                "type": "sec_stripe_api_key",
+                "value": "pk_live_1234567890abcdefghijklmnopqrstuvwxyz",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 9,
+                "end": 53,
+                "type": "sec_stripe_api_key",
+                "value": "pk_live_1234567890abcdefghijklmnopqrstuvwxyz",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "header_type": "api-key"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "auth-007",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "auth-008",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 14,
+                "end": 56,
+                "type": "sec_auth_header",
+                "value": "Authorization: Bearer token123456789abcdef",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 14,
+                "end": 56,
+                "type": "sec_auth_header",
+                "value": "Authorization: Bearer token123456789abcdef",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic",
+                  "auth_type": "bearer"
+                }
+              },
+              "overlap_ratio": 1
+            },
+            {
+              "detected": {
+                "start": 61,
+                "end": 87,
+                "type": "sec_api_key",
+                "value": "X-API-Key: apikey987654321",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 61,
+                "end": 87,
+                "type": "sec_api_key",
+                "value": "X-API-Key: apikey987654321",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic",
+                  "header_type": "x-api-key"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "auth-009",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "auth-010",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "auth-011",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "auth-012",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 18,
+                "end": 63,
+                "type": "sec_auth_header",
+                "value": "Authorization: Bearer multilineToken123456789",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 18,
+                "end": 63,
+                "type": "sec_auth_header",
+                "value": "Authorization: Bearer multilineToken123456789",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic",
+                  "auth_type": "bearer"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "auth-013",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 0,
+                "end": 76,
+                "type": "sec_auth_header",
+                "value": "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 0,
+                "end": 76,
+                "type": "sec_auth_header",
+                "value": "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "auth_type": "bearer"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "auth-014",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "auth-015",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        }
+      ],
+      "aggregate": {
+        "total_entries": 15,
+        "total_annotations": 9,
+        "total_detections": 9,
+        "true_positives": 9,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1,
+        "recall": 1,
+        "f1_score": 1,
+        "type_metrics": {
+          "sec_auth_header": {
+            "tp": 5,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_stripe_api_key": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_api_key": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          }
+        },
+        "confidence_analysis": {
+          "avg_tp_confidence": 0.98,
+          "avg_fp_confidence": 0,
+          "confidence_buckets": [
+            {
+              "range": "0.0-0.5",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.5-0.7",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.7-0.9",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.9-1.0",
+              "tp": 9,
+              "fp": 0,
+              "precision": 1
+            }
+          ]
+        }
+      },
+      "totalEntries": 15
+    },
+    {
+      "category": "Security",
+      "type": "Cookies & Sessions",
+      "results": [
+        {
+          "entry_id": "cookie-001",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 0,
+                "end": 52,
+                "type": "sec_cookie",
+                "value": "Cookie: session_id=abc123def456ghi789; user_id=12345",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 0,
+                "end": 52,
+                "type": "sec_cookie",
+                "value": "Cookie: session_id=abc123def456ghi789; user_id=12345",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cookie-002",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 12,
+                "end": 59,
+                "type": "sec_session_id",
+                "value": "JSESSIONID=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 12,
+                "end": 59,
+                "type": "sec_session_id",
+                "value": "JSESSIONID=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cookie-003",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 12,
+                "end": 54,
+                "type": "sec_session_id",
+                "value": "PHPSESSID=abcdefghijklmnopqrstuvwxyz123456",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 12,
+                "end": 54,
+                "type": "sec_session_id",
+                "value": "PHPSESSID=abcdefghijklmnopqrstuvwxyz123456",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cookie-004",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 0,
+                "end": 63,
+                "type": "sec_cookie",
+                "value": "Cookie: auth_token=xyz987654321abcdefghijk; theme=dark; lang=en",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 0,
+                "end": 63,
+                "type": "sec_cookie",
+                "value": "Cookie: auth_token=xyz987654321abcdefghijk; theme=dark; lang=en",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cookie-005",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 9,
+                "end": 37,
+                "type": "sec_session_id",
+                "value": "session=1a2b3c4d5e6f7g8h9i0j",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 9,
+                "end": 37,
+                "type": "sec_session_id",
+                "value": "session=1a2b3c4d5e6f7g8h9i0j",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cookie-006",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 28,
+                "end": 48,
+                "type": "sec_session_id",
+                "value": "sess=abcdef123456789",
+                "confidence": 0.9,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 28,
+                "end": 48,
+                "type": "sec_session_id",
+                "value": "sess=abcdef123456789",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cookie-007",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 5,
+                "end": 56,
+                "type": "sec_session_id",
+                "value": "JSESSIONID=A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 5,
+                "end": 56,
+                "type": "sec_session_id",
+                "value": "JSESSIONID=A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cookie-008",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 8,
+                "end": 49,
+                "type": "sec_session_id",
+                "value": "PHPSESSID=randomSessionId1234567890abcdef",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 8,
+                "end": 49,
+                "type": "sec_session_id",
+                "value": "PHPSESSID=randomSessionId1234567890abcdef",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cookie-009",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "cookie-010",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 0,
+                "end": 117,
+                "type": "sec_set_cookie",
+                "value": "Set-Cookie: secure_session=encrypted_data_123456789abcdef; Domain=.example.com; Expires=Thu, 01 Jan 2025 00:00:00 GMT",
+                "confidence": 0.75,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 0,
+                "end": 117,
+                "type": "sec_set_cookie",
+                "value": "Set-Cookie: secure_session=encrypted_data_123456789abcdef; Domain=.example.com; Expires=Thu, 01 Jan 2025 00:00:00 GMT",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "cookie-011",
+          "true_positives": [],
+          "false_positives": [
+            {
+              "start": 6,
+              "end": 63,
+              "type": "sec_cookie",
+              "value": "cookie: just some text with equals signs = and semicolons",
+              "confidence": 0.99,
+              "risk": "medium"
+            }
+          ],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "cookie-012",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "cookie-013",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "cookie-014",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "cookie-015",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 14,
+                "end": 70,
+                "type": "sec_cookie",
+                "value": "Cookie: cart_id=shop123456789; user_pref=settings_abcdef",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 14,
+                "end": 70,
+                "type": "sec_cookie",
+                "value": "Cookie: cart_id=shop123456789; user_pref=settings_abcdef",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        }
+      ],
+      "aggregate": {
+        "total_entries": 15,
+        "total_annotations": 10,
+        "total_detections": 11,
+        "true_positives": 10,
+        "false_positives": 1,
+        "false_negatives": 0,
+        "precision": 0.9090909090909091,
+        "recall": 1,
+        "f1_score": 0.9523809523809523,
+        "type_metrics": {
+          "sec_cookie": {
+            "tp": 3,
+            "fp": 1,
+            "fn": 0,
+            "precision": 0.75,
+            "recall": 1,
+            "f1_score": 0.8571428571428571
+          },
+          "sec_session_id": {
+            "tp": 6,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_set_cookie": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          }
+        },
+        "confidence_analysis": {
+          "avg_tp_confidence": 0.9570000000000002,
+          "avg_fp_confidence": 0.99,
+          "confidence_buckets": [
+            {
+              "range": "0.0-0.5",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.5-0.7",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.7-0.9",
+              "tp": 1,
+              "fp": 0,
+              "precision": 1
+            },
+            {
+              "range": "0.9-1.0",
+              "tp": 9,
+              "fp": 1,
+              "precision": 0.9
+            }
+          ]
+        }
+      },
+      "totalEntries": 15
+    },
+    {
+      "category": "Security",
+      "type": "URL Tokens",
+      "results": [
+        {
+          "entry_id": "url-001",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-002",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 30,
+                "end": 80,
+                "type": "sec_url_token",
+                "value": "?access_token=1234567890abcdefghijklmnopqrstuvwxyz",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 30,
+                "end": 80,
+                "type": "sec_url_token",
+                "value": "?access_token=1234567890abcdefghijklmnopqrstuvwxyz",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "param_type": "access_token"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "url-003",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-004",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 18,
+                "end": 62,
+                "type": "sec_client_secret",
+                "value": "?client_secret=secretkey123456789abcdefghijk",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 18,
+                "end": 62,
+                "type": "sec_client_secret",
+                "value": "?client_secret=secretkey123456789abcdefghijk",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "param_type": "client_secret"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "url-005",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 27,
+                "end": 77,
+                "type": "sec_url_token",
+                "value": "?refresh_token=xyz987654321abcdefghijklmnopqrstuvw",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 27,
+                "end": 77,
+                "type": "sec_url_token",
+                "value": "?refresh_token=xyz987654321abcdefghijklmnopqrstuvw",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "param_type": "refresh_token"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "url-006",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 21,
+                "end": 62,
+                "type": "sec_url_token",
+                "value": "?auth_token=authenticateMe123456789abcdef",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 21,
+                "end": 62,
+                "type": "sec_url_token",
+                "value": "?auth_token=authenticateMe123456789abcdef",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic",
+                  "param_type": "auth_token"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "url-007",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-008",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-009",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-010",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-011",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-012",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-013",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-014",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "url-015",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        }
+      ],
+      "aggregate": {
+        "total_entries": 15,
+        "total_annotations": 4,
+        "total_detections": 4,
+        "true_positives": 4,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1,
+        "recall": 1,
+        "f1_score": 1,
+        "type_metrics": {
+          "sec_url_token": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_client_secret": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          }
+        },
+        "confidence_analysis": {
+          "avg_tp_confidence": 0.99,
+          "avg_fp_confidence": 0,
+          "confidence_buckets": [
+            {
+              "range": "0.0-0.5",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.5-0.7",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.7-0.9",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.9-1.0",
+              "tp": 4,
+              "fp": 0,
+              "precision": 1
+            }
+          ]
+        }
+      },
+      "totalEntries": 15
+    },
+    {
+      "category": "Security",
+      "type": "Misc Tokens",
+      "results": [
+        {
+          "entry_id": "misc-001",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-002",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-003",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-004",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-005",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 14,
+                "end": 69,
+                "type": "sec_google_oauth_token",
+                "value": "ya29.A0ARrdaM1234567890abcdefghijklmnopqrstuvwxyzABCDEF",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 14,
+                "end": 69,
+                "type": "sec_google_oauth_token",
+                "value": "ya29.A0ARrdaM1234567890abcdefghijklmnopqrstuvwxyzABCDEF",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "easy",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "misc-006",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-007",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 24,
+                "end": 56,
+                "type": "sec_azure_subscription_key",
+                "value": "1234567890abcdef1234567890abcdef",
+                "confidence": 0.99,
+                "risk": "high"
+              },
+              "ground_truth": {
+                "start": 24,
+                "end": 56,
+                "type": "sec_azure_subscription_key",
+                "value": "1234567890abcdef1234567890abcdef",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "misc-008",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-009",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-010",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-011",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-012",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-013",
+          "true_positives": [
+            {
+              "detected": {
+                "start": 29,
+                "end": 77,
+                "type": "sec_hex_token",
+                "value": "fedcba0987654321abcdef1234567890fedcba0987654321",
+                "confidence": 0.99,
+                "risk": "medium"
+              },
+              "ground_truth": {
+                "start": 29,
+                "end": 77,
+                "type": "sec_hex_token",
+                "value": "fedcba0987654321abcdef1234567890fedcba0987654321",
+                "confidence": 1,
+                "metadata": {
+                  "difficulty": "medium",
+                  "source": "synthetic"
+                }
+              },
+              "overlap_ratio": 1
+            }
+          ],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 1,
+          "recall": 1,
+          "f1_score": 1
+        },
+        {
+          "entry_id": "misc-014",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        },
+        {
+          "entry_id": "misc-015",
+          "true_positives": [],
+          "false_positives": [],
+          "false_negatives": [],
+          "precision": 0,
+          "recall": 0,
+          "f1_score": 0
+        }
+      ],
+      "aggregate": {
+        "total_entries": 15,
+        "total_annotations": 3,
+        "total_detections": 3,
+        "true_positives": 3,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1,
+        "recall": 1,
+        "f1_score": 1,
+        "type_metrics": {
+          "sec_google_oauth_token": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_azure_subscription_key": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          },
+          "sec_hex_token": {
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1_score": 1
+          }
+        },
+        "confidence_analysis": {
+          "avg_tp_confidence": 0.9899999999999999,
+          "avg_fp_confidence": 0,
+          "confidence_buckets": [
+            {
+              "range": "0.0-0.5",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.5-0.7",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.7-0.9",
+              "tp": 0,
+              "fp": 0,
+              "precision": 0
+            },
+            {
+              "range": "0.9-1.0",
+              "tp": 3,
+              "fp": 0,
+              "precision": 1
+            }
+          ]
+        }
+      },
+      "totalEntries": 15
+    }
+  ]
+}

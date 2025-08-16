@@ -119,7 +119,7 @@ function compile(policy, dicts, options = {}) {
     const { entries = [] } = dict
     const customDetectors = []
     const customMaskers = {}
-    
+
     // Pre-compile patterns for better performance
     const compiledPatterns = new Map()
 
@@ -143,10 +143,10 @@ function compile(policy, dicts, options = {}) {
             if (!compiled || !canPush?.()) return
 
             const { regex, entry: dictEntry } = compiled
-            
+
             // Reset regex state for each match operation
             regex.lastIndex = 0
-            
+
             for (const m of src.matchAll(regex)) {
               if (m.index !== undefined) {
                 const hit = {
@@ -162,15 +162,15 @@ function compile(policy, dicts, options = {}) {
                     dictionary_priority: dictEntry.priority,
                   },
                 }
-                
+
                 // Basic confidence scoring for dictionary matches
                 if (options.enableConfidenceScoring !== false) {
                   hit.confidence = calculateDictionaryConfidence(hit, m[0], dictEntry)
                   hit.reasons = [`Dictionary pattern match: ${dictEntry.pattern}`]
                 }
-                
+
                 push(hit)
-                
+
                 // Respect match limits for performance
                 if (!canPush?.()) break
               }
@@ -203,18 +203,18 @@ function compile(policy, dicts, options = {}) {
 // Helper function for basic dictionary confidence scoring
 function calculateDictionaryConfidence(hit, matchedText, dictEntry) {
   let confidence = 0.8 // Base confidence for dictionary matches
-  
+
   // Adjust based on pattern complexity
   if (dictEntry.pattern.length > 20) confidence += 0.1
   if (dictEntry.pattern.includes('\\d{') || dictEntry.pattern.includes('\\w{')) confidence += 0.05
-  
+
   // Adjust based on match length
   if (matchedText.length >= 8) confidence += 0.05
-  
+
   // Risk level adjustments
   if (dictEntry.risk === 'high') confidence += 0.1
   else if (dictEntry.risk === 'low') confidence -= 0.1
-  
+
   return Math.min(1.0, Math.max(0.0, confidence))
 }
 
