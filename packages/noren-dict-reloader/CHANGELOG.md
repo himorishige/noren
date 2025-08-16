@@ -1,6 +1,6 @@
 # @himorishige/noren-dict-reloader
 
-## 2.0.4
+## 0.6.4
 
 ### Patch Changes
 
@@ -14,14 +14,14 @@
 - Updated dependencies [[`a74e9b8`](https://github.com/himorishige/noren/commit/a74e9b83b2d1574c204a8c2382e953fe3ce47e63)]:
   - @himorishige/noren-core@0.6.4
 
-## 2.0.3
+## 0.6.3
 
 ### Patch Changes
 
 - Updated dependencies [[`ea7c814`](https://github.com/himorishige/noren/commit/ea7c814de6ada089522dba3418dc2651c12ff7ee)]:
   - @himorishige/noren-core@0.6.3
 
-## 2.0.2
+## 0.6.2
 
 ### Patch Changes
 
@@ -30,7 +30,7 @@
 - Updated dependencies [[`4bf0831`](https://github.com/himorishige/noren/commit/4bf0831644c546d02619f5a7637c3cdd99a91597)]:
   - @himorishige/noren-core@0.6.2
 
-## 2.0.1
+## 0.6.1
 
 ### Patch Changes
 
@@ -39,7 +39,7 @@
 - Updated dependencies [[`c67d4a0`](https://github.com/himorishige/noren/commit/c67d4a0121ed909d2d258983edc111f8547510c6)]:
   - @himorishige/noren-core@0.6.1
 
-## 2.0.0
+## 0.6.0
 
 ### Minor Changes
 
@@ -121,7 +121,7 @@
 - Updated dependencies [[`89f3c62`](https://github.com/himorishige/noren/commit/89f3c6295e1f5c91c154db512d8ac2fb1e5de1bc)]:
   - @himorishige/noren-core@0.6.0
 
-## 1.0.0
+## 0.5.0
 
 ### Minor Changes
 
