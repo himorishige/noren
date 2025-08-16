@@ -42,6 +42,24 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.3.0)(@vitest/ui@3.2.4)(terser@5.43.1)
 
+  packages/noren:
+    devDependencies:
+      '@rollup/plugin-json':
+        specifier: ^6.1.0
+        version: 6.1.0(rollup@4.46.2)
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.17.2
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@22.17.2)(@vitest/ui@3.2.4)(terser@5.43.1))
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.2
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.17.2)(@vitest/ui@3.2.4)(terser@5.43.1)
+
   packages/noren-core:
     devDependencies:
       '@types/node':
@@ -76,24 +94,6 @@ importers:
       typescript:
         specifier: ^5.6.2
         version: 5.9.2
-
-  packages/noren-guard:
-    devDependencies:
-      '@rollup/plugin-json':
-        specifier: ^6.1.0
-        version: 6.1.0(rollup@4.46.2)
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.17.2
-      '@vitest/coverage-v8':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4(@types/node@22.17.2)(@vitest/ui@3.2.4)(terser@5.43.1))
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@22.17.2)(@vitest/ui@3.2.4)(terser@5.43.1)
 
   packages/noren-plugin-jp:
     dependencies:
