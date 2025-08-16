@@ -1,7 +1,7 @@
 {
-  "name": "@himorishige/noren-guard",
-  "version": "0.1.0",
-  "description": "Functional prompt injection protection using pure functions",
+  "name": "@himorishige/noren",
+  "version": "1.0.0",
+  "description": "Noren (のれん) - Lightweight AI security library for prompt injection protection. Like a shop curtain that provides privacy, Noren intelligently shields your AI applications from malicious prompts.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -29,20 +29,25 @@
   },
   "keywords": [
     "prompt-injection",
-    "security",
-    "llm",
-    "ai",
+    "ai-security",
+    "llm-security",
+    "prompt-guard",
+    "ai-safety",
+    "noren",
+    "japanese",
     "mcp",
-    "guard",
     "lightweight",
-    "typescript"
+    "typescript",
+    "functional",
+    "claude",
+    "chatgpt"
   ],
   "author": "himorishige",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/himorishige/noren.git",
-    "directory": "packages/noren-guard"
+    "directory": "packages/noren"
   },
   "bugs": {
     "url": "https://github.com/himorishige/noren/issues"

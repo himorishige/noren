@@ -15,7 +15,7 @@ import {
   financialPatterns,
   financialSanitizeRules,
   createFinancialConfig 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // 金融パターンの内容
 console.log(financialPatterns.map(p => ({
@@ -42,7 +42,7 @@ import {
   personalPatterns,
   personalSanitizeRules,
   createPersonalConfig 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // 個人情報パターンの内容
 const personalIds = personalPatterns.map(p => p.id);
@@ -57,7 +57,7 @@ import {
   securityPatterns,
   securitySanitizeRules,
   createSecurityConfig 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // セキュリティパターンの内容
 const securityIds = securityPatterns.map(p => p.id);
@@ -76,7 +76,7 @@ import {
   patternBuilder,
   ruleBuilder,
   createGuard 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // 既存の金融パターンに日本固有のパターンを追加
 const japaneseFinancialPatterns = patternBuilder()
@@ -117,7 +117,7 @@ const enhancedGuard = createGuard({
 #### 特定パターンのフィルタリング
 
 ```typescript
-import { personalPatterns } from '@himorishige/noren-guard';
+import { personalPatterns } from '@himorishige/noren';
 
 // 高重要度の個人情報のみ使用
 const criticalPersonalPatterns = personalPatterns.filter(
@@ -234,7 +234,7 @@ import {
   createGuard,
   personalPatterns, // 組み込み個人情報辞書
   securityPatterns  // 組み込みセキュリティ辞書
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 import { 
   healthcarePatterns,
   healthcareSanitizeRules,
@@ -278,7 +278,7 @@ interface InjectionPattern {
 ### 基本的なカスタムパターンの追加
 
 ```typescript
-import { createGuard } from '@himorishige/noren-guard';
+import { createGuard } from '@himorishige/noren';
 
 const customPatterns = [
   {
@@ -317,7 +317,7 @@ console.log(`リスク: ${result.risk}, 安全: ${result.safe}`);
 ### Fluent APIによるパターン構築
 
 ```typescript
-import { patternBuilder, createGuard } from '@himorishige/noren-guard';
+import { patternBuilder, createGuard } from '@himorishige/noren';
 
 // 会社固有のパターンを構築
 const companyPatterns = patternBuilder()
@@ -362,7 +362,7 @@ import {
   addKeywords,
   addCompanyTerms,
   buildPatterns 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // 関数型スタイル
 let state = createPatternBuilder();
@@ -410,7 +410,7 @@ interface SanitizeRule {
 ### ルールビルダーの使用
 
 ```typescript
-import { ruleBuilder, createGuard } from '@himorishige/noren-guard';
+import { ruleBuilder, createGuard } from '@himorishige/noren';
 
 // Fluent APIでルールを構築
 const sanitizeRules = ruleBuilder()
@@ -448,7 +448,7 @@ import {
   addRemovalRule,
   addReplacementRule,
   buildRules 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 let ruleState = createRuleBuilder();
 
@@ -485,7 +485,7 @@ import {
   createGovernmentPolicy,
   toGuardConfig,
   createGuard 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // ポリシーストアを作成
 let store = createPolicyStore();
@@ -518,7 +518,7 @@ import {
   validatePolicy,
   exportPolicy,
   importPolicy 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // ベースとなるパターンを構築
 const customPatterns = patternBuilder()
@@ -562,7 +562,7 @@ const importedPolicy = importPolicy(policyJson);
 ### 複数ポリシーの統合
 
 ```typescript
-import { mergePolicies } from '@himorishige/noren-guard';
+import { mergePolicies } from '@himorishige/noren';
 
 // 複数のポリシーを統合
 const financial = createFinancialPolicy();
@@ -592,7 +592,7 @@ import {
   createPIIPatterns,
   createPIISanitizationRules,
   createGuard 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // 標準的なPIIパターンを作成
 const piiPatterns = createPIIPatterns([

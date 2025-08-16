@@ -3,7 +3,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import terser from '@rollup/plugin-terser'
 
 export default {
-  // Optimized build for noren-guard
+  // Optimized build for noren
   input: 'dist/index.js',
   output: {
     file: 'dist/index.min.js',

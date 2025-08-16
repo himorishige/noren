@@ -20,7 +20,7 @@
 ## 🚀 クイックスタート
 
 ```typescript
-import { scanPrompt, isPromptSafe } from '@himorishige/noren-guard';
+import { scanPrompt, isPromptSafe } from '@himorishige/noren';
 
 // 簡単な安全性チェック
 const isSafe = isPromptSafe('今日の天気はどうですか？'); // true

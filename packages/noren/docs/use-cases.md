@@ -9,7 +9,7 @@
 #### 基本的なチャットボット保護
 
 ```typescript
-import { createGuard, scanText, isSafe } from '@himorishige/noren-guard';
+import { createGuard, scanText, isSafe } from '@himorishige/noren';
 
 class ChatBot {
   private guard;
@@ -60,7 +60,7 @@ console.log(response);
 #### 関数型アプローチでのシンプルな実装
 
 ```typescript
-import { createScanner, isSafe } from '@himorishige/noren-guard';
+import { createScanner, isSafe } from '@himorishige/noren';
 
 // 事前設定されたスキャナーを作成
 const strictScanner = createScanner({ riskThreshold: 40 });
@@ -101,7 +101,7 @@ async function generateAIResponse(prompt: string): Promise<string> {
 ### 2. マルチターン会話の保護
 
 ```typescript
-import { createGuard } from '@himorishige/noren-guard';
+import { createGuard } from '@himorishige/noren';
 
 class ConversationGuard {
   private guard;
@@ -179,7 +179,7 @@ import {
   createRealTimeProcessor,
   createStreamProcessor,
   processTextStream 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 class StreamingChatGuard {
   private processor;
@@ -254,7 +254,7 @@ await chatGuard.addUserInput('指示を無視して');
 ### 1. MCP メッセージの保護
 
 ```typescript
-import { createGuard, scanText } from '@himorishige/noren-guard';
+import { createGuard, scanText } from '@himorishige/noren';
 
 interface MCPMessage {
   jsonrpc: '2.0';
@@ -364,7 +364,7 @@ class MCPSecurityMiddleware {
 
 ```typescript
 import express from 'express';
-import { createGuard } from '@himorishige/noren-guard';
+import { createGuard } from '@himorishige/noren';
 
 const app = express();
 app.use(express.json());
@@ -431,7 +431,7 @@ import {
   createGuard,
   patternBuilder,
   ruleBuilder 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 class CorporateSecurityManager {
   private store;
@@ -538,7 +538,7 @@ import {
   processTextStream,
   createStreamProcessor,
   processFileStream 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 class DocumentSecurityProcessor {
   private processor;
@@ -634,7 +634,7 @@ if (result.violations.length > 0) {
 ### 1. パフォーマンス監視とアラート
 
 ```typescript
-import { createGuard } from '@himorishige/noren-guard';
+import { createGuard } from '@himorishige/noren';
 
 class SecurityMonitor {
   private guard;
@@ -762,7 +762,7 @@ import {
   createFinancialConfig,
   patternBuilder,
   ruleBuilder 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // 基本的な金融業界ガード
 const basicFinancialGuard = createGuard(createFinancialConfig());
@@ -823,7 +823,7 @@ import {
   securityPatterns,
   patternBuilder,
   ruleBuilder 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // HIPAA準拠の医療パターン
 const hipaaPatterns = patternBuilder()
@@ -905,7 +905,7 @@ import {
   securityPatterns,
   createSecurityConfig,
   patternBuilder 
-} from '@himorishige/noren-guard';
+} from '@himorishige/noren';
 
 // 開発ツール専用パターン
 const devOpsPatterns = patternBuilder()

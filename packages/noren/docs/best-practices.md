@@ -7,7 +7,7 @@
 ### 適切なプリセットの選択
 
 ```typescript
-import { PromptGuard, PRESETS } from '@himorishige/noren-guard';
+import { PromptGuard, PRESETS } from '@himorishige/noren';
 
 // 本番環境 - 高セキュリティが必要
 const productionGuard = new PromptGuard(PRESETS.STRICT);

@@ -1,4 +1,4 @@
-# @himorishige/noren-guard
+# @himorishige/noren
 
 🛡️ **MCPサーバーとAIツール向け軽量プロンプトインジェクション対策**
 
@@ -18,7 +18,7 @@ Model Context Protocol (MCP) サーバーとAIアプリケーションをプロ�
 ## 📦 インストール
 
 ```bash
-npm install @himorishige/noren-guard
+npm install @himorishige/noren
 ```
 
 ## 🚀 クイックスタート
@@ -26,7 +26,7 @@ npm install @himorishige/noren-guard
 ### 基本的な使用方法
 
 ```typescript
-import { scanPrompt, isPromptSafe } from '@himorishige/noren-guard'
+import { scanPrompt, isPromptSafe } from '@himorishige/noren'
 
 // 簡単な安全性チェック
 const isSafe = isPromptSafe('今日の天気はどうですか？') // true
@@ -45,7 +45,7 @@ console.log({
 ### MCPサーバー統合
 
 ```typescript
-import { createMCPMiddleware, PRESETS } from '@himorishige/noren-guard'
+import { createMCPMiddleware, PRESETS } from '@himorishige/noren'
 
 // MCPミドルウェアを作成
 const { guard, process } = createMCPMiddleware({
@@ -71,7 +71,7 @@ const { message, action } = await process(mcpMessage)
 ### ストリーミング処理
 
 ```typescript
-import { StreamProcessor, createTextStream } from '@himorishige/noren-guard'
+import { StreamProcessor, createTextStream } from '@himorishige/noren'
 
 const processor = new StreamProcessor({
   chunkSize: 1024,
@@ -93,7 +93,7 @@ for await (const result of processor.processText(largeText)) {
 MCPサーバーを悪意のあるプロンプトから保護：
 
 ```typescript
-import { MCPGuard, PRESETS } from '@himorishige/noren-guard'
+import { MCPGuard, PRESETS } from '@himorishige/noren'
 
 const guard = new MCPGuard(PRESETS.MCP)
 
@@ -115,7 +115,7 @@ async function handleMessage(message) {
 会話型AIを脱獄攻撃から保護：
 
 ```typescript
-import { PromptGuard, PRESETS } from '@himorishige/noren-guard'
+import { PromptGuard, PRESETS } from '@himorishige/noren'
 
 const guard = new PromptGuard(PRESETS.STRICT)
 
@@ -139,7 +139,7 @@ async function processChatMessage(userMessage, trustLevel = 'user') {
 ユーザー生成コンテンツをリアルタイムでフィルタリング：
 
 ```typescript
-import { createPipeline } from '@himorishige/noren-guard'
+import { createPipeline } from '@himorishige/noren'
 
 const moderationPipeline = createPipeline({
   riskThreshold: 70,
@@ -159,7 +159,7 @@ const cleanComment = await streamToString(moderatedStream)
 用途に応じて適切なセキュリティレベルを選択：
 
 ```typescript
-import { PRESETS, PromptGuard } from '@himorishige/noren-guard'
+import { PRESETS, PromptGuard } from '@himorishige/noren'
 
 // 本番システム向け厳格なセキュリティ
 const strictGuard = new PromptGuard(PRESETS.STRICT)
@@ -201,7 +201,7 @@ const customGuard = new PromptGuard({
 ### 組織固有の保護
 
 ```typescript
-import { PolicyManager, PatternBuilder } from '@himorishige/noren-guard'
+import { PolicyManager, PatternBuilder } from '@himorishige/noren'
 
 const policyManager = new PolicyManager()
 
@@ -238,7 +238,7 @@ const guard = new PromptGuard(guardConfig)
 ### セキュリティメトリクス
 
 ```typescript
-import { MCPGuard } from '@himorishige/noren-guard'
+import { MCPGuard } from '@himorishige/noren'
 
 const guard = new MCPGuard({ enableLogging: true })
 
@@ -280,7 +280,7 @@ console.log({
 ### リアルタイム処理
 
 ```typescript
-import { RealTimeProcessor } from '@himorishige/noren-guard'
+import { RealTimeProcessor } from '@himorishige/noren'
 
 const processor = new RealTimeProcessor({
   chunkSize: 256,
@@ -309,7 +309,7 @@ processor.end()
 ### バッチ処理
 
 ```typescript
-import { processFile } from '@himorishige/noren-guard'
+import { processFile } from '@himorishige/noren'
 
 // 大きなファイルを効率的に処理
 const file = new File([largeTextContent], 'document.txt')
@@ -352,7 +352,7 @@ console.log(`平均リスク: ${summary.averageRisk}/100`)
 
 ```typescript
 import express from 'express'
-import { createHTTPMiddleware } from '@himorishige/noren-guard'
+import { createHTTPMiddleware } from '@himorishige/noren'
 
 const app = express()
 app.use(express.json())

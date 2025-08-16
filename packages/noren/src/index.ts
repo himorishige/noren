@@ -1,5 +1,5 @@
 /**
- * @himorishige/noren-guard v0.1.0
+ * @himorishige/noren v0.1.0
  *
  * Lightweight prompt injection protection using functional programming
  *
