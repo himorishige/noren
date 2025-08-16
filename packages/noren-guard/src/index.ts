@@ -1,51 +1,77 @@
 /**
- * @himorishige/noren-guard
+ * @himorishige/noren-guard v0.1.0
  *
- * Lightweight prompt injection protection for MCP servers and AI tools
+ * Lightweight prompt injection protection using functional programming
  *
- * Key features:
- * - Ultra-fast rule-based detection (<3ms)
- * - Trust segment management
- * - Content sanitization
- * - Web Standards compatible
- * - Zero dependencies
+ * Features:
+ * - Pure functions for better tree-shaking
+ * - Stream processing support
+ * - Pattern builders and policy management
+ * - Zero dependencies, Web Standards compatible
  */
 
-// Custom patterns and policies
+// Pattern & Rule Builders
 export {
-  type CustomPatternConfig,
-  type CustomRuleConfig,
-  createCompanyPatterns,
-  createKeywordPolicy,
-  PatternBuilder,
-  type PolicyConfig,
-  PolicyManager,
-  RuleBuilder,
-} from './custom.js'
-// PII Dictionary system
+  addCompanyTerms,
+  addKeywords,
+  addPattern,
+  addQuoteRule,
+  addRegexPatterns,
+  addRemovalRule,
+  addReplacementRule,
+  addRule,
+  buildPatterns,
+  buildRules,
+  createPatternBuilder,
+  // PII utilities
+  createPIIPatterns,
+  createPIISanitizationRules,
+  createRuleBuilder,
+  // Pattern builder
+  type PatternBuilderState,
+  patternBuilder,
+  // Rule builder
+  type RuleBuilderState,
+  ruleBuilder,
+} from './builders.js'
+// Core API
 export {
-  DictionaryLoader,
-  type PIIDictionary,
-  PIIGuard,
-  type PIIPattern,
-  type PIISanitizeRule,
-} from './dictionary.js'
-// Core classes
-export { createGuard, isPromptSafe, PromptGuard, scanPrompt } from './guard.js'
-// MCP middleware
-export {
-  createHTTPMiddleware,
-  createMCPMiddleware,
-  MCPGuard,
-  type MCPGuardOptions,
-  type SecurityEvent,
-} from './mcp-middleware.js'
-// Individual pattern exports (tree-shaking friendly)
+  applyMitigation,
+  calculateRisk,
+  compose,
+  createGuard,
+  // Guard creation
+  createGuardContext,
+  createMetrics,
+  // Pipeline utilities
+  createPipeline,
+  createScanner,
+  // Detection functions
+  detectPatterns,
+  type FunctionalGuardAPI,
+  // Types
+  type GuardContext,
+  isSafe,
+  pipeline,
+  processWithPipeline,
+  quickScan,
+  scan,
+  scanBatch,
+  // Convenience functions
+  scanText,
+  updateMetrics,
+} from './core.js'
+// Pre-defined Patterns (tree-shaking friendly)
 export {
   createFinancialConfig,
   financialPatterns,
   financialSanitizeRules,
 } from './patterns/financial.js'
+export {
+  ALL_PATTERNS,
+  ALL_SANITIZE_RULES,
+  PRESETS,
+} from './patterns/index.js'
 export {
   createPersonalConfig,
   personalPatterns,
@@ -56,21 +82,30 @@ export {
   securityPatterns,
   securitySanitizeRules,
 } from './patterns/security.js'
-// Pattern collections
+// Policy Management
 export {
-  ALL_PATTERNS,
-  CODE_EXECUTION_PATTERNS,
-  CONTEXT_HIJACK_PATTERNS,
-  getPatternsByCategory,
-  getPatternsBySeverity,
-  INFO_EXTRACTION_PATTERNS,
-  INSTRUCTION_OVERRIDE_PATTERNS,
-  JAILBREAK_PATTERNS,
-  OBFUSCATION_PATTERNS,
-  PATTERN_CATEGORIES,
-} from './patterns.js'
-
-// Sanitization utilities
+  activatePolicy,
+  addPolicy,
+  createCustomPolicy,
+  // Policy templates
+  createFinancialPolicy,
+  createGovernmentPolicy,
+  createHealthcarePolicy,
+  // Store management
+  createPolicyStore,
+  exportPolicy,
+  getActivePolicy,
+  importPolicy,
+  mergePolicies,
+  // Types
+  type Policy,
+  type PolicyStore,
+  removePolicy,
+  toGuardConfig,
+  // Policy utilities
+  validatePolicy,
+} from './policies.js'
+// Sanitizer
 export {
   createSafePreview,
   DEFAULT_SANITIZE_RULES,
@@ -82,22 +117,32 @@ export {
   sanitizeContent,
   validateSanitized,
 } from './sanitizer.js'
-// Streaming support
+// Stream Processing
 export {
   collectStream,
-  createPipeline,
+  createGuardTransform,
+  // Real-time processing
+  createRealTimeProcessor,
+  createSanitizeTransform,
+  // Transform streams
+  createScanTransform,
+  createStreamPipeline,
+  // Stream processors
+  createStreamProcessor,
+  // Stream utilities
   createTextStream,
-  GuardTransform,
-  processFile,
-  RealTimeProcessor,
-  type StreamOptions,
-  StreamProcessor,
+  processFileStream,
+  processTextStream,
+  // Types
+  type StreamConfig,
   type StreamResult,
-  sanitizeText,
-  scanText,
+  sanitizeStream,
+  // Simple APIs
+  scanStream,
   streamToString,
 } from './stream.js'
-// Trust segment utilities
+
+// Trust Segments
 export {
   calculateTrustAdjustedRisk,
   createTrustSegment,
@@ -106,90 +151,25 @@ export {
   segmentText,
   validateSegments,
 } from './trust-segment.js'
-// Type definitions
+
+// Type exports
 export type {
-  ContextMarker,
   DetectionResult,
   GuardConfig,
+  // Pattern types
   InjectionPattern,
+  // MCP types
   MCPMessage,
   PatternMatch,
+  // Performance types
   PerformanceMetrics,
   RiskScore,
   SanitizeAction,
   SanitizeRule,
   Severity,
   ToolGuardConfig,
+  // Core types
   TrustLevel,
+  // Trust segment types
   TrustSegment,
 } from './types.js'
-
-// Version info
-export const VERSION = '2.0.0-alpha.1'
-
-// Default configurations
-export const DEFAULT_CONFIG = {
-  riskThreshold: 60,
-  enableSanitization: true,
-  enableContextSeparation: true,
-  maxProcessingTime: 100,
-  enablePerfMonitoring: false,
-}
-
-// Preset configurations for common use cases
-export const PRESETS = {
-  /**
-   * Strict mode - High security, low false positives
-   */
-  STRICT: {
-    riskThreshold: 50,
-    enableSanitization: true,
-    enableContextSeparation: true,
-    maxProcessingTime: 50,
-    enablePerfMonitoring: true,
-  },
-
-  /**
-   * Balanced mode - Good balance of security and usability
-   */
-  BALANCED: {
-    riskThreshold: 60,
-    enableSanitization: true,
-    enableContextSeparation: true,
-    maxProcessingTime: 100,
-    enablePerfMonitoring: false,
-  },
-
-  /**
-   * Permissive mode - Lower security, higher usability
-   */
-  PERMISSIVE: {
-    riskThreshold: 85,
-    enableSanitization: true,
-    enableContextSeparation: false,
-    maxProcessingTime: 200,
-    enablePerfMonitoring: false,
-  },
-
-  /**
-   * MCP optimized - Optimized for MCP server usage
-   */
-  MCP: {
-    riskThreshold: 65,
-    enableSanitization: true,
-    enableContextSeparation: true,
-    maxProcessingTime: 50,
-    enablePerfMonitoring: true,
-  },
-
-  /**
-   * High performance - Minimal processing for high-throughput scenarios
-   */
-  PERFORMANCE: {
-    riskThreshold: 80,
-    enableSanitization: false,
-    enableContextSeparation: false,
-    maxProcessingTime: 25,
-    enablePerfMonitoring: false,
-  },
-} as const

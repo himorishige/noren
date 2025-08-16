@@ -1,7 +1,7 @@
 {
   "name": "@himorishige/noren-guard",
-  "version": "2.0.0-alpha.1",
-  "description": "Lightweight prompt injection protection for MCP servers and AI tools",
+  "version": "0.1.0",
+  "description": "Functional prompt injection protection using pure functions",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

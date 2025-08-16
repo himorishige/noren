@@ -1,33 +1,26 @@
-import { PromptGuard } from './guard.js'
+/**
+ * Functional stream processing API for noren-guard
+ *
+ * This module provides functional stream processing utilities for handling
+ * large content efficiently using WHATWG Streams.
+ */
+
+import { createGuardContext, type GuardContext, scan } from './core.js'
 import type { DetectionResult, GuardConfig, TrustLevel } from './types.js'
 
 /**
- * Streaming prompt injection protection using WHATWG Streams
- * Efficient processing for large content and real-time data
+ * Stream processor configuration
  */
-
-export interface StreamOptions extends Partial<GuardConfig> {
-  /**
-   * Chunk size for processing (default: 1024)
-   */
+export interface StreamConfig extends Partial<GuardConfig> {
   chunkSize?: number
-
-  /**
-   * Buffer size for context (default: 512)
-   */
   contextBuffer?: number
-
-  /**
-   * Trust level for stream content
-   */
-  trustLevel?: TrustLevel
-
-  /**
-   * Enable progressive scanning (default: true)
-   */
   progressiveScanning?: boolean
+  trustLevel?: TrustLevel
 }
 
+/**
+ * Stream processing result
+ */
 export interface StreamResult {
   chunk: string
   result: DetectionResult
@@ -35,188 +28,97 @@ export interface StreamResult {
 }
 
 /**
- * Transform stream for prompt injection protection
+ * Creates a transform stream for scanning content
  */
-export class GuardTransform {
-  private guard: PromptGuard
-  private options: StreamOptions
-  private buffer = ''
-  private position = 0
+export function createScanTransform(
+  config?: StreamConfig,
+): TransformStream<string, DetectionResult> {
+  const context = createGuardContext(config)
+  const trustLevel = config?.trustLevel || 'user'
 
-  constructor(options: StreamOptions = {}) {
-    this.options = {
-      chunkSize: 1024,
-      contextBuffer: 512,
-      trustLevel: 'user',
-      progressiveScanning: true,
-      riskThreshold: 60,
-      enableSanitization: true,
-      ...options,
-    }
-
-    this.guard = new PromptGuard(this.options)
-  }
-
-  /**
-   * Create transform stream
-   */
-  createStream(): TransformStream<string, StreamResult> {
-    return new TransformStream({
-      transform: async (chunk: string, controller) => {
-        const results = await this.processChunk(chunk)
-        for (const result of results) {
-          controller.enqueue(result)
-        }
-      },
-      flush: async (controller) => {
-        if (this.buffer.length > 0) {
-          const finalResults = await this.processBuffer()
-          for (const result of finalResults) {
-            controller.enqueue(result)
-          }
-        }
-      },
-    })
-  }
-
-  /**
-   * Process incoming chunk
-   */
-  private async processChunk(chunk: string): Promise<StreamResult[]> {
-    this.buffer += chunk
-    const results: StreamResult[] = []
-
-    if (!this.options.progressiveScanning) {
-      // Simple mode: just accumulate
-      return []
-    }
-
-    // Process complete chunks
-    while (this.buffer.length >= (this.options.chunkSize || 1000)) {
-      const processChunk = this.buffer.slice(0, this.options.chunkSize || 1000)
-      this.buffer = this.buffer.slice(this.options.chunkSize || 1000)
-
-      const result = await this.guard.scan(processChunk, this.options.trustLevel || 'user')
-
-      results.push({
-        chunk: result.sanitized,
-        result,
-        position: this.position,
-      })
-
-      this.position += this.options.chunkSize || 1000
-    }
-
-    return results
-  }
-
-  /**
-   * Process remaining buffer
-   */
-  private async processBuffer(): Promise<StreamResult[]> {
-    if (this.buffer.length === 0) return []
-
-    const result = await this.guard.scan(this.buffer, this.options.trustLevel || 'user')
-
-    return [
-      {
-        chunk: result.sanitized,
-        result,
-        position: this.position,
-      },
-    ]
-  }
+  return new TransformStream<string, DetectionResult>({
+    async transform(chunk, controller) {
+      const result = await scan(context, chunk, trustLevel)
+      controller.enqueue(result)
+    },
+  })
 }
 
 /**
- * Streaming processor for large text content
+ * Creates a transform stream for sanitizing content
  */
-export class StreamProcessor {
-  private guard: PromptGuard
-  private options: StreamOptions
+export function createSanitizeTransform(config?: StreamConfig): TransformStream<string, string> {
+  const context = createGuardContext({
+    ...config,
+    enableSanitization: true,
+  })
+  const trustLevel = config?.trustLevel || 'user'
 
-  constructor(options: StreamOptions = {}) {
-    this.options = {
-      chunkSize: 2048,
-      contextBuffer: 1024,
-      trustLevel: 'user',
-      ...options,
-    }
+  return new TransformStream<string, string>({
+    async transform(chunk, controller) {
+      const result = await scan(context, chunk, trustLevel)
+      controller.enqueue(result.sanitized)
+    },
+  })
+}
 
-    this.guard = new PromptGuard(this.options)
-  }
+/**
+ * Creates a guard transform stream with buffering
+ */
+export function createGuardTransform(config?: StreamConfig): TransformStream<string, StreamResult> {
+  const context = createGuardContext(config)
+  const trustLevel = config?.trustLevel || 'user'
+  const chunkSize = config?.chunkSize || 1024
+  const progressiveScanning = config?.progressiveScanning ?? true
 
-  /**
-   * Process readable stream
-   */
-  async processStream(inputStream: ReadableStream<string>): Promise<ReadableStream<StreamResult>> {
-    const transform = new GuardTransform(this.options)
-    return inputStream.pipeThrough(transform.createStream())
-  }
+  let buffer = ''
+  let position = 0
 
-  /**
-   * Process string in streaming fashion
-   */
-  async *processText(text: string): AsyncGenerator<StreamResult, void, unknown> {
-    const chunkSize = this.options.chunkSize || 1000
-    let position = 0
+  return new TransformStream<string, StreamResult>({
+    async transform(chunk, controller) {
+      buffer += chunk
 
-    for (let i = 0; i < text.length; i += chunkSize) {
-      const chunk = text.slice(i, i + chunkSize)
-      const result = await this.guard.scan(chunk, this.options.trustLevel || 'user')
-
-      yield {
-        chunk: result.sanitized,
-        result,
-        position,
+      if (!progressiveScanning) {
+        // Accumulate without processing
+        return
       }
 
-      position += chunk.length
-    }
-  }
+      // Process complete chunks
+      while (buffer.length >= chunkSize) {
+        const processChunk = buffer.slice(0, chunkSize)
+        buffer = buffer.slice(chunkSize)
 
-  /**
-   * Create scanning transform for any stream
-   */
-  createScanTransform(): TransformStream<string, DetectionResult> {
-    const guard = this.guard
-    const trustLevel = this.options.trustLevel || 'user'
+        const result = await scan(context, processChunk, trustLevel)
+        controller.enqueue({
+          chunk: result.sanitized,
+          result,
+          position,
+        })
 
-    return new TransformStream({
-      transform: async (chunk: string, controller) => {
-        const result = await guard.scan(chunk, trustLevel)
-        controller.enqueue(result)
-      },
-    })
-  }
+        position += chunkSize
+      }
+    },
 
-  /**
-   * Create sanitizing transform
-   */
-  createSanitizeTransform(): TransformStream<string, string> {
-    const guard = this.guard
-    const trustLevel = this.options.trustLevel || 'user'
-
-    return new TransformStream({
-      transform: async (chunk: string, controller) => {
-        const result = await guard.scan(chunk, trustLevel)
-        controller.enqueue(result.sanitized)
-      },
-    })
-  }
+    async flush(controller) {
+      if (buffer.length > 0) {
+        const result = await scan(context, buffer, trustLevel)
+        controller.enqueue({
+          chunk: result.sanitized,
+          result,
+          position,
+        })
+      }
+    },
+  })
 }
 
 /**
- * Utility functions for streaming operations
- */
-
-/**
- * Create a readable stream from text
+ * Creates a readable stream from text
  */
 export function createTextStream(text: string, chunkSize = 1024): ReadableStream<string> {
   let position = 0
 
-  return new ReadableStream({
+  return new ReadableStream<string>({
     pull(controller) {
       if (position >= text.length) {
         controller.close()
@@ -231,7 +133,7 @@ export function createTextStream(text: string, chunkSize = 1024): ReadableStream
 }
 
 /**
- * Collect stream results into array
+ * Collects stream results into an array
  */
 export async function collectStream<T>(stream: ReadableStream<T>): Promise<T[]> {
   const results: T[] = []
@@ -251,7 +153,7 @@ export async function collectStream<T>(stream: ReadableStream<T>): Promise<T[]> 
 }
 
 /**
- * Transform stream to string
+ * Converts a stream to a string
  */
 export async function streamToString(stream: ReadableStream<string>): Promise<string> {
   const chunks = await collectStream(stream)
@@ -259,36 +161,72 @@ export async function streamToString(stream: ReadableStream<string>): Promise<st
 }
 
 /**
- * Create stream processing pipeline
+ * Creates a stream processor function
  */
-export function createPipeline(options: StreamOptions = {}) {
-  const processor = new StreamProcessor(options)
+export function createStreamProcessor(
+  config?: StreamConfig,
+): (input: ReadableStream<string>) => ReadableStream<StreamResult> {
+  const transform = createGuardTransform(config)
 
-  return {
-    /**
-     * Scan text stream for threats
-     */
-    scan: (input: ReadableStream<string>) => input.pipeThrough(processor.createScanTransform()),
-
-    /**
-     * Sanitize text stream
-     */
-    sanitize: (input: ReadableStream<string>) =>
-      input.pipeThrough(processor.createSanitizeTransform()),
-
-    /**
-     * Full processing pipeline
-     */
-    process: (input: ReadableStream<string>) => processor.processStream(input),
+  return (input: ReadableStream<string>) => {
+    return input.pipeThrough(transform)
   }
 }
 
 /**
- * Stream-based file processing
+ * Processes text as a stream
  */
-export async function processFile(
+export async function* processTextStream(
+  text: string,
+  config?: StreamConfig,
+): AsyncGenerator<StreamResult> {
+  const context = createGuardContext(config)
+  const trustLevel = config?.trustLevel || 'user'
+  const chunkSize = config?.chunkSize || 1024
+  let position = 0
+
+  for (let i = 0; i < text.length; i += chunkSize) {
+    const chunk = text.slice(i, i + chunkSize)
+    const result = await scan(context, chunk, trustLevel)
+
+    yield {
+      chunk: result.sanitized,
+      result,
+      position,
+    }
+
+    position += chunk.length
+  }
+}
+
+/**
+ * Creates a pipeline for stream processing
+ */
+export function createStreamPipeline(config?: StreamConfig) {
+  return {
+    /**
+     * Scan stream for threats
+     */
+    scan: (input: ReadableStream<string>) => input.pipeThrough(createScanTransform(config)),
+
+    /**
+     * Sanitize stream content
+     */
+    sanitize: (input: ReadableStream<string>) => input.pipeThrough(createSanitizeTransform(config)),
+
+    /**
+     * Full processing with buffering
+     */
+    process: (input: ReadableStream<string>) => input.pipeThrough(createGuardTransform(config)),
+  }
+}
+
+/**
+ * Processes a file stream
+ */
+export async function processFileStream(
   file: File | Blob,
-  options: StreamOptions = {},
+  config?: StreamConfig,
 ): Promise<{
   results: StreamResult[]
   summary: {
@@ -303,9 +241,9 @@ export async function processFile(
   // Create text stream from file
   const textStream = file.stream().pipeThrough(new TextDecoderStream())
 
-  // Process with guard
-  const processor = new StreamProcessor(options)
-  const resultStream = await processor.processStream(textStream)
+  // Process with guard transform
+  const processor = createStreamProcessor(config)
+  const resultStream = processor(textStream)
   const results = await collectStream(resultStream)
 
   // Calculate summary
@@ -327,69 +265,69 @@ export async function processFile(
 }
 
 /**
- * Real-time text processing
+ * Real-time stream processor
  */
-export class RealTimeProcessor {
-  private processor: StreamProcessor
-  private controller?: ReadableStreamDefaultController<StreamResult>
-  private stream?: ReadableStream<StreamResult>
+export function createRealTimeProcessor(config?: StreamConfig) {
+  let controller: ReadableStreamDefaultController<StreamResult> | undefined
+  const chunkSize = config?.chunkSize || 256
 
-  constructor(options: StreamOptions = {}) {
-    this.processor = new StreamProcessor({
-      ...options,
-      progressiveScanning: true,
-      chunkSize: 256, // Smaller chunks for real-time
-    })
-  }
+  const stream = new ReadableStream<StreamResult>({
+    start(c) {
+      controller = c
+    },
+  })
 
-  /**
-   * Start real-time processing
-   */
-  start(): ReadableStream<StreamResult> {
-    this.stream = new ReadableStream({
-      start: (controller) => {
-        this.controller = controller
-      },
-    })
+  const context = createGuardContext(config)
+  const trustLevel = config?.trustLevel || 'user'
+  let position = 0
 
-    return this.stream
-  }
+  return {
+    /**
+     * Get the output stream
+     */
+    getStream: () => stream,
 
-  /**
-   * Add text for processing
-   */
-  async addText(text: string): Promise<void> {
-    if (!this.controller) {
-      throw new Error('Real-time processor not started')
-    }
+    /**
+     * Add text for processing
+     */
+    addText: async (text: string) => {
+      if (!controller) {
+        throw new Error('Real-time processor not started')
+      }
 
-    for await (const result of this.processor.processText(text)) {
-      this.controller.enqueue(result)
-    }
-  }
+      for (let i = 0; i < text.length; i += chunkSize) {
+        const chunk = text.slice(i, i + chunkSize)
+        const result = await scan(context, chunk, trustLevel)
 
-  /**
-   * End processing
-   */
-  end(): void {
-    if (this.controller) {
-      this.controller.close()
-      this.controller = undefined
-    }
+        controller.enqueue({
+          chunk: result.sanitized,
+          result,
+          position,
+        })
+
+        position += chunk.length
+      }
+    },
+
+    /**
+     * End processing
+     */
+    end: () => {
+      if (controller) {
+        controller.close()
+        controller = undefined
+      }
+    },
   }
 }
 
 /**
- * Simple streaming API
+ * Simple streaming scan API
  */
-export async function scanText(
-  text: string,
-  options: StreamOptions = {},
-): Promise<DetectionResult[]> {
-  const processor = new StreamProcessor(options)
+export async function scanStream(text: string, config?: StreamConfig): Promise<DetectionResult[]> {
   const results: DetectionResult[] = []
 
-  for await (const streamResult of processor.processText(text)) {
+  for await (const streamResult of processTextStream(text, config)) {
     results.push(streamResult.result)
   }
 
@@ -397,15 +335,17 @@ export async function scanText(
 }
 
 /**
- * Simple sanitization API
+ * Simple streaming sanitize API
  */
-export async function sanitizeText(text: string, options: StreamOptions = {}): Promise<string> {
-  const processor = new StreamProcessor(options)
+export async function sanitizeStream(text: string, config?: StreamConfig): Promise<string> {
   const chunks: string[] = []
 
-  for await (const streamResult of processor.processText(text)) {
+  for await (const streamResult of processTextStream(text, config)) {
     chunks.push(streamResult.chunk)
   }
 
   return chunks.join('')
 }
+
+// Type exports
+export type { GuardContext, StreamConfig as GuardStreamConfig }
