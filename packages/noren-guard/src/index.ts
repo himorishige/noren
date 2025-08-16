@@ -22,6 +22,14 @@ export {
   PolicyManager,
   RuleBuilder,
 } from './custom.js'
+// PII Dictionary system
+export {
+  DictionaryLoader,
+  type PIIDictionary,
+  PIIGuard,
+  type PIIPattern,
+  type PIISanitizeRule,
+} from './dictionary.js'
 // Core classes
 export { createGuard, isPromptSafe, PromptGuard, scanPrompt } from './guard.js'
 // MCP middleware
@@ -32,6 +40,22 @@ export {
   type MCPGuardOptions,
   type SecurityEvent,
 } from './mcp-middleware.js'
+// Individual pattern exports (tree-shaking friendly)
+export {
+  createFinancialConfig,
+  financialPatterns,
+  financialSanitizeRules,
+} from './patterns/financial.js'
+export {
+  createPersonalConfig,
+  personalPatterns,
+  personalSanitizeRules,
+} from './patterns/personal.js'
+export {
+  createSecurityConfig,
+  securityPatterns,
+  securitySanitizeRules,
+} from './patterns/security.js'
 // Pattern collections
 export {
   ALL_PATTERNS,

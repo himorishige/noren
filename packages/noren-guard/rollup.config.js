@@ -1,3 +1,4 @@
+import json from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import terser from '@rollup/plugin-terser'
 
@@ -8,13 +9,22 @@ export default {
     file: 'dist/index.min.js',
     format: 'es',
     sourcemap: false, // No sourcemap for smaller size
+    inlineDynamicImports: false, // Don't inline JSON imports for smaller size
   },
   plugins: [
     nodeResolve(),
+    json(),
     terser({
       mangle: {
         // More aggressive mangling for size reduction
-        reserved: ['PromptGuard', 'MCPGuard', 'scanPrompt', 'isPromptSafe'],
+        reserved: [
+          'PromptGuard',
+          'MCPGuard',
+          'scanPrompt',
+          'isPromptSafe',
+          'PIIGuard',
+          'DictionaryLoader',
+        ],
       },
       compress: {
         drop_console: true, // Remove console for production
@@ -29,5 +39,6 @@ export default {
       },
     }),
   ],
-  external: [],
+  // Externalize dictionary JSON files for on-demand loading
+  external: [/^\.\.\/dictionaries\/.*\.json$/],
 }

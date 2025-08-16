@@ -11,8 +11,10 @@ A high-performance, rule-based security library designed specifically for protec
 - 🌊 **Streaming support**: Process large content efficiently using WHATWG Streams
 - 🎯 **Trust-based**: Different security levels for system/user/untrusted content
 - 🛠️ **Customizable**: Add organization-specific patterns and policies
+- 💳 **PII Detection**: Built-in patterns for credit cards, tokens, emails, and more
+- 📚 **Custom Dictionaries**: Create and extend PII detection dictionaries
 - 📊 **Metrics & monitoring**: Built-in performance and security analytics
-- 🪶 **Lightweight**: <30KB bundle size, zero dependencies
+- 🪶 **Lightweight**: <32KB bundle size, zero dependencies
 - 🌐 **Web Standards**: Compatible with browsers, Node.js, and edge environments
 
 ## 📦 Installation
@@ -195,6 +197,136 @@ const customGuard = new PromptGuard({
   ]
 })
 ```
+
+## 💳 PII Detection & Masking
+
+### Built-in PII Detection
+
+Noren Guard includes comprehensive PII detection capabilities:
+
+```typescript
+import { PIIGuard } from '@himorishige/noren-guard'
+
+// Financial data protection
+const financialGuard = await PIIGuard.financial()
+const guard = new PromptGuard(financialGuard)
+
+const result = await guard.scan('My credit card is 4532-1234-5678-9012')
+console.log(result.sanitized) // "My credit card is [CARD_NUMBER]"
+
+// Security token protection
+const securityGuard = await PIIGuard.security()
+const result2 = await guard.scan('API key: sk_live_abcd1234efgh5678')
+console.log(result2.sanitized) // "API key: [API_KEY]"
+
+// Personal data protection
+const personalGuard = await PIIGuard.personal()
+const result3 = await guard.scan('Contact me at john@example.com')
+console.log(result3.sanitized) // "Contact me at [EMAIL]"
+```
+
+### Preset Combinations
+
+Use predefined combinations for common scenarios:
+
+```typescript
+// Comprehensive protection (all PII types)
+const comprehensiveGuard = await PIIGuard.comprehensive()
+
+// Business standard (financial + security)
+const businessGuard = await PIIGuard.business()
+
+// Strict compliance (GDPR, HIPAA, SOX)
+const complianceGuard = await PIIGuard.compliance()
+
+// Development environment (reduced sensitivity)
+const devGuard = await PIIGuard.preset('development')
+```
+
+### Tree-shaking Friendly Imports
+
+Import only the patterns you need for smaller bundle sizes:
+
+```typescript
+import { 
+  PromptGuard,
+  // Individual patterns (tree-shaking friendly)
+  financialPatterns,
+  securityPatterns
+} from '@himorishige/noren-guard'
+
+// Use only specific patterns
+const lightweightConfig = {
+  customPatterns: [
+    ...securityPatterns.filter(p => p.id === 'jwt_token'),
+    ...financialPatterns.filter(p => p.id === 'credit_card')
+  ],
+  riskThreshold: 60
+}
+
+const guard = new PromptGuard(lightweightConfig)
+```
+
+### Custom Dictionaries
+
+Create organization-specific PII patterns:
+
+```typescript
+import { DictionaryLoader } from '@himorishige/noren-guard'
+
+// Create a custom dictionary
+DictionaryLoader.createCustomDictionary('acme_corp', {
+  description: 'ACME Corporation PII patterns',
+  patterns: [
+    {
+      id: 'employee_id',
+      description: 'ACME employee IDs',
+      pattern: '\\bEMP-\\d{5}\\b',
+      severity: 'medium',
+      weight: 70,
+      category: 'company',
+      sanitize: true,
+      contexts: ['employee', 'id']
+    }
+  ],
+  sanitizeRules: [
+    {
+      pattern: '\\bEMP-\\d{5}\\b',
+      action: 'replace',
+      replacement: '[EMPLOYEE_ID]',
+      category: 'company',
+      priority: 3
+    }
+  ]
+})
+
+// Extend existing dictionaries
+await DictionaryLoader.extendDictionary('financial', {
+  patterns: [
+    {
+      id: 'crypto_wallet',
+      description: 'Bitcoin wallet addresses',
+      pattern: '\\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\\b',
+      severity: 'high',
+      weight: 85,
+      category: 'financial',
+      sanitize: true,
+      contexts: ['bitcoin', 'wallet']
+    }
+  ]
+})
+
+// Use custom dictionary
+const customConfig = await DictionaryLoader.createConfigFromDictionary('acme_corp')
+const guard = new PromptGuard(customConfig)
+```
+
+### Available PII Types
+
+- **Financial**: Credit cards, bank accounts, routing numbers, IBAN, SWIFT codes
+- **Security**: JWT tokens, API keys, GitHub tokens, AWS keys, Stripe keys, OAuth tokens
+- **Personal**: Email addresses, phone numbers, SSN, IP addresses, postal codes
+- **Custom**: Company-specific patterns, employee IDs, customer numbers
 
 ## 🎨 Custom Patterns & Policies
 

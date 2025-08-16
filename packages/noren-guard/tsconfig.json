@@ -4,8 +4,10 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "resolveJsonModule": true,
+    "module": "ESNext"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "dictionaries/**/*.json"],
   "exclude": ["dist", "test", "node_modules"]
 }
