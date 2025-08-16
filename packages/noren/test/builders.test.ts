@@ -172,7 +172,12 @@ describe('Rule Builder - Functional API', () => {
   test('addReplacementRule adds replacement rule', () => {
     let state = createRuleBuilder()
 
-    state = addReplacementRule(state, 'api[_-]?key\\s*[:=]\\s*\\S+', '[API_KEY_REDACTED]', 'security')
+    state = addReplacementRule(
+      state,
+      'api[_-]?key\\s*[:=]\\s*\\S+',
+      '[API_KEY_REDACTED]',
+      'security',
+    )
 
     expect(state.rules.length).toBe(1)
 
@@ -369,12 +374,12 @@ describe('Pattern validation', () => {
     state = addKeywords(state, 'special', ['[brackets]', '(parens)', '.dots'], 'medium')
 
     expect(state.patterns.length).toBe(3)
-    
+
     // Check each pattern for escaped characters
-    const bracketsPattern = state.patterns.find(p => p.description.includes('[brackets]'))
-    const parensPattern = state.patterns.find(p => p.description.includes('(parens)'))
-    const dotsPattern = state.patterns.find(p => p.description.includes('.dots'))
-    
+    const bracketsPattern = state.patterns.find((p) => p.description.includes('[brackets]'))
+    const parensPattern = state.patterns.find((p) => p.description.includes('(parens)'))
+    const dotsPattern = state.patterns.find((p) => p.description.includes('.dots'))
+
     // Special regex characters should be escaped
     expect(bracketsPattern?.pattern.source).toContain('\\[brackets\\]')
     expect(parensPattern?.pattern.source).toContain('\\(parens\\)')
@@ -472,12 +477,12 @@ describe('Builder composition', () => {
       })
       .build()
 
-    expect(patterns.length).toBe(4)
+    expect(patterns.length).toBe(10) // 1 code + 4 financial keywords + 4 company terms + 1 system
 
     // Verify each pattern type
     const codePattern = patterns.find((p) => p.category === 'code_execution')
     const financialPattern = patterns.find((p) => p.category === 'financial')
-    const companyPattern = patterns.find((p) => p.category === 'company_acmecorp')
+    const companyPattern = patterns.find((p) => p.category === 'company')
     const systemPattern = patterns.find((p) => p.category === 'context_hijack')
 
     expect(codePattern).toBeDefined()

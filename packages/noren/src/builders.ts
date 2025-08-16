@@ -47,11 +47,10 @@ export function addPattern(
   },
 ): PatternBuilderState {
   let regex: RegExp
-  
+
   try {
-    regex = typeof options.pattern === 'string' 
-      ? new RegExp(options.pattern, 'gi') 
-      : options.pattern
+    regex =
+      typeof options.pattern === 'string' ? new RegExp(options.pattern, 'gi') : options.pattern
   } catch (error) {
     // If regex is invalid, create a pattern that never matches
     console.warn(`Invalid regex pattern: ${options.pattern}`, error)
@@ -88,19 +87,22 @@ export function addKeywords(
     // Return state with an empty pattern placeholder
     return {
       ...state,
-      patterns: [...state.patterns, {
-        id: `${category}_keyword_${state.idCounter}`,
-        description: 'Empty keyword list',
-        pattern: /(?:)/gi, // Empty alternation
-        severity,
-        category,
-        weight: 0,
-        sanitize: false,
-      }],
+      patterns: [
+        ...state.patterns,
+        {
+          id: `${category}_keyword_${state.idCounter}`,
+          description: 'Empty keyword list',
+          pattern: /(?:)/gi, // Empty alternation
+          severity,
+          category,
+          weight: 0,
+          sanitize: false,
+        },
+      ],
       idCounter: state.idCounter + 1,
     }
   }
-  
+
   const newPatterns = keywords.map((keyword, index) => ({
     id: `${category}_keyword_${state.idCounter + index}`,
     description: `Keyword: ${keyword}`,
@@ -130,19 +132,22 @@ export function addCompanyTerms(
     // Return state with an empty pattern placeholder
     return {
       ...state,
-      patterns: [...state.patterns, {
-        id: `company_${companyName}_${state.idCounter}`,
-        description: 'Empty company terms',
-        pattern: /(?:)/gi, // Empty alternation
-        severity: 'high' as Severity,
-        category: 'company',
-        weight: 0,
-        sanitize: false,
-      }],
+      patterns: [
+        ...state.patterns,
+        {
+          id: `company_${companyName}_${state.idCounter}`,
+          description: 'Empty company terms',
+          pattern: /(?:)/gi, // Empty alternation
+          severity: 'high' as Severity,
+          category: 'company',
+          weight: 0,
+          sanitize: false,
+        },
+      ],
       idCounter: state.idCounter + 1,
     }
   }
-  
+
   const newPatterns = terms.map((term, index) => ({
     id: `company_${companyName}_${state.idCounter + index}`,
     description: `Company term: ${term}`,
@@ -228,11 +233,10 @@ export function addRule(
   },
 ): RuleBuilderState {
   let regex: RegExp
-  
+
   try {
-    regex = typeof options.pattern === 'string' 
-      ? new RegExp(options.pattern, 'gi') 
-      : options.pattern
+    regex =
+      typeof options.pattern === 'string' ? new RegExp(options.pattern, 'gi') : options.pattern
   } catch (error) {
     // If regex is invalid, create a pattern that never matches
     console.warn(`Invalid regex pattern for rule: ${options.pattern}`, error)
@@ -362,7 +366,7 @@ export function patternBuilder() {
     build: () => buildPatterns(state),
     getState: () => state,
   }
-  
+
   return api
 }
 
@@ -392,7 +396,7 @@ export function ruleBuilder() {
     build: () => buildRules(state),
     getState: () => state,
   }
-  
+
   return api
 }
 
