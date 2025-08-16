@@ -352,6 +352,156 @@ const ndjsonResult = await redactText(registry, ndjsonInput)
 - **NDJSON support**: Line-by-line processing for streaming data
 - **Type safety**: Validates JSON structure before processing
 
+## 🔗 MCP (Model Context Protocol) Integration
+
+Noren provides specialized support for MCP servers that communicate via JSON-RPC over stdio. This is particularly useful for AI tools like Claude Code that need to process communication with external services while protecting sensitive data.
+
+### MCP Transform Stream
+
+For real-time stdio processing in MCP servers:
+
+```typescript
+import { 
+  Registry, 
+  createMCPRedactionTransform,
+  redactJsonRpcMessage 
+} from '@himorishige/noren-core'
+
+// Create registry with comprehensive PII detection
+const registry = new Registry({
+  defaultAction: 'mask',
+  validationStrictness: 'fast', // Optimized for real-time processing
+  enableJsonDetection: true,
+  rules: {
+    email: { action: 'mask' },
+    api_key: { action: 'remove' },
+    jwt_token: { action: 'tokenize' }
+  },
+  hmacKey: 'mcp-server-redaction-key-32-chars-minimum-length-required'
+})
+
+// Create MCP-optimized transform stream
+const transform = createMCPRedactionTransform({
+  registry,
+  policy: { defaultAction: 'mask' },
+  lineBufferSize: 64 * 1024
+})
+
+// Process stdio communication
+await process.stdin
+  .pipeThrough(transform)
+  .pipeTo(process.stdout)
+```
+
+### JSON-RPC Message Processing
+
+For processing individual JSON-RPC messages:
+
+```typescript
+// Process a JSON-RPC request
+const request = {
+  jsonrpc: '2.0',
+  method: 'getUserProfile',
+  params: {
+    email: 'user@company.com',
+    phone: '+1-555-123-4567'
+  },
+  id: 1
+}
+
+const redacted = await redactJsonRpcMessage(request, { registry })
+console.log(redacted)
+// Output: {
+//   jsonrpc: '2.0',
+//   method: 'getUserProfile', 
+//   params: {
+//     email: '[REDACTED:email]',
+//     phone: '•••-•••-••••'
+//   },
+//   id: 1
+// }
+```
+
+### MCP Server Proxy Example
+
+Create a proxy server that automatically redacts PII from stdio communication:
+
+```javascript
+#!/usr/bin/env node
+import { Registry, createMCPRedactionTransform } from '@himorishige/noren-core'
+import { Readable, Writable } from 'node:stream'
+
+class MCPRedactionProxy {
+  constructor(options = {}) {
+    this.registry = new Registry({
+      defaultAction: 'mask',
+      enableJsonDetection: true,
+      validationStrictness: 'fast'
+    })
+  }
+
+  async start() {
+    const inputStream = Readable.toWeb(process.stdin)
+    const outputStream = Writable.toWeb(process.stdout)
+    
+    const transform = createMCPRedactionTransform({
+      registry: this.registry,
+      policy: { defaultAction: 'mask' }
+    })
+
+    await inputStream
+      .pipeThrough(transform)
+      .pipeTo(outputStream)
+  }
+}
+
+// Start the proxy
+const proxy = new MCPRedactionProxy()
+await proxy.start()
+```
+
+### MCP Use Cases
+
+**1. AI Assistant Communication**
+- Protect user data in Claude Code AI interactions
+- Redact PII from external API communications
+- Safe logging of AI model conversations
+
+**2. Development Tools Integration**
+- IDE extensions with PII protection
+- Code analysis tools with privacy features
+- Debug logging with automatic data sanitization
+
+**3. CI/CD Pipeline Protection**
+- Build logs with PII redaction
+- Test data anonymization
+- Environment variable protection
+
+### MCP Utilities
+
+The library also provides utility functions for MCP processing:
+
+```typescript
+import {
+  parseJsonLines,
+  isValidJsonRpcMessage,
+  extractSensitiveContent,
+  containsJsonRpcPattern,
+  getMessageType
+} from '@himorishige/noren-core'
+
+// Parse line-delimited JSON messages
+const messages = parseJsonLines(ndjsonString)
+
+// Validate JSON-RPC message format
+if (isValidJsonRpcMessage(message)) {
+  const type = getMessageType(message) // 'request' | 'response' | 'notification' | 'error'
+}
+
+// Extract potentially sensitive content
+const sensitiveContent = extractSensitiveContent(jsonRpcMessage)
+```
+
 ## 📚 API Reference
 
 ### `Registry`

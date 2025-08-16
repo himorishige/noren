@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.1.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
   "files": {
     "ignoreUnknown": true,
     "includes": [
@@ -9,10 +9,10 @@
       "**/*.tsx",
       "**/*.jsx",
       "**/*.json",
-      "!**/dist/**",
-      "!**/dist-test/**",
-      "!**/coverage/**",
-      "!**/node_modules/**"
+      "!**/dist",
+      "!**/dist-test",
+      "!**/coverage",
+      "!**/node_modules"
     ]
   },
   "formatter": {

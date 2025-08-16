@@ -185,9 +185,161 @@ const sameResult = await redactText(registry, halfWidthInput)
 // 両方の入力は同等のマスキング結果を生成します
 ```
 
+## 🔗 MCP (Model Context Protocol) 統合
+
+NorenはstdioでJSON-RPC通信を行うMCPサーバーに特化したサポートを提供します。Claude CodeなどのAIツールが外部サービスと通信する際に機密データを保護する場合に特に有用です。
+
+### MCPトランスフォームストリーム
+
+MCPサーバーでのリアルタイムstdio処理用：
+
+```typescript
+import { 
+  Registry, 
+  createMCPRedactionTransform,
+  redactJsonRpcMessage 
+} from '@himorishige/noren-core'
+
+// 包括的なPII検出用のレジストリを作成
+const registry = new Registry({
+  defaultAction: 'mask',
+  validationStrictness: 'fast', // リアルタイム処理用に最適化
+  enableJsonDetection: true,
+  rules: {
+    email: { action: 'mask' },
+    api_key: { action: 'remove' },
+    jwt_token: { action: 'tokenize' }
+  },
+  hmacKey: 'mcp-server-redaction-key-32-chars-minimum-length-required'
+})
+
+// MCP最適化トランスフォームストリームを作成
+const transform = createMCPRedactionTransform({
+  registry,
+  policy: { defaultAction: 'mask' },
+  lineBufferSize: 64 * 1024
+})
+
+// stdio通信を処理
+await process.stdin
+  .pipeThrough(transform)
+  .pipeTo(process.stdout)
+```
+
+### JSON-RPCメッセージ処理
+
+個別のJSON-RPCメッセージを処理する場合：
+
+```typescript
+// JSON-RPCリクエストを処理
+const request = {
+  jsonrpc: '2.0',
+  method: 'getUserProfile',
+  params: {
+    email: 'user@company.com',
+    phone: '090-1234-5678'
+  },
+  id: 1
+}
+
+const redacted = await redactJsonRpcMessage(request, { registry })
+console.log(redacted)
+// 出力: {
+//   jsonrpc: '2.0',
+//   method: 'getUserProfile', 
+//   params: {
+//     email: '[REDACTED:email]',
+//     phone: '•••-••••-••••'
+//   },
+//   id: 1
+// }
+```
+
+### MCPサーバープロキシ例
+
+stdio通信からPIIを自動的に除去するプロキシサーバーを作成：
+
+```javascript
+#!/usr/bin/env node
+import { Registry, createMCPRedactionTransform } from '@himorishige/noren-core'
+import { Readable, Writable } from 'node:stream'
+
+class MCPRedactionProxy {
+  constructor(options = {}) {
+    this.registry = new Registry({
+      defaultAction: 'mask',
+      enableJsonDetection: true,
+      validationStrictness: 'fast'
+    })
+  }
+
+  async start() {
+    const inputStream = Readable.toWeb(process.stdin)
+    const outputStream = Writable.toWeb(process.stdout)
+    
+    const transform = createMCPRedactionTransform({
+      registry: this.registry,
+      policy: { defaultAction: 'mask' }
+    })
+
+    await inputStream
+      .pipeThrough(transform)
+      .pipeTo(outputStream)
+  }
+}
+
+// プロキシを開始
+const proxy = new MCPRedactionProxy()
+await proxy.start()
+```
+
+### MCP使用例
+
+**1. AIアシスタント通信**
+- Claude Code AIインタラクションでのユーザーデータ保護
+- 外部API通信からのPII除去
+- AIモデル会話の安全なログ記録
+
+**2. 開発ツール統合**
+- PII保護機能付きIDE拡張
+- プライバシー機能付きコード解析ツール
+- 自動データサニタイゼーション付きデバッグログ
+
+**3. CI/CDパイプライン保護**
+- PII除去機能付きビルドログ
+- テストデータの匿名化
+- 環境変数保護
+
+### MCPユーティリティ
+
+ライブラリはMCP処理用のユーティリティ関数も提供します：
+
+```typescript
+import {
+  parseJsonLines,
+  isValidJsonRpcMessage,
+  extractSensitiveContent,
+  containsJsonRpcPattern,
+  getMessageType
+} from '@himorishige/noren-core'
+
+// 行区切りJSONメッセージを解析
+const messages = parseJsonLines(ndjsonString)
+
+// JSON-RPCメッセージ形式を検証
+if (isValidJsonRpcMessage(message)) {
+  const type = getMessageType(message) // 'request' | 'response' | 'notification' | 'error'
+}
+
+// 潜在的に機密性の高いコンテンツを抽出
+const sensitiveContent = extractSensitiveContent(jsonRpcMessage)
+```
+
 ## API概要
 
 - `Registry`: ディテクター、マスカー、マスキングポリシーを一元管理する中央クラス。
 - `redactText(registry, text, policy)`: 指定されたテキストに対して、Registryに登録されたルールに基づき秘匿化処理を実行します。
+- `createMCPRedactionTransform(options)`: MCP通信用の最適化されたトランスフォームストリームを作成します。
+- `redactJsonRpcMessage(message, options)`: JSON-RPCメッセージから個別にPIIを除去します。
 - `normalize(text)`: テキストを正規化（NFKC、空白文字の統一など）します。
 - **型定義**: `PiiType`, `Hit`, `Action`, `Policy`, `Detector`, `Masker`など、プラグイン開発に必要な型を提供します。

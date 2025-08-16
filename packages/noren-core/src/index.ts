@@ -23,6 +23,19 @@ export {
 // Advanced exports for plugins and power users
 export type { LazyPlugin } from './lazy.js'
 export { clearPluginCache } from './lazy.js'
+// MCP (Model Context Protocol) utilities
+export {
+  containsJsonRpcPattern,
+  createMCPRedactionTransform,
+  extractMethodName,
+  extractSensitiveContent,
+  getMessageType,
+  isValidJsonRpcMessage,
+  type JsonRpcMessage,
+  type MCPRedactionOptions,
+  parseJsonLines,
+  redactJsonRpcMessage,
+} from './mcp-utils.js'
 export { HitPool } from './pool.js'
 export { createRedactionTransform } from './stream-utils.js'
 // Essential API exports for v0.5.0

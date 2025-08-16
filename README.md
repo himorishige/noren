@@ -36,6 +36,7 @@ Noren (暖簾) protects sensitive data at your application's "edge". Like the Ja
 - **JSON/NDJSON data** with key-based context detection
 - **Security tokens** (GitHub, AWS, Stripe, Slack, OpenAI, etc.)
 - **IP addresses** (IPv4 & IPv6) via network plugin
+- **MCP (Model Context Protocol)** JSON-RPC over stdio support
 - **Custom patterns** via plugin system
 
 ### 🌐 **Web Standards Only**
@@ -156,6 +157,51 @@ const stream = new ReadableStream({
 const redactedStream = stream.pipeThrough(transform)
 ```
 
+### 6. **MCP (Model Context Protocol) Integration**
+Perfect for AI tools that need PII protection in stdio communication:
+
+```typescript
+import { 
+  Registry, 
+  createMCPRedactionTransform,
+  redactJsonRpcMessage 
+} from '@himorishige/noren-core'
+
+// Create registry for MCP server
+const registry = new Registry({
+  defaultAction: 'mask',
+  validationStrictness: 'fast', // Optimized for real-time processing
+  enableJsonDetection: true,
+  rules: {
+    email: { action: 'mask' },
+    api_key: { action: 'remove' },
+    jwt_token: { action: 'tokenize' }
+  }
+})
+
+// Process JSON-RPC messages
+const transform = createMCPRedactionTransform({
+  registry,
+  policy: { defaultAction: 'mask' }
+})
+
+// Use in MCP server stdio pipeline
+await process.stdin
+  .pipeThrough(transform)
+  .pipeTo(process.stdout)
+
+// Or process individual JSON-RPC messages
+const request = {
+  jsonrpc: '2.0',
+  method: 'getUserProfile',
+  params: { email: 'user@company.com' },
+  id: 1
+}
+
+const redacted = await redactJsonRpcMessage(request, { registry })
+// Output: { jsonrpc: '2.0', method: 'getUserProfile', params: { email: '[REDACTED:email]' }, id: 1 }
+```
+
 ## 💡 Use Cases
 
 ### 🎯 **Common Scenarios**
@@ -163,6 +209,7 @@ const redactedStream = stream.pipeThrough(transform)
 - **Customer Support**: Mask sensitive data in support tickets
 - **Data Analysis**: Anonymize datasets while preserving structure
 - **Compliance**: Meet GDPR, CCPA, and other privacy regulations
+- **AI Tool Integration**: Protect sensitive data in Claude Code AI and other MCP-compatible tools
 
 ### 🚀 **Edge Deployments**
 Perfect for serverless and edge computing:
@@ -288,6 +335,7 @@ registry.use([myDetector], { ssn: (hit) => '***-**-****' })
 - **[Tokenization](./examples/tokenize.mjs)**: HMAC-based tokenization
 - **[Stream Processing](./examples/stream-redact.mjs)**: Large file processing
 - **[Security Plugin](./examples/security-demo.mjs)**: HTTP headers and tokens
+- **[MCP Server Adapter](./examples/mcp-server-adapter.mjs)**: JSON-RPC over stdio protection for AI tools
 - **[Web Server](./examples/hono-server.mjs)**: Integration with Hono framework
 
 ## ⚡ Performance & Benchmarks

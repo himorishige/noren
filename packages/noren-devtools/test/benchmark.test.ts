@@ -75,7 +75,7 @@ describe.skip('MemoryMonitor - memory tracking', () => {
   it('should handle environments without process.memoryUsage', () => {
     // Temporarily mock missing memoryUsage
     const originalProcess = global.process
-    // @ts-ignore
+    // @ts-expect-error
     global.process = undefined
 
     const monitor = new MemoryMonitor()

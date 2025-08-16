@@ -110,7 +110,7 @@ function generateSecurityTestData(size: 'small' | 'medium' | 'large'): string {
   for (let i = 0; i < targetLines; i++) {
     const pattern = basePatterns[i % basePatterns.length]
     const variation = pattern.replace(/\d+/g, (match) =>
-      String(parseInt(match) + i).padStart(match.length, '0'),
+      String(parseInt(match, 10) + i).padStart(match.length, '0'),
     )
     lines.push(`[${new Date().toISOString()}] ${variation}`)
   }

@@ -71,7 +71,7 @@ function generateTestData(config: TestDataConfig): string {
   while (currentSize < targetSize) {
     const pattern = combinedPool[counter % combinedPool.length]
     const variation = pattern.replace(/\d+/g, (match) =>
-      String(parseInt(match) + counter).padStart(match.length, '0'),
+      String(parseInt(match, 10) + counter).padStart(match.length, '0'),
     )
     const line = `[${counter.toString().padStart(6, '0')}] ${variation}`
 
