@@ -1,0 +1,66 @@
+{
+  "name": "@himorishige/noren",
+  "version": "0.1.0",
+  "description": "Noren (のれん) - Lightweight AI security library for prompt injection protection. Like a shop curtain that provides privacy, Noren intelligently shields your AI applications from malicious prompts.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./min": "./dist/index.min.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && rollup -c",
+    "build:tsc": "tsc",
+    "build:min": "rollup -c",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "prompt-injection",
+    "ai-security",
+    "llm-security",
+    "prompt-guard",
+    "ai-safety",
+    "noren",
+    "japanese",
+    "mcp",
+    "lightweight",
+    "typescript",
+    "functional",
+    "claude",
+    "chatgpt"
+  ],
+  "author": "himorishige",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/himorishige/noren.git",
+    "directory": "packages/noren"
+  },
+  "bugs": {
+    "url": "https://github.com/himorishige/noren/issues"
+  },
+  "homepage": "https://github.com/himorishige/noren#readme",
+  "devDependencies": {
+    "@rollup/plugin-json": "^6.1.0",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=20.10.0"
+  }
+}
