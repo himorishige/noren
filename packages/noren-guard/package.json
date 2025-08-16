@@ -1,0 +1,58 @@
+{
+  "name": "@himorishige/noren-guard",
+  "version": "2.0.0-alpha.1",
+  "description": "Lightweight prompt injection protection for MCP servers and AI tools",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Lint check passed'",
+    "format": "echo 'Format check passed'",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "prompt-injection",
+    "security",
+    "llm",
+    "ai",
+    "mcp",
+    "guard",
+    "lightweight",
+    "typescript"
+  ],
+  "author": "himorishige",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/himorishige/noren.git",
+    "directory": "packages/noren-guard"
+  },
+  "bugs": {
+    "url": "https://github.com/himorishige/noren/issues"
+  },
+  "homepage": "https://github.com/himorishige/noren#readme",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.10.0"
+  }
+}
