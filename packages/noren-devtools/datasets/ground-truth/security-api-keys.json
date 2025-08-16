@@ -1,0 +1,387 @@
+[
+  {
+    "_comment": "SYNTHETIC TEST DATA - All API keys and tokens in this file are dummy/fake values for PII detection testing only",
+    "_warning": "NO REAL CREDENTIALS - These are artificially generated patterns that do not work with any real services",
+    "id": "api-001",
+    "text": "GitHub token: ghp_1234567890123456789012345678901234567890",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-002",
+    "text": "AWS key: AKIAIOSFODNN7EXAMPLE for S3 access",
+    "annotations": [
+      {
+        "start": 9,
+        "end": 29,
+        "type": "sec_aws_access_key",
+        "value": "AKIAIOSFODNN7EXAMPLE",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-003",
+    "text": "Google API: AIzaSyDdVgKwhZl-fffffffffffffffff for maps",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-004",
+    "text": "Stripe key: sk_test_1234567890123456789012345678901234567890",
+    "annotations": [
+      {
+        "start": 12,
+        "end": 60,
+        "type": "sec_stripe_api_key",
+        "value": "sk_test_1234567890123456789012345678901234567890",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-005",
+    "text": "Config: API_KEY=sk_live_abc123def456ghi789jkl012mno345pqr678stu901",
+    "annotations": [
+      {
+        "start": 16,
+        "end": 66,
+        "type": "sec_stripe_api_key",
+        "value": "sk_live_abc123def456ghi789jkl012mno345pqr678stu901",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "config",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-006",
+    "text": "Slack webhook: https://hooks.slack.com/services/T1234567890/B1234567890/abcdefghijklmnopqrstuvwx",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-007",
+    "text": "Not an API key: shortkey123 (too short)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-008",
+    "text": "SendGrid: SG.1234567890123456.abcdefghijklmnopqrstuvwxyz1234567890",
+    "annotations": [
+      {
+        "start": 10,
+        "end": 66,
+        "type": "sec_sendgrid_api_key",
+        "value": "SG.1234567890123456.abcdefghijklmnopqrstuvwxyz1234567890",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-009",
+    "text": "OpenAI key: sk-proj-abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqr in config",
+    "annotations": [
+      {
+        "start": 12,
+        "end": 74,
+        "type": "sec_openai_api_key",
+        "value": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqr",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-010",
+    "text": "UUID not API: 550e8400-e29b-41d4-a716-446655440000 should not match",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-011",
+    "text": "Slack bot token: xoxb-1234567890123-1234567890123-abcdefghijklmnopqrstuvwx",
+    "annotations": [
+      {
+        "start": 17,
+        "end": 74,
+        "type": "sec_slack_token",
+        "value": "xoxb-1234567890123-1234567890123-abcdefghijklmnopqrstuvwx",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "slack_type": "bot"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-012",
+    "text": "Slack user token: xoxp-1234567890123-1234567890123-1234567890123-abcdefghijklmnopqrstuvwxyz123456",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-013",
+    "text": "Slack app token: xapp-1-A1234567890-1234567890123-abcdefghijklmnopqrstuvwxyz1234567890abcdef",
+    "annotations": [
+      {
+        "start": 17,
+        "end": 92,
+        "type": "sec_slack_token",
+        "value": "xapp-1-A1234567890-1234567890123-abcdefghijklmnopqrstuvwxyz1234567890abcdef",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "slack_type": "app"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-014",
+    "text": "Google OAuth access token: ya29.A0ARrdaM-1234567890abcdefghijklmnopqrstuvwxyzABCDEF1234567890",
+    "annotations": [
+      {
+        "start": 27,
+        "end": 93,
+        "type": "sec_google_oauth_token",
+        "value": "ya29.A0ARrdaM-1234567890abcdefghijklmnopqrstuvwxyzABCDEF1234567890",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-015",
+    "text": "Azure subscription key: abcdef1234567890abcdef1234567890abcdef12 for cognitive services",
+    "annotations": [
+      {
+        "start": 24,
+        "end": 64,
+        "type": "sec_azure_subscription_key",
+        "value": "abcdef1234567890abcdef1234567890abcdef12",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-016",
+    "text": "Old OpenAI API: sk-1234567890abcdefghijklmnopqrstuvwxyzABCDEF1234567890",
+    "annotations": [
+      {
+        "start": 16,
+        "end": 71,
+        "type": "sec_openai_api_key",
+        "value": "sk-1234567890abcdefghijklmnopqrstuvwxyzABCDEF1234567890",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "openai_type": "legacy"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-017",
+    "text": "New OpenAI project key: sk-proj-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOP",
+    "annotations": [
+      {
+        "start": 24,
+        "end": 84,
+        "type": "sec_openai_api_key",
+        "value": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOP",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic",
+          "openai_type": "project"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-018",
+    "text": "Multiple API keys: GitHub ghp_1234567890123456789012345678901234567890 and Stripe sk_live_1234567890abcdef",
+    "annotations": [
+      {
+        "start": 82,
+        "end": 106,
+        "type": "sec_api_key",
+        "value": "sk_live_1234567890abcdef",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-019",
+    "text": "Environment config:\\nSTRIPE_SECRET_KEY=sk_test_abcdefghijklmnopqrstuvwxyz123456\\nSENDGRID_API_KEY=SG.abcdefghijklmnop.qrstuvwxyz1234567890",
+    "annotations": [
+      {
+        "start": 39,
+        "end": 79,
+        "type": "sec_stripe_api_key",
+        "value": "sk_test_abcdefghijklmnopqrstuvwxyz123456",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      },
+      {
+        "start": 98,
+        "end": 138,
+        "type": "sec_sendgrid_api_key",
+        "value": "SG.abcdefghijklmnop.qrstuvwxyz1234567890",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "config",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "api-020",
+    "text": "Docker environment: docker run -e AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE -e AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY myapp",
+    "annotations": [
+      {
+        "start": 52,
+        "end": 72,
+        "type": "sec_aws_access_key",
+        "value": "AKIAIOSFODNN7EXAMPLE",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "command",
+      "created_at": 1692000000000
+    }
+  }
+]

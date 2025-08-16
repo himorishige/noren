@@ -1,0 +1,4 @@
+# Exclude ground truth test datasets from secret scanning
+# These files contain synthetic/dummy data for PII detection testing
+packages/noren-devtools/datasets/ground-truth/*.json linguist-generated=true
+packages/noren-devtools/datasets/ground-truth/*.json -diff

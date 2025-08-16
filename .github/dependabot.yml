@@ -1,0 +1,10 @@
+# Dependabot configuration
+# Note: Secret scanning exclusions should be configured in repository settings
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10

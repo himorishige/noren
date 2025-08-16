@@ -1,0 +1,272 @@
+[
+  {
+    "id": "cookie-001",
+    "text": "Cookie: session_id=abc123def456ghi789; user_id=12345",
+    "annotations": [
+      {
+        "start": 0,
+        "end": 52,
+        "type": "sec_cookie",
+        "value": "Cookie: session_id=abc123def456ghi789; user_id=12345",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-002",
+    "text": "Set-Cookie: JSESSIONID=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ; Path=/; HttpOnly",
+    "annotations": [
+      {
+        "start": 12,
+        "end": 59,
+        "type": "sec_session_id",
+        "value": "JSESSIONID=1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-003",
+    "text": "Set-Cookie: PHPSESSID=abcdefghijklmnopqrstuvwxyz123456; Secure; SameSite=Strict",
+    "annotations": [
+      {
+        "start": 12,
+        "end": 54,
+        "type": "sec_session_id",
+        "value": "PHPSESSID=abcdefghijklmnopqrstuvwxyz123456",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-004",
+    "text": "Cookie: auth_token=xyz987654321abcdefghijk; theme=dark; lang=en",
+    "annotations": [
+      {
+        "start": 0,
+        "end": 63,
+        "type": "sec_cookie",
+        "value": "Cookie: auth_token=xyz987654321abcdefghijk; theme=dark; lang=en",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-005",
+    "text": "Session: session=1a2b3c4d5e6f7g8h9i0j; expires=2024-12-31",
+    "annotations": [
+      {
+        "start": 9,
+        "end": 37,
+        "type": "sec_session_id",
+        "value": "session=1a2b3c4d5e6f7g8h9i0j",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-006",
+    "text": "URL with session: /api/data?sess=abcdef123456789&format=json",
+    "annotations": [
+      {
+        "start": 28,
+        "end": 48,
+        "type": "sec_session_id",
+        "value": "sess=abcdef123456789",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "url",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-007",
+    "text": "Log: JSESSIONID=A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0 found in request",
+    "annotations": [
+      {
+        "start": 5,
+        "end": 56,
+        "type": "sec_session_id",
+        "value": "JSESSIONID=A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "easy",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "log",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-008",
+    "text": "Config: PHPSESSID=randomSessionId1234567890abcdef in PHP settings",
+    "annotations": [
+      {
+        "start": 8,
+        "end": 49,
+        "type": "sec_session_id",
+        "value": "PHPSESSID=randomSessionId1234567890abcdef",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "config",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-009",
+    "text": "Multiple cookies: Cookie: token1=abc123; token2=def456; session=ghi789",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-010",
+    "text": "Set-Cookie: secure_session=encrypted_data_123456789abcdef; Domain=.example.com; Expires=Thu, 01 Jan 2025 00:00:00 GMT",
+    "annotations": [
+      {
+        "start": 0,
+        "end": 117,
+        "type": "sec_set_cookie",
+        "value": "Set-Cookie: secure_session=encrypted_data_123456789abcdef; Domain=.example.com; Expires=Thu, 01 Jan 2025 00:00:00 GMT",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_header",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-011",
+    "text": "Not a cookie: just some text with equals signs = and semicolons;",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-012",
+    "text": "Short session: session=abc (too short)",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "text",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-013",
+    "text": "JSON response: {\\\"sessionId\\\": \\\"1234567890abcdefghijklmnop\\\", \\\"userId\\\": 12345}",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "json",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-014",
+    "text": "Browser storage: localStorage.setItem('sessionToken', 'abcdef123456789ghijklmnop');",
+    "annotations": [],
+    "metadata": {
+      "language": "en",
+      "domain": "code",
+      "created_at": 1692000000000
+    }
+  },
+  {
+    "id": "cookie-015",
+    "text": "HTTP trace: > Cookie: cart_id=shop123456789; user_pref=settings_abcdef",
+    "annotations": [
+      {
+        "start": 14,
+        "end": 70,
+        "type": "sec_cookie",
+        "value": "Cookie: cart_id=shop123456789; user_pref=settings_abcdef",
+        "confidence": 1,
+        "metadata": {
+          "difficulty": "medium",
+          "source": "synthetic"
+        }
+      }
+    ],
+    "metadata": {
+      "language": "en",
+      "domain": "http_trace",
+      "created_at": 1692000000000
+    }
+  }
+]

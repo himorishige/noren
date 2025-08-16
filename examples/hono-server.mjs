@@ -1,6 +1,6 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
-import { Registry, createRedactionTransform } from '../packages/noren-core/dist/index.js'
+import { createRedactionTransform, Registry } from '../packages/noren-core/dist/index.js'
 import * as jp from '../packages/noren-plugin-jp/dist/noren-plugin-jp/src/index.js'
 import * as us from '../packages/noren-plugin-us/dist/noren-plugin-us/src/index.js'
 
@@ -22,7 +22,7 @@ function createBinarySafeRedactionTransform(window = 96) {
     window,
     policy: {
       hmacKey: 'development-secret-key-for-server-example-32-chars',
-    }
+    },
   })
 }
 
