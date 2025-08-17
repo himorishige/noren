@@ -25,7 +25,7 @@ async function quickBenchmark() {
 
   // Benchmark isContentSafe
   const iterations = 1000
-  const start = performance.now()
+  const start = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
   for (let i = 0; i < iterations; i++) {
     for (const text of testCases) {
@@ -33,7 +33,7 @@ async function quickBenchmark() {
     }
   }
 
-  const end = performance.now()
+  const end = typeof performance !== 'undefined' ? performance.now() : Date.now()
   const totalTime = end - start
   const avgTime = totalTime / (iterations * testCases.length)
   const qps = 1000 / avgTime
@@ -47,9 +47,9 @@ async function quickBenchmark() {
 
   // Detailed analysis
   for (const text of testCases) {
-    const detectionStart = performance.now()
+    const detectionStart = typeof performance !== 'undefined' ? performance.now() : Date.now()
     const result = await detectThreats(text)
-    const detectionEnd = performance.now()
+    const detectionEnd = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
     console.log(`"${text.slice(0, 30)}${text.length > 30 ? '...' : ''}"`)
     console.log(`  安全性: ${result.safe ? '✅' : '❌'} (リスク: ${result.risk})`)

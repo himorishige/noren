@@ -17,10 +17,10 @@ async function realisticBenchmark() {
 
   // Test 1: Cold start (first time)
   console.log('1️⃣ コールドスタート（初回実行）:')
-  const coldStart = performance.now()
+  const coldStart = typeof performance !== 'undefined' ? performance.now() : Date.now()
   await setSecurityLevel('balanced')
   const coldResult = await detectThreats(testText)
-  const coldEnd = performance.now()
+  const coldEnd = typeof performance !== 'undefined' ? performance.now() : Date.now()
   console.log(`   時間: ${(coldEnd - coldStart).toFixed(4)}ms`)
   console.log(`   結果: ${coldResult.safe ? 'Safe' : 'Unsafe'} (risk: ${coldResult.risk})\n`)
 
@@ -33,11 +33,11 @@ async function realisticBenchmark() {
     await detectThreats(testText)
   }
 
-  const warmStart = performance.now()
+  const warmStart = typeof performance !== 'undefined' ? performance.now() : Date.now()
   for (let i = 0; i < warmupIterations; i++) {
     await detectThreats(testText)
   }
-  const warmEnd = performance.now()
+  const warmEnd = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
   const warmAvg = (warmEnd - warmStart) / warmupIterations
   const warmQPS = 1000 / warmAvg
@@ -49,11 +49,11 @@ async function realisticBenchmark() {
   console.log('3️⃣ 大量バースト（1000回連続）:')
   const burstIterations = 1000
 
-  const burstStart = performance.now()
+  const burstStart = typeof performance !== 'undefined' ? performance.now() : Date.now()
   for (let i = 0; i < burstIterations; i++) {
     await isContentSafe(testText)
   }
-  const burstEnd = performance.now()
+  const burstEnd = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
   const burstAvg = (burstEnd - burstStart) / burstIterations
   const burstQPS = 1000 / burstAvg
@@ -73,11 +73,11 @@ async function realisticBenchmark() {
   }
 
   const preloadIterations = 1000
-  const preloadStart = performance.now()
+  const preloadStart = typeof performance !== 'undefined' ? performance.now() : Date.now()
   for (let i = 0; i < preloadIterations; i++) {
     await guard.scan(testText)
   }
-  const preloadEnd = performance.now()
+  const preloadEnd = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
   const preloadAvg = (preloadEnd - preloadStart) / preloadIterations
   const preloadQPS = 1000 / preloadAvg

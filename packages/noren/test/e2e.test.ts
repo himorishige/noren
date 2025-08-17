@@ -831,7 +831,8 @@ describe('E2E Performance and Compliance', () => {
       global.gc()
     }
 
-    const initialMemory = process.memoryUsage().heapUsed
+    const initialMemory =
+      typeof process !== 'undefined' && process.memoryUsage ? process.memoryUsage().heapUsed : 0
     const memorySnapshots = [initialMemory]
 
     // Run extended operation
@@ -841,7 +842,8 @@ describe('E2E Performance and Compliance', () => {
 
       // Take memory snapshots
       if (i % 1000 === 0) {
-        const currentMemory = process.memoryUsage().heapUsed
+        const currentMemory =
+          typeof process !== 'undefined' && process.memoryUsage ? process.memoryUsage().heapUsed : 0
         memorySnapshots.push(currentMemory)
       }
     }
@@ -850,7 +852,8 @@ describe('E2E Performance and Compliance', () => {
       global.gc()
     }
 
-    const finalMemory = process.memoryUsage().heapUsed
+    const finalMemory =
+      typeof process !== 'undefined' && process.memoryUsage ? process.memoryUsage().heapUsed : 0
     const memoryGrowth = finalMemory - initialMemory
 
     // Memory should remain stable
