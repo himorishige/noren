@@ -58,7 +58,27 @@ console.log({
 });
 ```
 
-### 3. ガード関数の使用
+### 3. セキュリティレベルプリセット（新機能）
+
+v0.3では3つのプリセットで簡単にセキュリティレベルを設定できます：
+
+```typescript
+import { setSecurityLevel, detectThreats } from '@himorishige/noren';
+
+// 厳格（金融・医療向け）
+await setSecurityLevel('strict');
+
+// バランス（一般用途、デフォルト）
+await setSecurityLevel('balanced');
+
+// 寛容（内部ツール向け）
+await setSecurityLevel('permissive');
+
+// 設定後は自動で適用
+const result = await detectThreats('危険なテキスト');
+```
+
+### 4. ガード関数の使用（既存API）
 
 より高度な制御が必要な場合は `createGuard` 関数を使用します：
 
@@ -77,6 +97,56 @@ const customGuard = createGuard({
 
 // プロンプトをスキャン
 const result = await guard.scan('ユーザーの入力', 'user');
+```
+
+## 🆕 新機能（v0.3）
+
+### 動的パターンローディング
+
+必要なパターンのみを読み込んでバンドルサイズを削減：
+
+```typescript
+import { createLazyGuard, preload } from '@himorishige/noren';
+
+// 事前ロードで最高のパフォーマンス
+await preload('balanced');
+
+// 必要なカテゴリのみロード
+const guard = await createLazyGuard(['core', 'security']);
+```
+
+### 大容量テキスト処理
+
+ステートフル処理でチャンク境界をまたぐ検出：
+
+```typescript
+import { processLargeText } from '@himorishige/noren';
+
+// 大容量ファイルの効率的な処理
+const result = await processLargeText(largeContent, {
+  level: 'strict'
+});
+
+console.log({
+  safe: result.safe,
+  chunks: result.chunks,
+  matches: result.matches.length,
+  processingTime: result.processingTime
+});
+```
+
+### フレームワーク統合
+
+Express.jsやCloudflare Workers向けヘルパー：
+
+```typescript
+// Express.js
+import { createExpressMiddleware } from '@himorishige/noren';
+app.use(createExpressMiddleware({ level: 'strict' }));
+
+// Cloudflare Workers
+import { checkRequest } from '@himorishige/noren';
+const result = await checkRequest(request);
 ```
 
 ## 🎯 信頼レベルの設定
@@ -473,6 +543,40 @@ const sanitized = applyMitigation(context, content, matches);
 
 console.log({ matches, risk, sanitized });
 ```
+
+## 🔄 既存コードからの移行
+
+### v0.2からの移行は不要 ✅
+
+**既存のコードはそのまま動作します：**
+
+```typescript
+// v0.2のコード - 変更不要
+import { isSafe, scanText, createGuard } from '@himorishige/noren';
+
+const safe = isSafe('テキスト');           // ✅ 動作
+const result = await scanText('テキスト');   // ✅ 動作
+const guard = createGuard();               // ✅ 動作
+```
+
+### 段階的なアップグレード（オプション）
+
+```typescript
+// ステップ1: 簡単なAPIに移行
+import { isContentSafe } from '@himorishige/noren';
+const safe = await isContentSafe('テキスト');
+
+// ステップ2: セキュリティレベル活用
+import { setSecurityLevel } from '@himorishige/noren';
+await setSecurityLevel('strict');
+
+// ステップ3: パフォーマンス最適化
+import { createLazyGuard, preload } from '@himorishige/noren';
+await preload('balanced');
+const guard = await createLazyGuard(['core']);
+```
+
+詳細は[移行ガイド](./migration-guide.md)をご覧ください。
 
 ## 📝 次のステップ
 

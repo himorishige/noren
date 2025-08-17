@@ -56,7 +56,7 @@ export {
   processWithPipeline,
   quickScan,
   scan,
-  scanBatch,
+  scanBatch as scanBatchCore,
   // Convenience functions
   scanText,
   updateMetrics,
@@ -114,7 +114,7 @@ export {
   normalizeEncoding,
   quoteDangerous,
   removeInstructions,
-  sanitizeContent,
+  sanitizeContent as sanitizeContentCore,
   validateSanitized,
 } from './sanitizer.js'
 // Stream Processing
@@ -151,6 +151,66 @@ export {
   segmentText,
   validateSegments,
 } from './trust-segment.js'
+
+// Core patterns (lightweight)
+export {
+  CORE_PATTERNS,
+  createCoreConfig,
+  isCorePatternUnsafe,
+} from './patterns/core.js'
+
+// Dynamic pattern loading (lazy loading)
+export {
+  clearPatternCache,
+  createLazyGuard,
+  getCacheStatus,
+  loadMultipleCategories,
+  loadPatterns,
+  loadSanitizeRules,
+  type PatternCategory,
+  preloadCategories,
+} from './pattern-loader.js'
+
+// Simple API (recommended for most users)
+export {
+  checkRequest,
+  createExpressMiddleware,
+  createGuard as createSpecializedGuard,
+  detectThreats,
+  fullScan,
+  getSecurityLevel,
+  isSafe as isContentSafe,
+  preload,
+  reset as resetGuard,
+  sanitize as sanitizeContentSimple,
+  type SecurityLevel,
+  setSecurityLevel,
+  type SimpleConfig,
+} from './simple-api.js'
+
+// Advanced features
+export {
+  AhoCorasick,
+  clearAutomatonCache,
+  createOptimizedDetector,
+  detectMultiplePatterns,
+} from './aho-corasick.js'
+
+export {
+  createStatefulProcessor,
+  createStatefulStream,
+  processLargeText,
+  type StatefulStreamConfig,
+  StatefulStreamProcessor,
+} from './stream-state.js'
+
+export {
+  compilePatterns as compilePatternsToTypedArray,
+  CompiledPatternMatcher,
+  type CompiledPatternSet,
+  deserializeCompiledPatterns,
+  serializeCompiledPatterns,
+} from './compiler.js'
 
 // Type exports
 export type {
