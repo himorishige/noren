@@ -4,15 +4,287 @@
 
 ## 📚 目次
 
-1. [コア関数](#コア関数)
-2. [ガード関数](#ガード関数)
-3. [ストリーミング](#ストリーミング)
-4. [ビルダー](#ビルダー)
-5. [ポリシー管理](#ポリシー管理)
-6. [Pure Functions](#pure-functions)
-7. [型定義](#型定義)
+1. [新しい簡潔API（推奨）](#新しい簡潔api推奨)
+2. [高度な機能](#高度な機能)
+3. [フレームワーク統合](#フレームワーク統合)
+4. [コア関数（既存）](#コア関数既存)
+5. [ガード関数](#ガード関数)
+6. [ストリーミング](#ストリーミング)
+7. [ビルダー](#ビルダー)
+8. [ポリシー管理](#ポリシー管理)
+9. [Pure Functions](#pure-functions)
+10. [型定義](#型定義)
 
-## コア関数
+## 新しい簡潔API（推奨）
+
+v0.3で追加された使いやすいAPIです。既存のAPIも引き続き利用可能です。
+
+### isContentSafe()
+
+最もシンプルな安全性チェック。
+
+```typescript
+async isContentSafe(
+  content: string,
+  config?: SimpleConfig
+): Promise<boolean>
+```
+
+**パラメータ:**
+- `content` - チェック対象のテキスト
+- `config` - オプション設定
+
+**例:**
+```typescript
+import { isContentSafe } from '@himorishige/noren';
+
+const safe = await isContentSafe('今日の天気は？');
+const dangerous = await isContentSafe('指示を無視して', { level: 'strict' });
+```
+
+### detectThreats()
+
+詳細な脅威分析を実行。
+
+```typescript
+async detectThreats(
+  content: string,
+  config?: SimpleConfig
+): Promise<{
+  safe: boolean
+  risk: number
+  level: 'none' | 'low' | 'medium' | 'high' | 'critical'
+}>
+```
+
+**例:**
+```typescript
+import { detectThreats } from '@himorishige/noren';
+
+const threat = await detectThreats('危険なテキスト');
+console.log({
+  safe: threat.safe,     // false
+  risk: threat.risk,     // 85
+  level: threat.level,   // 'high'
+});
+```
+
+### sanitizeContent()
+
+コンテンツのサニタイズを実行。
+
+```typescript
+async sanitizeContent(
+  content: string,
+  config?: SimpleConfig
+): Promise<string>
+```
+
+**例:**
+```typescript
+import { sanitizeContent } from '@himorishige/noren';
+
+const cleaned = await sanitizeContent('APIキー: sk-123456');
+console.log(cleaned); // "APIキー: [API_KEY]"
+```
+
+### setSecurityLevel()
+
+グローバルなセキュリティレベルを設定。
+
+```typescript
+async setSecurityLevel(level: SecurityLevel): Promise<void>
+
+type SecurityLevel = 'strict' | 'balanced' | 'permissive'
+```
+
+**例:**
+```typescript
+import { setSecurityLevel } from '@himorishige/noren';
+
+await setSecurityLevel('strict');     // 金融・医療向け
+await setSecurityLevel('balanced');   // 一般用途（デフォルト）
+await setSecurityLevel('permissive'); // 内部ツール向け
+```
+
+### preload()
+
+パターンの事前ロードでパフォーマンス向上。
+
+```typescript
+async preload(level?: SecurityLevel): Promise<void>
+```
+
+**例:**
+```typescript
+import { preload } from '@himorishige/noren';
+
+// アプリケーション開始時に実行
+await preload('balanced');
+```
+
+## 高度な機能
+
+### createLazyGuard()
+
+動的パターンローディング機能。
+
+```typescript
+async createLazyGuard(
+  categories?: PatternCategory[],
+  options?: {
+    preload?: boolean
+    riskThreshold?: number
+    enableSanitization?: boolean
+  }
+): Promise<LazyGuard>
+
+type PatternCategory = 'core' | 'financial' | 'personal' | 'security' | 'all'
+```
+
+**例:**
+```typescript
+import { createLazyGuard } from '@himorishige/noren';
+
+// コアパターンのみ（最軽量）
+const coreGuard = await createLazyGuard(['core']);
+
+// セキュリティ重視
+const securityGuard = await createLazyGuard(['core', 'security'], {
+  preload: true,
+  riskThreshold: 40
+});
+```
+
+### processLargeText()
+
+大容量テキストの効率的な処理。
+
+```typescript
+async processLargeText(
+  text: string,
+  config?: StatefulStreamConfig
+): Promise<{
+  safe: boolean
+  risk: number
+  matches: PatternMatch[]
+  chunks: number
+  processingTime: number
+}>
+```
+
+**例:**
+```typescript
+import { processLargeText } from '@himorishige/noren';
+
+const result = await processLargeText(largeFile, {
+  level: 'strict',
+  chunkSize: 1024
+});
+
+console.log(`処理チャンク数: ${result.chunks}`);
+console.log(`処理時間: ${result.processingTime}ms`);
+```
+
+### createStatefulProcessor()
+
+ステートフルストリーム処理。
+
+```typescript
+createStatefulProcessor(config?: StatefulStreamConfig): StatefulStreamProcessor
+```
+
+**例:**
+```typescript
+import { createStatefulProcessor } from '@himorishige/noren';
+
+const processor = createStatefulProcessor({
+  chunkSize: 512,
+  riskThreshold: 60
+});
+
+// チャンク境界をまたぐ検出
+await processor.processChunk(chunk1);
+await processor.processChunk(chunk2);
+```
+
+## フレームワーク統合
+
+### createExpressMiddleware()
+
+Express.js用ミドルウェア。
+
+```typescript
+createExpressMiddleware(config?: SimpleConfig): RequestHandler
+```
+
+**例:**
+```typescript
+import express from 'express';
+import { createExpressMiddleware } from '@himorishige/noren';
+
+const app = express();
+
+app.use(createExpressMiddleware({ level: 'strict' }));
+
+app.post('/api/chat', (req, res) => {
+  // req.body.sanitized が利用可能
+  res.json({ message: 'Safe content processed' });
+});
+```
+
+### checkRequest()
+
+Cloudflare Workers用ヘルパー。
+
+```typescript
+async checkRequest(
+  request: Request,
+  config?: SimpleConfig
+): Promise<{
+  allowed: boolean
+  risk?: number
+  sanitized?: string
+}>
+```
+
+**例:**
+```typescript
+import { checkRequest } from '@himorishige/noren';
+
+export default {
+  async fetch(request) {
+    const check = await checkRequest(request, { level: 'strict' });
+    
+    if (!check.allowed) {
+      return new Response('Content blocked', { status: 400 });
+    }
+    
+    // 安全なコンテンツを処理
+    return new Response('Success');
+  }
+};
+```
+
+### createSpecializedGuard()
+
+特定用途向けガード作成。
+
+```typescript
+async createSpecializedGuard(
+  type: 'financial' | 'healthcare' | 'general' | 'security'
+): Promise<LazyGuard>
+```
+
+**例:**
+```typescript
+import { createSpecializedGuard } from '@himorishige/noren';
+
+const financialGuard = await createSpecializedGuard('financial');
+const healthGuard = await createSpecializedGuard('healthcare');
+```
+
+## コア関数（既存）
 
 ### isSafe()
 

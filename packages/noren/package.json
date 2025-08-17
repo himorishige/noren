@@ -25,7 +25,12 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "benchmark": "node examples/optimized-benchmark.mjs",
+    "example:quick": "node examples/quick-start.mjs",
+    "example:advanced": "node examples/advanced-demo.mjs",
+    "example:minimal": "node examples/minimal.mjs",
+    "example:streaming": "node examples/streaming.mjs"
   },
   "keywords": [
     "prompt-injection",

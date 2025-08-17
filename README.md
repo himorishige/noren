@@ -1,6 +1,6 @@
 # Noren (のれん)
 
-[English](./README.md) | [日本語](./docs/ja/README.md)
+[English](./README.md) | [日本語](./docs/ja/README.md) | [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/himorishige/noren)
 
 🏮 **The modern AI security ecosystem inspired by traditional Japanese craftsmanship**
 

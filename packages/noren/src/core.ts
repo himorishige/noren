@@ -5,6 +5,7 @@
  * It offers better tree-shaking, easier testing, and more flexibility through function composition.
  */
 
+import { detectMultiplePatterns } from './aho-corasick.js'
 import { ALL_PATTERNS } from './patterns.js'
 import { DEFAULT_SANITIZE_RULES, normalizeEncoding, sanitizeContent } from './sanitizer.js'
 import {
@@ -56,8 +57,83 @@ const DEFAULT_CONFIG: GuardConfig = {
   enablePerfMonitoring: false,
 }
 
-// Cache compiled patterns for performance
-const COMPILED_PATTERNS_CACHE = new WeakMap<InjectionPattern[], CompiledPattern[]>()
+// Cache compiled patterns for performance with improved stability
+class PatternCache {
+  private cache = new Map<string, CompiledPattern[]>()
+  private maxSize = 100 // LRU cache limit
+  private accessOrder = new Map<string, number>()
+  private accessCounter = 0
+
+  private createCacheKey(patterns: InjectionPattern[]): string {
+    // Create stable cache key from pattern IDs and versions
+    const key = patterns
+      .map((p) => `${p.id}:${p.weight}:${p.severity}`)
+      .sort()
+      .join('|')
+    return key
+  }
+
+  get(patterns: InjectionPattern[]): CompiledPattern[] | undefined {
+    const key = this.createCacheKey(patterns)
+    const result = this.cache.get(key)
+
+    if (result) {
+      // Update access order for LRU
+      this.accessOrder.set(key, ++this.accessCounter)
+    }
+
+    return result
+  }
+
+  set(patterns: InjectionPattern[], compiled: CompiledPattern[]): void {
+    const key = this.createCacheKey(patterns)
+
+    // Evict old entries if cache is full
+    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+      this.evictLRU()
+    }
+
+    this.cache.set(key, compiled)
+    this.accessOrder.set(key, ++this.accessCounter)
+  }
+
+  private evictLRU(): void {
+    let oldestKey = ''
+    let oldestAccess = Infinity
+
+    for (const [key, access] of this.accessOrder) {
+      if (access < oldestAccess) {
+        oldestAccess = access
+        oldestKey = key
+      }
+    }
+
+    if (oldestKey) {
+      this.cache.delete(oldestKey)
+      this.accessOrder.delete(oldestKey)
+    }
+  }
+
+  clear(): void {
+    this.cache.clear()
+    this.accessOrder.clear()
+    this.accessCounter = 0
+  }
+
+  getStats(): {
+    size: number
+    maxSize: number
+    hitRate: number
+  } {
+    return {
+      size: this.cache.size,
+      maxSize: this.maxSize,
+      hitRate: this.accessCounter > 0 ? this.cache.size / this.accessCounter : 0,
+    }
+  }
+}
+
+const COMPILED_PATTERNS_CACHE = new PatternCache()
 
 // Compiled pattern interface for better performance
 interface CompiledPattern {
@@ -112,12 +188,10 @@ export function createMetrics(): PerformanceMetrics {
  * Compiles patterns for optimized performance
  */
 function compilePatterns(patterns: InjectionPattern[]): CompiledPattern[] {
-  // Check cache first
-  if (COMPILED_PATTERNS_CACHE.has(patterns)) {
-    const cached = COMPILED_PATTERNS_CACHE.get(patterns)
-    if (cached) {
-      return cached
-    }
+  // Check cache first with improved stability
+  const cached = COMPILED_PATTERNS_CACHE.get(patterns)
+  if (cached) {
+    return cached
   }
 
   const severityPriority = {
@@ -150,7 +224,7 @@ function compilePatterns(patterns: InjectionPattern[]): CompiledPattern[] {
     // Sort by priority (higher priority first) for early detection
     .sort((a, b) => b.priority - a.priority)
 
-  // Cache the compiled patterns
+  // Cache the compiled patterns with improved cache
   COMPILED_PATTERNS_CACHE.set(patterns, compiled)
 
   return compiled
@@ -166,25 +240,46 @@ export function detectPatterns(
     maxMatches?: number
     earlyExit?: boolean
     severityFilter?: InjectionPattern['severity'][]
+    useAhoCorasick?: boolean
   },
 ): PatternMatch[] {
-  const { compiledPatterns } = context
-  const matches: PatternMatch[] = []
-  const maxMatches = options?.maxMatches || 50 // Prevent excessive matches
+  const { patterns } = context
+  const maxMatches = options?.maxMatches || 50
   const earlyExit = options?.earlyExit ?? false
   const severityFilter = options?.severityFilter
+  const useAhoCorasick = options?.useAhoCorasick ?? true // Default to AC for better performance
 
   // Filter patterns by severity if specified
   const patternsToCheck = severityFilter
+    ? patterns.filter((p) => severityFilter.includes(p.severity))
+    : patterns
+
+  if (patternsToCheck.length === 0) {
+    return []
+  }
+
+  // Use Aho-Corasick for multi-pattern matching (faster for many patterns)
+  if (useAhoCorasick && patternsToCheck.length > 5) {
+    return detectMultiplePatterns(content, patternsToCheck, {
+      maxMatches,
+      severityFilter,
+    })
+  }
+
+  // Fallback to original regex-based detection for few patterns
+  const { compiledPatterns } = context
+  const matches: PatternMatch[] = []
+
+  // Filter compiled patterns by severity
+  const compiledToCheck = severityFilter
     ? compiledPatterns.filter((p) => severityFilter.includes(p.severity))
     : compiledPatterns
 
-  for (const pattern of patternsToCheck) {
+  for (const pattern of compiledToCheck) {
     try {
       // Reset regex state for each pattern
       pattern.regex.lastIndex = 0
 
-      let _match: RegExpExecArray | null
       let _matchCount = 0
 
       // Use match() for global patterns to avoid state issues
