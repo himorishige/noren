@@ -17,3 +17,4 @@ packages/*/coverage/
 
 # cache
 *.tsbuildinfo
+.serena/cache
