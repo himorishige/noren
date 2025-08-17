@@ -133,14 +133,14 @@ export function createCoreConfig() {
  */
 export function isCorePatternUnsafe(content: string): boolean {
   // Pre-compile for reuse
-  const coreRegexes = CORE_PATTERNS.map(p => p.pattern)
-  
+  const coreRegexes = CORE_PATTERNS.map((p) => p.pattern)
+
   for (const regex of coreRegexes) {
     regex.lastIndex = 0 // Reset state
     if (regex.test(content)) {
       return true
     }
   }
-  
+
   return false
 }

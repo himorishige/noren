@@ -5,8 +5,8 @@
  * It offers better tree-shaking, easier testing, and more flexibility through function composition.
  */
 
-import { ALL_PATTERNS } from './patterns.js'
 import { detectMultiplePatterns } from './aho-corasick.js'
+import { ALL_PATTERNS } from './patterns.js'
 import { DEFAULT_SANITIZE_RULES, normalizeEncoding, sanitizeContent } from './sanitizer.js'
 import {
   calculateTrustAdjustedRisk,
@@ -67,7 +67,7 @@ class PatternCache {
   private createCacheKey(patterns: InjectionPattern[]): string {
     // Create stable cache key from pattern IDs and versions
     const key = patterns
-      .map(p => `${p.id}:${p.weight}:${p.severity}`)
+      .map((p) => `${p.id}:${p.weight}:${p.severity}`)
       .sort()
       .join('|')
     return key
@@ -76,23 +76,23 @@ class PatternCache {
   get(patterns: InjectionPattern[]): CompiledPattern[] | undefined {
     const key = this.createCacheKey(patterns)
     const result = this.cache.get(key)
-    
+
     if (result) {
       // Update access order for LRU
       this.accessOrder.set(key, ++this.accessCounter)
     }
-    
+
     return result
   }
 
   set(patterns: InjectionPattern[], compiled: CompiledPattern[]): void {
     const key = this.createCacheKey(patterns)
-    
+
     // Evict old entries if cache is full
     if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
       this.evictLRU()
     }
-    
+
     this.cache.set(key, compiled)
     this.accessOrder.set(key, ++this.accessCounter)
   }
@@ -100,14 +100,14 @@ class PatternCache {
   private evictLRU(): void {
     let oldestKey = ''
     let oldestAccess = Infinity
-    
+
     for (const [key, access] of this.accessOrder) {
       if (access < oldestAccess) {
         oldestAccess = access
         oldestKey = key
       }
     }
-    
+
     if (oldestKey) {
       this.cache.delete(oldestKey)
       this.accessOrder.delete(oldestKey)
@@ -128,7 +128,7 @@ class PatternCache {
     return {
       size: this.cache.size,
       maxSize: this.maxSize,
-      hitRate: this.accessCounter > 0 ? this.cache.size / this.accessCounter : 0
+      hitRate: this.accessCounter > 0 ? this.cache.size / this.accessCounter : 0,
     }
   }
 }
@@ -262,7 +262,7 @@ export function detectPatterns(
   if (useAhoCorasick && patternsToCheck.length > 5) {
     return detectMultiplePatterns(content, patternsToCheck, {
       maxMatches,
-      severityFilter
+      severityFilter,
     })
   }
 

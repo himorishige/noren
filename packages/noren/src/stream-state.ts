@@ -3,7 +3,7 @@
  * Enables continuous pattern detection across chunk boundaries
  */
 
-import { AhoCorasick, createOptimizedDetector } from './aho-corasick.js'
+import { type AhoCorasick, createOptimizedDetector } from './aho-corasick.js'
 import { createGuardContext, type GuardContext } from './core.js'
 import type { DetectionResult, InjectionPattern, PatternMatch, TrustLevel } from './types.js'
 
@@ -45,7 +45,7 @@ export class StatefulStreamProcessor {
       riskThreshold: config.riskThreshold ?? 60,
       enableSanitization: config.enableSanitization ?? true,
       trustLevel: config.trustLevel ?? 'user',
-      patterns: config.patterns ?? []
+      patterns: config.patterns ?? [],
     }
 
     this.state = {
@@ -55,10 +55,10 @@ export class StatefulStreamProcessor {
       context: createGuardContext({
         riskThreshold: this.config.riskThreshold,
         enableSanitization: this.config.enableSanitization,
-        customPatterns: this.config.patterns
+        customPatterns: this.config.patterns,
       }),
       totalMatches: [],
-      chunkCount: 0
+      chunkCount: 0,
     }
 
     // Initialize automaton if patterns provided
@@ -93,18 +93,18 @@ export class StatefulStreamProcessor {
           safe: true,
           matches: [],
           segments: [],
-          processingTime: 0
+          processingTime: 0,
         },
         matches: [],
         position: this.state.position,
-        isComplete: false
+        isComplete: false,
       }
     }
 
     // Calculate processing window with overlap
     const processSize = isLastChunk ? this.state.buffer.length : this.config.chunkSize
     const contentToProcess = this.state.buffer.slice(0, processSize)
-    
+
     // Use Aho-Corasick for stateful detection if available
     let matches: PatternMatch[] = []
     if (this.state.automaton) {
@@ -116,9 +116,9 @@ export class StatefulStreamProcessor {
     }
 
     // Adjust match positions for global stream position
-    const adjustedMatches = matches.map(match => ({
+    const adjustedMatches = matches.map((match) => ({
       ...match,
-      index: match.index + this.state.position
+      index: match.index + this.state.position,
     }))
 
     this.state.totalMatches.push(...adjustedMatches)
@@ -142,11 +142,11 @@ export class StatefulStreamProcessor {
     return {
       result: {
         ...result,
-        matches: adjustedMatches
+        matches: adjustedMatches,
       },
       matches: adjustedMatches,
       position: this.state.position,
-      isComplete: isLastChunk
+      isComplete: isLastChunk,
     }
   }
 
@@ -166,7 +166,7 @@ export class StatefulStreamProcessor {
   }> {
     const startTime = performance.now()
     const results: DetectionResult[] = []
-    
+
     // Reset state
     this.resetState()
 
@@ -175,10 +175,10 @@ export class StatefulStreamProcessor {
     while (position < text.length) {
       const chunkEnd = Math.min(position + this.config.chunkSize, text.length)
       const chunk = text.slice(position, chunkEnd)
-      
+
       const chunkResult = await this.processChunk(chunk)
       results.push(chunkResult.result)
-      
+
       position = chunkEnd
     }
 
@@ -186,7 +186,7 @@ export class StatefulStreamProcessor {
     await this.processChunk('') // Signal end
 
     const processingTime = performance.now() - startTime
-    const risks = results.map(r => r.risk)
+    const risks = results.map((r) => r.risk)
     const averageRisk = risks.length > 0 ? risks.reduce((a, b) => a + b, 0) / risks.length : 0
     const highestRisk = risks.length > 0 ? Math.max(...risks) : 0
 
@@ -198,8 +198,8 @@ export class StatefulStreamProcessor {
         totalMatches: this.state.totalMatches.length,
         highestRisk,
         averageRisk,
-        processingTime
-      }
+        processingTime,
+      },
     }
   }
 
@@ -214,14 +214,14 @@ export class StatefulStreamProcessor {
           controller.enqueue(result.result)
         }
       },
-      
+
       flush: async (controller) => {
         // Process any remaining buffer
         const finalResult = await this.processChunk('')
         if (finalResult.result.input.length > 0) {
           controller.enqueue(finalResult.result)
         }
-      }
+      },
     })
   }
 
@@ -248,7 +248,7 @@ export class StatefulStreamProcessor {
       bufferSize: this.state.buffer.length,
       position: this.state.position,
       totalMatches: this.state.totalMatches.length,
-      chunkCount: this.state.chunkCount
+      chunkCount: this.state.chunkCount,
     }
   }
 
@@ -260,9 +260,9 @@ export class StatefulStreamProcessor {
     this.state.context = createGuardContext({
       riskThreshold: this.config.riskThreshold,
       enableSanitization: this.config.enableSanitization,
-      customPatterns: patterns
+      customPatterns: patterns,
     })
-    
+
     if (patterns.length > 0) {
       this.state.automaton = createOptimizedDetector(patterns)
     } else {
@@ -283,7 +283,7 @@ export function createStatefulProcessor(config?: StatefulStreamConfig): Stateful
  */
 export async function processLargeText(
   text: string,
-  config?: StatefulStreamConfig
+  config?: StatefulStreamConfig,
 ): Promise<{
   safe: boolean
   risk: number
@@ -293,16 +293,16 @@ export async function processLargeText(
 }> {
   const processor = createStatefulProcessor(config)
   const result = await processor.processStream(text)
-  
+
   const overallRisk = result.summary.averageRisk
   const safe = overallRisk < (config?.riskThreshold ?? 60)
-  
+
   return {
     safe,
     risk: overallRisk,
     matches: result.totalMatches,
     chunks: result.summary.totalChunks,
-    processingTime: result.summary.processingTime
+    processingTime: result.summary.processingTime,
   }
 }
 
@@ -311,7 +311,7 @@ export async function processLargeText(
  */
 export function createStatefulStream(
   text: string,
-  config?: StatefulStreamConfig
+  config?: StatefulStreamConfig,
 ): ReadableStream<DetectionResult> {
   const processor = createStatefulProcessor(config)
   const chunkSize = config?.chunkSize ?? 1024
@@ -328,12 +328,12 @@ export function createStatefulStream(
 
       const chunk = text.slice(position, position + chunkSize)
       const result = await processor.processChunk(chunk)
-      
+
       if (result.isComplete || result.result.matches.length > 0) {
         controller.enqueue(result.result)
       }
-      
+
       position += chunk.length
-    }
+    },
   })
 }

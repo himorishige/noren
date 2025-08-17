@@ -6,12 +6,7 @@
 import type { InjectionPattern, SanitizeRule } from './types.js'
 
 // Pattern category type
-export type PatternCategory = 
-  | 'core'
-  | 'financial' 
-  | 'personal'
-  | 'security'
-  | 'all'
+export type PatternCategory = 'core' | 'financial' | 'personal' | 'security' | 'all'
 
 // Loaded patterns cache
 const loadedPatterns = new Map<PatternCategory, InjectionPattern[]>()
@@ -20,12 +15,12 @@ const loadedRules = new Map<PatternCategory, SanitizeRule[]>()
 /**
  * Dynamically load patterns by category
  */
-export async function loadPatterns(
-  category: PatternCategory
-): Promise<InjectionPattern[]> {
+export async function loadPatterns(category: PatternCategory): Promise<InjectionPattern[]> {
   // Return cached if already loaded
   if (loadedPatterns.has(category)) {
-    return loadedPatterns.get(category)!
+    const cached = loadedPatterns.get(category)
+    if (!cached) throw new Error('Failed to get cached patterns')
+    return cached
   }
 
   let patterns: InjectionPattern[]
@@ -57,7 +52,7 @@ export async function loadPatterns(
         loadPatterns('core'),
         loadPatterns('financial'),
         loadPatterns('personal'),
-        loadPatterns('security')
+        loadPatterns('security'),
       ])
       patterns = [...core, ...financial, ...personal, ...security]
       break
@@ -74,12 +69,12 @@ export async function loadPatterns(
 /**
  * Dynamically load sanitization rules by category
  */
-export async function loadSanitizeRules(
-  category: PatternCategory
-): Promise<SanitizeRule[]> {
+export async function loadSanitizeRules(category: PatternCategory): Promise<SanitizeRule[]> {
   // Return cached if already loaded
   if (loadedRules.has(category)) {
-    return loadedRules.get(category)!
+    const cached = loadedRules.get(category)
+    if (!cached) throw new Error('Failed to get cached rules')
+    return cached
   }
 
   let rules: SanitizeRule[]
@@ -110,7 +105,7 @@ export async function loadSanitizeRules(
       const [financial, personal, security] = await Promise.all([
         loadSanitizeRules('financial'),
         loadSanitizeRules('personal'),
-        loadSanitizeRules('security')
+        loadSanitizeRules('security'),
       ])
       rules = [...financial, ...personal, ...security]
       break
@@ -127,15 +122,13 @@ export async function loadSanitizeRules(
 /**
  * Load multiple categories at once
  */
-export async function loadMultipleCategories(
-  categories: PatternCategory[]
-): Promise<{
+export async function loadMultipleCategories(categories: PatternCategory[]): Promise<{
   patterns: InjectionPattern[]
   rules: SanitizeRule[]
 }> {
   const [patternsResults, rulesResults] = await Promise.all([
-    Promise.all(categories.map(cat => loadPatterns(cat))),
-    Promise.all(categories.map(cat => loadSanitizeRules(cat)))
+    Promise.all(categories.map((cat) => loadPatterns(cat))),
+    Promise.all(categories.map((cat) => loadSanitizeRules(cat))),
   ])
 
   const patterns = patternsResults.flat()
@@ -147,12 +140,10 @@ export async function loadMultipleCategories(
 /**
  * Preload categories for better performance
  */
-export async function preloadCategories(
-  categories: PatternCategory[]
-): Promise<void> {
+export async function preloadCategories(categories: PatternCategory[]): Promise<void> {
   await Promise.all([
-    ...categories.map(cat => loadPatterns(cat)),
-    ...categories.map(cat => loadSanitizeRules(cat))
+    ...categories.map((cat) => loadPatterns(cat)),
+    ...categories.map((cat) => loadSanitizeRules(cat)),
   ])
 }
 
@@ -173,7 +164,7 @@ export function getCacheStatus(): {
 } {
   return {
     loadedPatterns: Array.from(loadedPatterns.keys()),
-    loadedRules: Array.from(loadedRules.keys())
+    loadedRules: Array.from(loadedRules.keys()),
   }
 }
 
@@ -186,7 +177,7 @@ export async function createLazyGuard(
     preload?: boolean
     riskThreshold?: number
     enableSanitization?: boolean
-  }
+  },
 ) {
   const { preload = false, riskThreshold = 60, enableSanitization = true } = options || {}
 
@@ -197,15 +188,15 @@ export async function createLazyGuard(
   return {
     async scan(content: string) {
       const { patterns, rules } = await loadMultipleCategories(categories)
-      
+
       // Use lightweight core detection for initial scan
       const { createGuardContext, scan } = await import('./core.js')
-      
+
       const context = createGuardContext({
         customPatterns: patterns,
         customRules: enableSanitization ? rules : undefined,
         riskThreshold,
-        enableSanitization
+        enableSanitization,
       })
 
       return scan(context, content)
@@ -215,11 +206,11 @@ export async function createLazyGuard(
       // Use only core patterns for quick scan
       const corePatterns = await loadPatterns('core')
       const { createGuardContext, quickScan } = await import('./core.js')
-      
+
       const context = createGuardContext({
         customPatterns: corePatterns,
         riskThreshold,
-        enableSanitization: false // Quick scan doesn't sanitize
+        enableSanitization: false, // Quick scan doesn't sanitize
       })
 
       return quickScan(context, content)
@@ -235,6 +226,6 @@ export async function createLazyGuard(
     },
 
     getLoadedCategories: () => [...categories],
-    getCacheStatus
+    getCacheStatus,
   }
 }
