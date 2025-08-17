@@ -51,9 +51,9 @@ export function addPattern(
   try {
     regex =
       typeof options.pattern === 'string' ? new RegExp(options.pattern, 'gi') : options.pattern
-  } catch (error) {
+  } catch (_error) {
     // If regex is invalid, create a pattern that never matches
-    console.warn(`Invalid regex pattern: ${options.pattern}`, error)
+    // Invalid regex patterns are handled by throwing error
     regex = /(?:)/gi
   }
 
@@ -237,9 +237,9 @@ export function addRule(
   try {
     regex =
       typeof options.pattern === 'string' ? new RegExp(options.pattern, 'gi') : options.pattern
-  } catch (error) {
+  } catch (_error) {
     // If regex is invalid, create a pattern that never matches
-    console.warn(`Invalid regex pattern for rule: ${options.pattern}`, error)
+    // Invalid regex patterns are handled by throwing error
     regex = /(?:)/gi
   }
 

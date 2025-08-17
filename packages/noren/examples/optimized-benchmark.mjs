@@ -3,7 +3,7 @@
  * Tests all new features and performance improvements
  */
 
-import { performance } from 'node:perf_hooks'
+// Using global performance API for cross-platform compatibility
 
 // Import new optimized APIs
 import {
@@ -48,13 +48,13 @@ async function benchmark(name, fn, iterations = 1000) {
     await fn()
   }
 
-  const start = performance.now()
+  const start = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
   for (let i = 0; i < iterations; i++) {
     await fn()
   }
 
-  const end = performance.now()
+  const end = typeof performance !== 'undefined' ? performance.now() : Date.now()
   const totalTime = end - start
   const avgTime = totalTime / iterations
   const qps = 1000 / avgTime
