@@ -7,11 +7,9 @@
 
 import {
   collectStream,
-  createPipeline,
+  createStreamPipeline,
   createTextStream,
-  RealTimeProcessor,
-  StreamProcessor,
-  sanitizeText,
+  sanitizeContent,
   scanText,
 } from '../dist/index.js'
 
@@ -59,12 +57,7 @@ async function demonstrateBasicStreaming() {
   // Create a text stream
   const _textStream = createTextStream(sampleText, 100) // 100 char chunks
 
-  // Process with streaming scanner
-  const processor = new StreamProcessor({
-    chunkSize: 100,
-    trustLevel: 'user',
-    riskThreshold: 60,
-  })
+  // Note: Using direct scanning approach instead of streaming processor
 
   console.log(colorize('Processing stream in chunks...', 'yellow'))
   const startTime = performance.now()
@@ -73,19 +66,24 @@ async function demonstrateBasicStreaming() {
   let totalRisk = 0
   let dangerousChunks = 0
 
-  for await (const result of processor.processText(sampleText)) {
-    chunkCount++
-    totalRisk += result.result.risk
+  // Simplified streaming approach using direct scanning
+  const chunkSize = 100
+  for (let i = 0; i < sampleText.length; i += chunkSize) {
+    const chunk = sampleText.slice(i, i + chunkSize)
+    const result = await scanText(chunk, { riskThreshold: 60 })
 
-    if (!result.result.safe) {
+    chunkCount++
+    totalRisk += result.risk
+
+    if (!result.safe) {
       dangerousChunks++
-      console.log(colorize(`⚠️  Chunk ${chunkCount} (Risk: ${result.result.risk})`, 'red'))
-      console.log(`    "${result.chunk.slice(0, 60)}..."`)
-      if (result.result.matches.length > 0) {
-        console.log(`    Patterns: ${result.result.matches.map((m) => m.pattern).join(', ')}`)
+      console.log(colorize(`⚠️  Chunk ${chunkCount} (Risk: ${result.risk})`, 'red'))
+      console.log(`    "${chunk.slice(0, 60)}..."`)
+      if (result.matches.length > 0) {
+        console.log(`    Patterns: ${result.matches.map((m) => m.pattern).join(', ')}`)
       }
     } else {
-      console.log(colorize(`✅ Chunk ${chunkCount} (Risk: ${result.result.risk})`, 'green'))
+      console.log(colorize(`✅ Chunk ${chunkCount} (Risk: ${result.risk})`, 'green'))
     }
   }
 
@@ -107,7 +105,7 @@ async function demonstratePipeline() {
   console.log()
 
   // Create processing pipeline
-  const pipeline = createPipeline({
+  const pipeline = createStreamPipeline({
     chunkSize: 150,
     riskThreshold: 70,
     enableSanitization: true,
@@ -147,37 +145,7 @@ async function demonstrateRealTime() {
   console.log(colorize('3. Real-Time Processing', 'blue'))
   console.log()
 
-  const realTimeProcessor = new RealTimeProcessor({
-    chunkSize: 50,
-    riskThreshold: 65,
-    progressiveScanning: true,
-  })
-
-  // Start real-time processing
-  const resultStream = realTimeProcessor.start()
-
-  // Set up result monitoring
-  const reader = resultStream.getReader()
-  const resultPromise = (async () => {
-    const results = []
-    try {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        results.push(value)
-
-        // Log dangerous content immediately
-        if (!value.result.safe) {
-          console.log(colorize(`🚨 Real-time alert: Risk ${value.result.risk}`, 'red'))
-          console.log(`   Text: "${value.chunk.trim()}"`)
-        }
-      }
-    } finally {
-      reader.releaseLock()
-    }
-    return results
-  })()
+  // Note: Using direct scanning instead of real-time processor
 
   console.log(colorize('Simulating real-time text input...', 'yellow'))
 
@@ -192,17 +160,22 @@ async function demonstrateRealTime() {
     '\n\nThank you for your help!',
   ]
 
+  const results = []
   for (const [index, input] of dangerousInputs.entries()) {
     console.log(colorize(`Input ${index + 1}: "${input}"`, 'blue'))
-    await realTimeProcessor.addText(input)
+
+    const result = await scanText(input, { riskThreshold: 65 })
+    results.push({ chunk: input, result })
+
+    // Log dangerous content immediately
+    if (!result.safe) {
+      console.log(colorize(`🚨 Real-time alert: Risk ${result.risk}`, 'red'))
+      console.log(`   Text: "${input.trim()}"`)
+    }
 
     // Simulate typing delay
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
-
-  // End processing and collect results
-  realTimeProcessor.end()
-  const results = await resultPromise
 
   console.log()
   console.log(colorize('Real-Time Processing Summary:', 'cyan'))
@@ -268,7 +241,7 @@ async function demonstrateHighThroughput() {
 
   const sanitizeStartTime = performance.now()
   const sanitizedTexts = await Promise.all(
-    testTexts.map((text) => sanitizeText(text, { riskThreshold: 60 })),
+    testTexts.map((text) => sanitizeContent(text, { riskThreshold: 60 })),
   )
   const sanitizeTime = performance.now() - sanitizeStartTime
 
@@ -299,24 +272,24 @@ async function demonstrateMemoryEfficiency() {
     colorize(`Processing large text (${Math.round(largeText.length / 1024)}KB)...`, 'yellow'),
   )
 
-  const processor = new StreamProcessor({
-    chunkSize: 1024, // 1KB chunks
-    contextBuffer: 512, // 512B context buffer
-    trustLevel: 'user',
-  })
+  // Note: Using direct chunk processing approach
 
   const startTime = performance.now()
   let chunkCount = 0
   let totalMatches = 0
 
-  // Process in streaming fashion to minimize memory usage
-  for await (const result of processor.processText(largeText)) {
+  // Process in chunks to minimize memory usage
+  const largeChunkSize = 1024
+  for (let i = 0; i < largeText.length; i += largeChunkSize) {
+    const chunk = largeText.slice(i, i + largeChunkSize)
+    const result = await scanText(chunk)
+
     chunkCount++
-    totalMatches += result.result.matches.length
+    totalMatches += result.matches.length
 
     // Only log dangerous chunks to avoid spam
-    if (!result.result.safe && result.result.risk > 80) {
-      console.log(colorize(`High-risk chunk ${chunkCount}: ${result.result.risk}/100`, 'red'))
+    if (!result.safe && result.risk > 80) {
+      console.log(colorize(`High-risk chunk ${chunkCount}: ${result.risk}/100`, 'red'))
     }
   }
 

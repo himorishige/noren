@@ -5,7 +5,7 @@
  * Demonstrates how to integrate Noren Guard with an MCP server
  */
 
-import { createMCPMiddleware, MCPGuard, PRESETS } from '../dist/index.js'
+import { createGuard } from '../dist/index.js'
 
 // Mock MCP messages for demonstration
 const sampleMessages = [
@@ -72,22 +72,10 @@ async function demonstrateMCPGuard() {
   console.log('=' * 50)
   console.log()
 
-  // Create MCP Guard with custom settings
-  const mcpGuard = new MCPGuard({
-    ...PRESETS.MCP,
-    blockDangerous: false, // Sanitize instead of block
-    enableLogging: true,
-    logger: (event) => {
-      const status = event.safe ? colorize('✅ SAFE', 'green') : colorize('⚠️  RISKY', 'red')
-
-      console.log(`[${event.timestamp.toISOString()}] ${status} ${event.action.toUpperCase()}`)
-      console.log(`  Method: ${event.messageType}`)
-      console.log(`  Risk: ${event.risk}/100`)
-      if (event.matches.length > 0) {
-        console.log(`  Patterns: ${event.matches.map((m) => m.pattern).join(', ')}`)
-      }
-      console.log()
-    },
+  // Create Guard with MCP-compatible settings
+  const guard = createGuard({
+    riskThreshold: 60,
+    enableSanitization: true,
   })
 
   console.log(colorize('Processing MCP Messages:', 'blue'))
@@ -98,14 +86,21 @@ async function demonstrateMCPGuard() {
     console.log(JSON.stringify(message, null, 2))
     console.log()
 
-    const { message: processedMessage, action } = await mcpGuard.processMessage(message)
+    // Process message content for dangerous patterns
+    const messageStr = JSON.stringify(message)
+    const result = await guard.scan(messageStr)
+    const action = result.safe ? 'safe' : 'sanitized'
+    const processedMessage = result.safe ? message : { ...message, sanitized: result.sanitized }
+
+    // Log results
+    const status = result.safe ? colorize('✅ SAFE', 'green') : colorize('⚠️  RISKY', 'red')
+    console.log(`${status} Risk: ${result.risk}/100`)
+    if (result.matches.length > 0) {
+      console.log(`Patterns: ${result.matches.map((m) => m.pattern).join(', ')}`)
+    }
 
     if (action === 'sanitized') {
       console.log(colorize('Sanitized Message:', 'cyan'))
-      console.log(JSON.stringify(processedMessage, null, 2))
-      console.log()
-    } else if (action === 'blocked') {
-      console.log(colorize('Message Blocked:', 'red'))
       console.log(JSON.stringify(processedMessage, null, 2))
       console.log()
     }
@@ -119,32 +114,37 @@ async function demonstrateMiddleware() {
   console.log(colorize('MCP Middleware Usage:', 'blue'))
   console.log()
 
-  const { process, isSafe } = createMCPMiddleware({
-    ...PRESETS.STRICT,
-    blockDangerous: true,
-    enableLogging: false,
+  // Create a strict guard for middleware demo
+  const strictGuard = createGuard({
+    riskThreshold: 30,
+    enableSanitization: false,
   })
 
   // Simulate processing messages
   for (const message of sampleMessages.slice(2)) {
     // Test dangerous ones
     console.log(colorize('Quick Safety Check:', 'yellow'))
-    const quickSafe = isSafe(message)
+    const messageStr = JSON.stringify(message)
+    const quickResult = await strictGuard.scan(messageStr)
+    const quickSafe = quickResult.safe
     console.log(
       `Message ID ${message.id}: ${quickSafe ? colorize('Safe', 'green') : colorize('Unsafe', 'red')}`,
     )
 
     if (!quickSafe) {
       console.log(colorize('Full Processing:', 'yellow'))
-      const { message: processed, action } = await process(message)
-      console.log(
-        `Action taken: ${colorize(action.toUpperCase(), action === 'blocked' ? 'red' : 'yellow')}`,
-      )
+      console.log(`Action taken: ${colorize('BLOCKED', 'red')} (Risk: ${quickResult.risk}/100)`)
 
-      if (action === 'blocked') {
-        console.log('Error response:')
-        console.log(JSON.stringify(processed.error, null, 2))
+      const errorResponse = {
+        jsonrpc: '2.0',
+        id: message.id,
+        error: {
+          code: -32603,
+          message: 'Request blocked due to security policy violation',
+        },
       }
+      console.log('Error response:')
+      console.log(JSON.stringify(errorResponse, null, 2))
     }
     console.log()
   }
@@ -154,23 +154,59 @@ async function demonstrateMetrics() {
   console.log(colorize('Security Metrics:', 'blue'))
   console.log()
 
-  const mcpGuard = new MCPGuard({
+  const metricsGuard = createGuard({
     riskThreshold: 60,
-    enableLogging: true,
-    logger: () => {}, // Silent logging for metrics demo
   })
 
-  // Process a bunch of messages
+  // Process a bunch of messages and collect metrics
   const testMessages = [
     ...sampleMessages,
     ...sampleMessages.map((m) => ({ ...m, id: m.id + 10 })), // Duplicate with different IDs
   ]
 
+  let totalMessages = 0
+  let blockedMessages = 0
+  let sanitizedMessages = 0
+  let totalRisk = 0
+  const events = []
+
   for (const message of testMessages) {
-    await mcpGuard.processMessage(message)
+    const messageStr = JSON.stringify(message)
+    const result = await metricsGuard.scan(messageStr)
+
+    totalMessages++
+    totalRisk += result.risk
+
+    if (!result.safe) {
+      if (result.risk > 80) {
+        blockedMessages++
+        events.push({
+          safe: false,
+          risk: result.risk,
+          action: 'blocked',
+          messageType: message.method,
+        })
+      } else {
+        sanitizedMessages++
+        events.push({
+          safe: false,
+          risk: result.risk,
+          action: 'sanitized',
+          messageType: message.method,
+        })
+      }
+    } else {
+      events.push({ safe: true, risk: result.risk, action: 'allowed', messageType: message.method })
+    }
   }
 
-  const metrics = mcpGuard.getMetrics()
+  const metrics = {
+    totalMessages,
+    blockedMessages,
+    sanitizedMessages,
+    averageRisk: totalRisk / totalMessages,
+    topPatterns: [], // Simplified for demo
+  }
 
   console.log(colorize('📊 Security Metrics Summary:', 'cyan'))
   console.log(`Total Messages: ${metrics.totalMessages}`)
@@ -188,7 +224,7 @@ async function demonstrateMetrics() {
   console.log()
 
   // Show recent security events
-  const recentEvents = mcpGuard.getEvents(5)
+  const recentEvents = events.slice(-5)
   if (recentEvents.length > 0) {
     console.log(colorize('Recent Security Events:', 'yellow'))
     recentEvents.forEach((event) => {
@@ -210,12 +246,13 @@ async function demonstrateHTTPMiddleware() {
     // Simulate request with MCP message
     req.body = sampleMessages[3] // Dangerous message
 
-    const mcpGuard = new MCPGuard({
-      blockDangerous: true,
+    const httpGuard = createGuard({
       riskThreshold: 50,
     })
 
-    const { action } = await mcpGuard.processMessage(req.body)
+    const messageStr = JSON.stringify(req.body)
+    const result = await httpGuard.scan(messageStr)
+    const action = result.safe ? 'allowed' : 'blocked'
 
     if (action === 'blocked') {
       console.log(colorize('❌ Request blocked by security policy', 'red'))
