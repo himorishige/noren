@@ -1,5 +1,18 @@
 # @himorishige/noren
 
+## 0.3.1
+
+### Patch Changes
+
+- [#86](https://github.com/himorishige/noren/pull/86) [`69f3f87`](https://github.com/himorishige/noren/commit/69f3f87e0c566dd17910695db0b96bbca70623e8) Thanks [@himorishige](https://github.com/himorishige)! - Fix Web Standards compatibility and pattern detection issues
+
+  - Replace Node.js-specific APIs with Web Standards for Deno/Bun compatibility
+  - Fix ALL_PATTERNS export duplication in patterns.ts
+  - Temporarily disable Aho-Corasick algorithm due to regex pattern incompatibility
+  - Adjust performance test thresholds to realistic values
+  - Remove console.warn() calls from error handlers
+  - Add compatibility checks for process.memoryUsage() in tests
+
 ## 0.3.0
 
 ### Minor Changes

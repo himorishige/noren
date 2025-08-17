@@ -1,6 +1,6 @@
 {
   "name": "@himorishige/noren",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Noren (のれん) - Lightweight AI security library for prompt injection protection. Like a shop curtain that provides privacy, Noren intelligently shields your AI applications from malicious prompts.",
   "type": "module",
   "main": "./dist/index.js",
