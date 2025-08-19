@@ -60,7 +60,7 @@
   "homepage": "https://github.com/himorishige/noren#readme",
   "devDependencies": {
     "@rollup/plugin-json": "^6.1.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.3.0",
     "@vitest/coverage-v8": "^3.2.4",
     "typescript": "^5.0.0",
     "vitest": "^3.2.4"
